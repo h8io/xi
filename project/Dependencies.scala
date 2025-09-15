@@ -1,4 +1,4 @@
-import io.h8.sbt.dependencies.*
+import h8io.sbt.dependencies.*
 import sbt.*
 
 object Dependencies {

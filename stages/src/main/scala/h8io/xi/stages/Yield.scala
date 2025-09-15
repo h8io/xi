@@ -1,4 +1,4 @@
-package io.h8.xi.stages
+package h8io.xi.stages
 
 sealed trait Yield[-I, +O, +E] {
   val onDone: OnDone[I, O, E]
