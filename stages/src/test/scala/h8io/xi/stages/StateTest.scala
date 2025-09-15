@@ -1,4 +1,4 @@
-package io.h8.xi.stages
+package h8io.xi.stages
 
 import cats.data.NonEmptyChain
 import org.scalamock.scalatest.MockFactory

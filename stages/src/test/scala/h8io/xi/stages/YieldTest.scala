@@ -1,7 +1,7 @@
-package io.h8.xi.stages
+package h8io.xi.stages
 
 import cats.data.NonEmptyChain
-import io.h8.xi.stages.State.Complete
+import State.Complete
 import org.scalamock.handlers.CallHandler0
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.Inside
