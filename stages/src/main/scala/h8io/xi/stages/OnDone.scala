@@ -36,10 +36,10 @@ object OnDone {
     final override private[stages] def safe: Safe[I, O, E] = this
   }
 
-  final case class DoNothing[-I, +O, +E](lazyStage: () => Stage[I, O, E]) extends OnDone.Safe[I, O, E] {
-    def onSuccess(): State[I, O, E] = State.Success(lazyStage)
-    def onComplete(): State[I, O, E] = State.Success(lazyStage)
-    def onFailure(): State[I, O, E] = State.Success(lazyStage)
+  final case class DoNothing[-I, +O, +E](stage: Stage[I, O, E]) extends OnDone.Safe[I, O, E] {
+    def onSuccess(): State[I, O, E] = State.Success(stage)
+    def onComplete(): State[I, O, E] = State.Success(stage)
+    def onFailure(): State[I, O, E] = State.Success(stage)
   }
 
   final case class OnFailure[+E](e: Exception) extends OnDone.Safe[Any, Nothing, E] {

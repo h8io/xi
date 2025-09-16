@@ -10,32 +10,32 @@ class StateTest extends AnyFlatSpec with Matchers with Inside with MockFactory {
   "Success" should "become a Success if it is composed with a Success" in {
     val stage1 = mock[Stage[Unit, String, Nothing]]
     val stage2 = mock[Stage[String, Int, Nothing]]
-    inside(State.Success(() => stage1) <~ State.Success(() => stage2)) { case State.Success(lazyStage) =>
+    inside(State.Success(stage1) <~ State.Success(stage2)) { case State.Success(stage) =>
       inSequence {
         (stage1.apply _).expects(()).returns(Yield.Some("xi", mock[OnDone[Unit, String, Nothing]]))
         (stage2.apply _).expects("xi").returns(Yield.Some(42, mock[OnDone[String, Int, Nothing]]))
       }
-      lazyStage()(()) should matchPattern { case Yield.Some(42, _) => }
+      stage(()) should matchPattern { case Yield.Some(42, _) => }
     }
   }
 
   it should "become the Complete if it is composed with the Complete" in {
-    State.Success(mock[() => Stage[Int, String, Nothing]]) <~ State.Complete shouldBe State.Complete
+    State.Success(mock[Stage[Int, String, Nothing]]) <~ State.Complete shouldBe State.Complete
   }
 
   it should "become a Failure if it is composed with a Failure" in {
     val failure = State.error("Success <~ Failure")
-    State.Success(mock[() => Stage[String, Int, Nothing]]) <~ failure shouldBe failure
+    State.Success(mock[Stage[String, Int, Nothing]]) <~ failure shouldBe failure
   }
 
   it should "call onSuccess in composition with OnDone" in {
     val onDone = mock[OnDone[Boolean, String, Nothing]]
     (onDone.onSuccess _).expects().returns(State.Complete)
-    State.Success(mock[() => Stage[String, Int, Nothing]]) ~> onDone shouldBe State.Complete
+    State.Success(mock[Stage[String, Int, Nothing]]) ~> onDone shouldBe State.Complete
   }
 
   "Complete" should "remain the Complete if it is composed with a Success" in {
-    State.Complete <~ State.Success(mock[() => Stage[Boolean, Byte, Nothing]]) shouldBe State.Complete
+    State.Complete <~ State.Success(mock[Stage[Boolean, Byte, Nothing]]) shouldBe State.Complete
   }
 
   it should "remain the Complete if it is composed with the Complete" in {
@@ -55,7 +55,7 @@ class StateTest extends AnyFlatSpec with Matchers with Inside with MockFactory {
 
   "Failure" should "remain the same Failure if it is composed with a Success" in {
     val failure = State.failure(new Exception("Failure <~ Success"))
-    failure <~ State.Success(mock[() => Stage[Boolean, Byte, Nothing]]) shouldBe failure
+    failure <~ State.Success(mock[Stage[Boolean, Byte, Nothing]]) shouldBe failure
   }
 
   it should "remain the Complete if it is composed with the Complete" in {
