@@ -11,9 +11,9 @@ sealed trait State[-I, +O, +E] {
 }
 
 object State {
-  final case class Success[-I, +O, +E](lazyStage: () => Stage[I, O, E]) extends State[I, O, E] {
+  final case class Success[-I, +O, +E](stage: Stage[I, O, E]) extends State[I, O, E] {
     private[stages] def <~[_O, _E >: E](that: State[O, _O, _E]): State[I, _O, _E] = that match {
-      case Success(nextStage) => Success(() => lazyStage() ~> nextStage())
+      case Success(nextStage) => Success(stage ~> nextStage)
       case Complete => Complete
       case failure: Failure[?] => failure
     }

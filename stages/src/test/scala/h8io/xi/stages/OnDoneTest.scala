@@ -36,15 +36,15 @@ class OnDoneTest extends AnyFlatSpec with Matchers with Inside with MockFactory 
     val onDone2 = mock[OnDone.Safe[Int, String, Nothing]]
     val stage2 = mock[Stage[Int, String, Nothing]]
     inSequence {
-      (onDone2.onSuccess _).expects().returns(State.Success(() => stage2))
-      (onDone1.onSuccess _).expects().returns(State.Success(() => stage1))
+      (onDone2.onSuccess _).expects().returns(State.Success(stage2))
+      (onDone1.onSuccess _).expects().returns(State.Success(stage1))
     }
-    inside((onDone1 <~ onDone2).onSuccess()) { case State.Success(lazyStage) =>
+    inside((onDone1 <~ onDone2).onSuccess()) { case State.Success(stage) =>
       inSequence {
         (stage1.apply _).expects(()).returns(Yield.Some(42, mock[OnDone[Unit, Int, Nothing]]))
         (stage2.apply _).expects(42).returns(Yield.Some("xi", mock[OnDone[Int, String, Nothing]]))
       }
-      lazyStage()(()) should matchPattern { case Yield.Some("xi", _) => }
+      stage(()) should matchPattern { case Yield.Some("xi", _) => }
     }
   }
 
@@ -54,15 +54,15 @@ class OnDoneTest extends AnyFlatSpec with Matchers with Inside with MockFactory 
     val onDone2 = mock[OnDone.Safe[Int, String, Nothing]]
     val stage2 = mock[Stage[Int, String, Nothing]]
     inSequence {
-      (onDone2.onComplete _).expects().returns(State.Success(() => stage2))
-      (onDone1.onSuccess _).expects().returns(State.Success(() => stage1))
+      (onDone2.onComplete _).expects().returns(State.Success(stage2))
+      (onDone1.onSuccess _).expects().returns(State.Success(stage1))
     }
-    inside((onDone1 <~ onDone2).onComplete()) { case State.Success(lazyStage) =>
+    inside((onDone1 <~ onDone2).onComplete()) { case State.Success(stage) =>
       inSequence {
         (stage1.apply _).expects(()).returns(Yield.Some(42, mock[OnDone[Unit, Int, Nothing]]))
         (stage2.apply _).expects(42).returns(Yield.Some("xi", mock[OnDone[Int, String, Nothing]]))
       }
-      lazyStage()(()) should matchPattern { case Yield.Some("xi", _) => }
+      stage(()) should matchPattern { case Yield.Some("xi", _) => }
     }
   }
 
@@ -72,22 +72,22 @@ class OnDoneTest extends AnyFlatSpec with Matchers with Inside with MockFactory 
     val onDone2 = mock[OnDone.Safe[Int, String, Nothing]]
     val stage2 = mock[Stage[Int, String, Nothing]]
     inSequence {
-      (onDone2.onFailure _).expects().returns(State.Success(() => stage2))
-      (onDone1.onSuccess _).expects().returns(State.Success(() => stage1))
+      (onDone2.onFailure _).expects().returns(State.Success(stage2))
+      (onDone1.onSuccess _).expects().returns(State.Success(stage1))
     }
-    inside((onDone1 <~ onDone2).onFailure()) { case State.Success(lazyStage) =>
+    inside((onDone1 <~ onDone2).onFailure()) { case State.Success(stage) =>
       inSequence {
         (stage1.apply _).expects(()).returns(Yield.Some(42, mock[OnDone[Unit, Int, Nothing]]))
         (stage2.apply _).expects(42).returns(Yield.Some("xi", mock[OnDone[Int, String, Nothing]]))
       }
-      lazyStage()(()) should matchPattern { case Yield.Some("xi", _) => }
+      stage(()) should matchPattern { case Yield.Some("xi", _) => }
     }
   }
 
   "OnDone.DoNothing" should "always return a success state" in {
-    val lazyStage = mock[() => Stage[Int, String, Nothing]]
-    val onDone = OnDone.DoNothing(lazyStage)
-    val expectedState = State.Success(lazyStage)
+    val stage = mock[Stage[Int, String, Nothing]]
+    val onDone = OnDone.DoNothing(stage)
+    val expectedState = State.Success(stage)
     onDone.onSuccess() shouldBe expectedState
     onDone.onComplete() shouldBe expectedState
     onDone.onFailure() shouldBe expectedState
