@@ -9,7 +9,7 @@ final case class Repeat[-I, +O, +E](stage: Stage[I, O, E]) extends Stage[I, O, E
       val yld = stg(in)
       yld.onDone.onSuccess() match {
         case State.Success(next) => repeat(next)
-        case State.Complete => yld.`with`(OnDone.of(State.Success(this)))
+        case State.Complete(next) => yld.`with`(OnDone.of(State.Success(next)))
         // The type parameters of OnDone.Of are kept for backward compatibility with Scala 2.12
         case failure: State.Failure[E] => yld.`with`(OnDone.of[I, O, E](failure))
       }

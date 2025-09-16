@@ -1,7 +1,6 @@
 package h8io.xi.stages
 
 import cats.data.NonEmptyChain
-import State.Complete
 import org.scalamock.handlers.CallHandler0
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.Inside
@@ -29,9 +28,9 @@ class YieldTest extends AnyFlatSpec with Matchers with Inside with MockFactory {
     inside(Yield.Some("xi", onDone1) ~> stage2) { case Yield.None(onDone) =>
       inSequence {
         (onDone2.onSuccess _).expects().returns(State.Success(mock[Stage[String, Int, Nothing]]))
-        (onDone1.onSuccess _).expects().returns(State.Complete)
+        (onDone1.onSuccess _).expects().returns(State.Complete(mock[Stage[Unit, String, Nothing]]))
       }
-      onDone.onSuccess() shouldBe Complete
+      onDone.onSuccess() shouldBe a[State.Complete[?, ?, ?]]
     }
   }
 

@@ -84,15 +84,15 @@ class OnDoneTest extends AnyFlatSpec with Matchers with Inside with MockFactory 
     }
   }
 
-  "OnDone.of" should "return a success state" in {
+  "OnDone.of" should "return a state `Success`" in {
     onDoneOfTest(State.Success(mock[Stage[Int, String, Int]]))
   }
 
-  it should "return a complete state" in {
-    onDoneOfTest(State.Complete)
+  it should "return the state `Complete`" in {
+    onDoneOfTest(State.Complete(mock[Stage[Int, String, Int]]))
   }
 
-  it should "return a failure state" in {
+  it should "return a state `Failure`" in {
     onDoneOfTest(State.error("error"))
   }
 
