@@ -105,7 +105,7 @@ class OnDoneTest extends AnyFlatSpec with Matchers with Inside with MockFactory 
 
   "OnDone.DoNothing" should "always return a success state" in {
     val stage = mock[Stage[Int, String, Nothing]]
-    val onDone = OnDone.DoNothing(stage)
+    val onDone = OnDone.doNothing(stage)
     val expectedState = State.Success(stage)
     onDone.onSuccess() shouldBe expectedState
     onDone.onComplete() shouldBe expectedState
@@ -114,7 +114,7 @@ class OnDoneTest extends AnyFlatSpec with Matchers with Inside with MockFactory 
 
   "OnDone.OnFailure" should "always return a failure state" in {
     val expectedException = new Exception("Failure happens")
-    val onDone = OnDone.OnFailure(expectedException)
+    val onDone = OnDone.onFailure(expectedException)
     val expectedState = State.failure(expectedException)
     onDone.onSuccess() shouldBe expectedState
     onDone.onComplete() shouldBe expectedState

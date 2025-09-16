@@ -22,9 +22,10 @@ object Yield {
   final case class None[-I, +O, +E](onDone: OnDone[I, O, E]) extends Yield[I, O, E] {
     private[stages] def ~>[_O, _E >: E](stage: Stage[O, _O, _E]): Yield.None[I, _O, _E] = {
       Yield.None(new OnDone[I, _O, _E] {
-        override def onSuccess(): State[I, _O, _E] = onDone.onSuccess() <~ State.Success(stage)
-        override def onComplete(): State[I, _O, _E] = onDone.onComplete() <~ State.Success(stage)
-        override def onFailure(): State[I, _O, _E] = onDone.onFailure() <~ State.Success(stage)
+        def onSuccess(): State[I, _O, _E] = onDone.onSuccess() <~ State.Success(stage)
+        def onComplete(): State[I, _O, _E] = onDone.onComplete() <~ State.Success(stage)
+        def onFailure(): State[I, _O, _E] = onDone.onFailure() <~ State.Success(stage)
+        def dispose(): Unit = onDone.dispose()
       })
     }
 
