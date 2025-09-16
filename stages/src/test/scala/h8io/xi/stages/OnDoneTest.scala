@@ -1,7 +1,7 @@
 package h8io.xi.stages
 
 import org.scalamock.scalatest.MockFactory
-import org.scalatest.Inside
+import org.scalatest.{Assertion, Inside}
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
@@ -82,6 +82,25 @@ class OnDoneTest extends AnyFlatSpec with Matchers with Inside with MockFactory 
       }
       stage(()) should matchPattern { case Yield.Some("xi", _) => }
     }
+  }
+
+  "OnDone.of" should "return a success state" in {
+    onDoneOfTest(State.Success(mock[Stage[Int, String, Int]]))
+  }
+
+  it should "return a complete state" in {
+    onDoneOfTest(State.Complete)
+  }
+
+  it should "return a failure state" in {
+    onDoneOfTest(State.error("error"))
+  }
+
+  private def onDoneOfTest[I, O, E](state: State[I, O, E]): Assertion = {
+    val onDone = OnDone.of(state)
+    onDone.onSuccess() shouldBe state
+    onDone.onComplete() shouldBe state
+    onDone.onFailure() shouldBe state
   }
 
   "OnDone.DoNothing" should "always return a success state" in {

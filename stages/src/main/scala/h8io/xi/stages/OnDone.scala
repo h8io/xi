@@ -36,13 +36,14 @@ object OnDone {
     final override private[stages] def safe: Safe[I, O, E] = this
   }
 
-  final case class Of[-I, +O, +E](lazyState: () => State[I, O, E]) extends OnDone[I, O, E] {
-    override def onSuccess(): State[I, O, E] = lazyState()
-    override def onComplete(): State[I, O, E] = lazyState()
-    override def onFailure(): State[I, O, E] = lazyState()
+  // Only one method of OnDone should be called, so no need to memoize state
+  private[stages] def of[I, O, E](state: => State[I, O, E]): OnDone[I, O, E] = new OnDone[I, O, E] {
+    override def onSuccess(): State[I, O, E] = state
+    override def onComplete(): State[I, O, E] = state
+    override def onFailure(): State[I, O, E] = state
   }
 
-  def DoNothing[I, O, E](stage: Stage[I, O, E]): OnDone[I, O, E] = Of(() => State.Success(stage))
+  def DoNothing[I, O, E](stage: Stage[I, O, E]): OnDone[I, O, E] = of(State.Success(stage))
 
-  def OnFailure[E](e: Exception): OnDone[Any, Nothing, E] = Of(() => State.failure(e))
+  def OnFailure[E](e: Exception): OnDone[Any, Nothing, E] = of(State.failure(e))
 }
