@@ -6,4 +6,6 @@ import org.scalatest.matchers.should.Matchers
 
 class RepeatTest extends AnyFlatSpec with Matchers with MockFactory {
   "Repeat" should "be executed until the state `Complete`" in {}
+
+  it should "be executed until the state `Failure`" in {}
 }
