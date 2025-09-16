@@ -37,9 +37,11 @@ class YieldTest extends AnyFlatSpec with Matchers with Inside with MockFactory {
   "Yield.None" should "be successfully composed with any stage" in {
     val onDone1 = mock[OnDone[Unit, String, String]]
     val stage2 = mock[Stage[String, Int, String]]
-    inSequence { (onDone1.onSuccess _).expects().returns(State.error("error")) }
+    (onDone1.onSuccess _).expects().returns(State.error("error"))
     inside(Yield.None(onDone1) ~> stage2) { case Yield.None(onDone) =>
       inside(onDone.onSuccess()) { case State.Failure(failures) => failures shouldBe NonEmptyChain.one(Right("error")) }
+      (onDone1.dispose _).expects()
+      onDone.dispose()
     }
   }
 
