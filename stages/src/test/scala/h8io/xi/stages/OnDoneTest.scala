@@ -100,13 +100,24 @@ class OnDoneTest extends AnyFlatSpec with Matchers with Inside with MockFactory 
     (onDone1 <~ onDone2).dispose()
   }
 
-  "OnDone.OnFailure" should "always return a failure state" in {
+  "OnFailure" should "always return a failure state" in {
     val expectedException = new Exception("Failure happens")
     val onDone = OnDone.OnFailure(expectedException)
     val expectedState = State.failure(expectedException)
     onDone.onSuccess() shouldBe expectedState
     onDone.onComplete() shouldBe expectedState
     onDone.onFailure() shouldBe expectedState
+    onDone.dispose()
+  }
+
+  "FromState" should "always return a predefined state" in {
+    val state = State.Success(mock[Stage[Unit, Unit, Nothing]])
+    val dispose = mock[() => Unit]
+    val onDone = OnDone.FromState(state, dispose)
+    onDone.onSuccess() shouldBe state
+    onDone.onComplete() shouldBe state
+    onDone.onFailure() shouldBe state
+    (dispose.apply _).expects()
     onDone.dispose()
   }
 }

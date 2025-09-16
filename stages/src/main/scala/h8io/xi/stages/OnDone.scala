@@ -49,4 +49,12 @@ object OnDone {
     def onFailure(): State[Any, Nothing, E] = State.failure(e)
     def dispose(): Unit = {}
   }
+
+  private[stages] final case class FromState[-I, +O, +E](state: State[I, O, E], _dispose: () => Unit)
+      extends OnDone.Safe[I, O, E] {
+    def onSuccess(): State[I, O, E] = state
+    def onComplete(): State[I, O, E] = state
+    def onFailure(): State[I, O, E] = state
+    def dispose(): Unit = _dispose()
+  }
 }
