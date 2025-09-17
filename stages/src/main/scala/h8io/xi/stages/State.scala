@@ -13,21 +13,22 @@ sealed trait State[-I, +O, +E] {
 object State {
   final case class Success[-I, +O, +E](stage: Stage[I, O, E]) extends State[I, O, E] {
     private[stages] def <~[_O, _E >: E](that: State[O, _O, _E]): State[I, _O, _E] = that match {
-      case Success(nextStage) => Success(stage ~> nextStage)
-      case Complete => Complete
       case failure: Failure[?] => failure
+      case Complete(nextStage) => Complete(stage ~> nextStage)
+      case Success(nextStage) => Success(stage ~> nextStage)
     }
 
     private[stages] def ~>[_I, _E >: E](onDone: OnDone[_I, I, _E]): State[_I, O, _E] = onDone.onSuccess() <~ this
   }
 
-  final case object Complete extends State[Any, Nothing, Nothing] {
-    private[stages] def <~[_O, _E](state: State[Nothing, _O, _E]): State[Any, Nothing, _E] = state match {
-      case failure: Failure[_] => failure
-      case _ => Complete
+  final case class Complete[I, O, E](stage: Stage[I, O, E]) extends State[I, O, E] {
+    private[stages] def <~[_O, _E >: E](state: State[O, _O, _E]): State[I, _O, _E] = state match {
+      case failure: Failure[?] => failure
+      case Complete(nextStage) => Complete(stage ~> nextStage)
+      case Success(nextStage) => Complete(stage ~> nextStage)
     }
 
-    private[stages] def ~>[_I, _E](onDone: OnDone[_I, Any, _E]): State[_I, Nothing, _E] = onDone.onComplete() <~ this
+    private[stages] def ~>[_I, _E >: E](onDone: OnDone[_I, I, _E]): State[_I, O, _E] = onDone.onComplete() <~ this
   }
 
   @nowarn("msg=access modifiers for `copy` method are copied from the case class constructor under Scala 3")

@@ -1,7 +1,6 @@
 package h8io.xi.stages
 
 import cats.data.NonEmptyChain
-import State.Complete
 import org.scalamock.handlers.CallHandler0
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.Inside
@@ -9,7 +8,7 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
 class YieldTest extends AnyFlatSpec with Matchers with Inside with MockFactory {
-  "Yield.Some" should "be successfully combined with stage that returns Yield.Some" in {
+  "Yield.Some" should "be successfully composed with stage that returns Yield.Some" in {
     val onDone1 = mock[OnDone[Unit, Int, Nothing]]
     val onDone2 = mock[OnDone[Int, Int, Nothing]]
     val stage2 = mock[Stage[Int, Int, Nothing]]
@@ -21,7 +20,7 @@ class YieldTest extends AnyFlatSpec with Matchers with Inside with MockFactory {
     }
   }
 
-  it should "be successfully combined with stage that returns Yield.None" in {
+  it should "be successfully composed with stage that returns Yield.None" in {
     val onDone1 = mock[OnDone[Unit, String, Nothing]]
     val onDone2 = mock[OnDone[String, Int, Nothing]]
     val stage2 = mock[Stage[String, Int, Nothing]]
@@ -29,22 +28,24 @@ class YieldTest extends AnyFlatSpec with Matchers with Inside with MockFactory {
     inside(Yield.Some("xi", onDone1) ~> stage2) { case Yield.None(onDone) =>
       inSequence {
         (onDone2.onSuccess _).expects().returns(State.Success(mock[Stage[String, Int, Nothing]]))
-        (onDone1.onSuccess _).expects().returns(State.Complete)
+        (onDone1.onSuccess _).expects().returns(State.Complete(mock[Stage[Unit, String, Nothing]]))
       }
-      onDone.onSuccess() shouldBe Complete
+      onDone.onSuccess() shouldBe a[State.Complete[?, ?, ?]]
     }
   }
 
-  "Yield.None" should "be successfully combined with any stage" in {
+  "Yield.None" should "be successfully composed with any stage" in {
     val onDone1 = mock[OnDone[Unit, String, String]]
     val stage2 = mock[Stage[String, Int, String]]
-    inSequence { (onDone1.onSuccess _).expects().returns(State.error("error")) }
+    (onDone1.onSuccess _).expects().returns(State.error("error"))
     inside(Yield.None(onDone1) ~> stage2) { case Yield.None(onDone) =>
       inside(onDone.onSuccess()) { case State.Failure(failures) => failures shouldBe NonEmptyChain.one(Right("error")) }
+      (onDone1.dispose _).expects()
+      onDone.dispose()
     }
   }
 
-  "Combined Yield.None" should "produce a correct state on success" in {
+  "Composed Yield.None" should "produce a correct state on success" in {
     testCombined(mockOnDone => (mockOnDone.onSuccess _).expects(), _.onSuccess())
   }
 
@@ -73,5 +74,19 @@ class YieldTest extends AnyFlatSpec with Matchers with Inside with MockFactory {
         stage(()) should matchPattern { case Yield.Some(42, _) => }
       }
     }
+  }
+
+  "Yield.Some.with" should "replace OnDone object" in {
+    val onDone1 = mock[OnDone[String, Int, Nothing]]
+    val onDone2 = mock[OnDone[String, Int, Nothing]]
+    onDone1 shouldNot equal(onDone2)
+    Yield.Some(42, onDone1) `with` onDone2 shouldEqual Yield.Some(42, onDone2)
+  }
+
+  "Yield.None.with" should "replace OnDone object" in {
+    val onDone1 = mock[OnDone[String, Int, Nothing]]
+    val onDone2 = mock[OnDone[String, Int, Nothing]]
+    onDone1 shouldNot equal(onDone2)
+    Yield.None(onDone1) `with` onDone2 shouldEqual Yield.None(onDone2)
   }
 }
