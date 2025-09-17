@@ -11,4 +11,8 @@ class FactorialTest extends AnyFlatSpec with Matchers {
   it should "be 1 if n = 1" in {
     Factorial(1) shouldBe BigInt(1)
   }
+
+  it should "be 120 if n = 5" in {
+    Factorial(5) shouldBe BigInt(120)
+  }
 }
