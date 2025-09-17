@@ -5,9 +5,19 @@ import cats.data.NonEmptyChain
 import scala.annotation.nowarn
 
 sealed trait State[-I, +O, +E] {
+  self =>
+
   private[stages] def <~[_O, _E >: E](that: State[O, _O, _E]): State[I, _O, _E]
 
   private[stages] def ~>[_I, _E >: E](onDone: OnDone[_I, I, _E]): State[_I, O, _E]
+
+  def onDone(_dispose: () => Unit = () => {}): OnDone.Safe[I, O, E] = new OnDone.Safe[I, O, E] {
+    def onSuccess(): State[I, O, E] = self
+    def onComplete(): State[I, O, E] = self
+    def onFailure(): State[I, O, E] = self
+
+    def dispose(): Unit = _dispose()
+  }
 }
 
 object State {

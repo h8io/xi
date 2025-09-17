@@ -99,25 +99,4 @@ class OnDoneTest extends AnyFlatSpec with Matchers with Inside with MockFactory 
     }
     (onDone1 <~ onDone2).dispose()
   }
-
-  "Panic" should "always return a failure state" in {
-    val expectedException = new Exception("failure happens")
-    val onDone = OnDone.Panic(expectedException)
-    val expectedState = State.panic(expectedException)
-    onDone.onSuccess() shouldBe expectedState
-    onDone.onComplete() shouldBe expectedState
-    onDone.onFailure() shouldBe expectedState
-    onDone.dispose()
-  }
-
-  "Stable" should "always return a predefined state" in {
-    val state = State.Success(mock[Stage[Unit, Unit, Nothing]])
-    val dispose = mock[() => Unit]
-    val onDone = OnDone.Stable(state, dispose)
-    onDone.onSuccess() shouldBe state
-    onDone.onComplete() shouldBe state
-    onDone.onFailure() shouldBe state
-    (dispose.apply _).expects()
-    onDone.dispose()
-  }
 }

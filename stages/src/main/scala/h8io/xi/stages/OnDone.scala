@@ -42,19 +42,4 @@ object OnDone {
 
     final override private[stages] def safe: Safe[I, O, E] = this
   }
-
-  private[stages] final case class Panic[E](e: Exception) extends OnDone.Safe[Any, Nothing, E] {
-    def onSuccess(): State.Failure[E] = State.panic(e)
-    def onComplete(): State.Failure[E] = State.panic(e)
-    def onFailure(): State.Failure[E] = State.panic(e)
-    def dispose(): Unit = {}
-  }
-
-  private[stages] final case class Stable[-I, +O, +E](state: State[I, O, E], _dispose: () => Unit)
-      extends OnDone.Safe[I, O, E] {
-    def onSuccess(): State[I, O, E] = state
-    def onComplete(): State[I, O, E] = state
-    def onFailure(): State[I, O, E] = state
-    def dispose(): Unit = _dispose()
-  }
 }

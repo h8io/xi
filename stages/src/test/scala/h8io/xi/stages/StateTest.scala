@@ -7,6 +7,23 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
 class StateTest extends AnyFlatSpec with Matchers with Inside with MockFactory {
+  "onDone" should "return a stable OnDone object" in {
+    testOnDone(State.Success(mock[Stage[Unit, Unit, Nothing]]))
+    testOnDone(State.Complete(mock[Stage[Unit, Unit, Nothing]]))
+    testOnDone(State.error("error message"))
+    testOnDone(State.panic(new Exception()))
+  }
+
+  private def testOnDone[I, O, E](state: State[I, O, E]): Unit = {
+    val dispose = mock[() => Unit]
+    val onDone = state.onDone(dispose)
+    onDone.onSuccess() shouldBe state
+    onDone.onComplete() shouldBe state
+    onDone.onFailure() shouldBe state
+    (dispose.apply _).expects()
+    onDone.dispose()
+  }
+
   "Success" should "become a Success if it is composed with a Success" in {
     val stage1 = mock[Stage[Unit, String, Nothing]]
     val stage2 = mock[Stage[String, Int, Nothing]]
