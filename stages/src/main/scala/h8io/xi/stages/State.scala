@@ -45,5 +45,5 @@ object State {
 
   def error[E](head: E, tail: E*): Failure[E] = Failure(NonEmptyChain(Right(head), (tail map Right.apply)*))
 
-  private[stages] def failure(e: Exception): Failure[Nothing] = Failure(NonEmptyChain(Left(e)))
+  private[stages] def panic(e: Exception): Failure[Nothing] = Failure(NonEmptyChain(Left(e)))
 }

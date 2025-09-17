@@ -11,15 +11,15 @@ trait OnDone[-I, +O, +E] {
   private[stages] def safe: OnDone.Safe[I, O, E] = new OnDone.Safe[I, O, E] {
     def onSuccess(): State[I, O, E] =
       try self.onSuccess()
-      catch { case e: Exception => State.failure(e) }
+      catch { case e: Exception => State.panic(e) }
 
     def onComplete(): State[I, O, E] =
       try self.onComplete()
-      catch { case e: Exception => State.failure(e) }
+      catch { case e: Exception => State.panic(e) }
 
     def onFailure(): State[I, O, E] =
       try self.onFailure()
-      catch { case e: Exception => State.failure(e) }
+      catch { case e: Exception => State.panic(e) }
 
     def dispose(): Unit = self.dispose()
   }
@@ -43,10 +43,10 @@ object OnDone {
     final override private[stages] def safe: Safe[I, O, E] = this
   }
 
-  private[stages] final case class OnFailure[E](e: Exception) extends OnDone.Safe[Any, Nothing, E] {
-    def onSuccess(): State[Any, Nothing, E] = State.failure(e)
-    def onComplete(): State[Any, Nothing, E] = State.failure(e)
-    def onFailure(): State[Any, Nothing, E] = State.failure(e)
+  private[stages] final case class Panic[E](e: Exception) extends OnDone.Safe[Any, Nothing, E] {
+    def onSuccess(): State.Failure[E] = State.panic(e)
+    def onComplete(): State.Failure[E] = State.panic(e)
+    def onFailure(): State.Failure[E] = State.panic(e)
     def dispose(): Unit = {}
   }
 
