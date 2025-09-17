@@ -11,7 +11,7 @@ class StageTest extends AnyFlatSpec with Matchers with Inside with MockFactory {
     val stage: Stage[Unit, Nothing, Nothing] = _ => throw expectedException
     the[Exception] thrownBy stage(()) shouldBe expectedException
     inside(stage.safe(())) { case Yield.None(onDone) =>
-      val expectedState = State.failure(expectedException)
+      val expectedState = State.panic(expectedException)
       onDone.onSuccess() shouldBe expectedState
       onDone.onComplete() shouldBe expectedState
       onDone.onFailure() shouldBe expectedState

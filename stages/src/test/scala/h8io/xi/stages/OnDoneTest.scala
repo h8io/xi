@@ -11,7 +11,7 @@ class OnDoneTest extends AnyFlatSpec with Matchers with Inside with MockFactory 
     val expectedException = new Exception("onSuccess exception")
     (onDone.onSuccess _).expects().throws(expectedException).twice()
     the[Exception] thrownBy onDone.onSuccess() shouldBe expectedException
-    onDone.safe.onSuccess() shouldBe State.failure(expectedException)
+    onDone.safe.onSuccess() shouldBe State.panic(expectedException)
     (onDone.dispose _).expects()
     onDone.safe.dispose()
   }
@@ -21,7 +21,7 @@ class OnDoneTest extends AnyFlatSpec with Matchers with Inside with MockFactory 
     val expectedException = new Exception("onComplete exception")
     (onDone.onComplete _).expects().throws(expectedException).twice()
     the[Exception] thrownBy onDone.onComplete() shouldBe expectedException
-    onDone.safe.onComplete() shouldBe State.failure(expectedException)
+    onDone.safe.onComplete() shouldBe State.panic(expectedException)
     (onDone.dispose _).expects()
     onDone.safe.dispose()
   }
@@ -31,7 +31,7 @@ class OnDoneTest extends AnyFlatSpec with Matchers with Inside with MockFactory 
     val expectedException = new Exception("onFailure exception")
     (onDone.onFailure _).expects().throws(expectedException).twice()
     the[Exception] thrownBy onDone.onFailure() shouldBe expectedException
-    onDone.safe.onFailure() shouldBe State.failure(expectedException)
+    onDone.safe.onFailure() shouldBe State.panic(expectedException)
     (onDone.dispose _).expects()
     onDone.safe.dispose()
   }
@@ -98,26 +98,5 @@ class OnDoneTest extends AnyFlatSpec with Matchers with Inside with MockFactory 
       (onDone1.dispose _).expects()
     }
     (onDone1 <~ onDone2).dispose()
-  }
-
-  "OnFailure" should "always return a failure state" in {
-    val expectedException = new Exception("Failure happens")
-    val onDone = OnDone.OnFailure(expectedException)
-    val expectedState = State.failure(expectedException)
-    onDone.onSuccess() shouldBe expectedState
-    onDone.onComplete() shouldBe expectedState
-    onDone.onFailure() shouldBe expectedState
-    onDone.dispose()
-  }
-
-  "FromState" should "always return a predefined state" in {
-    val state = State.Success(mock[Stage[Unit, Unit, Nothing]])
-    val dispose = mock[() => Unit]
-    val onDone = OnDone.FromState(state, dispose)
-    onDone.onSuccess() shouldBe state
-    onDone.onComplete() shouldBe state
-    onDone.onFailure() shouldBe state
-    (dispose.apply _).expects()
-    onDone.dispose()
   }
 }
