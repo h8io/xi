@@ -93,4 +93,46 @@ class YieldTest extends AnyFlatSpec with Matchers with Inside with MockFactory {
     onDone1 shouldNot equal(onDone2)
     Yield.None(onDone1) `with` onDone2 shouldEqual Yield.None(onDone2)
   }
+
+  "outcome" should "return an Outcome.Some object" in {
+    val onDone = mock[OnDone[String, Int, Nothing]]
+    val state = State.Success(mock[Stage[String, Int, Nothing]])
+    (onDone.onSuccess _).expects().returns(state)
+    inside(Yield.Some(42, onDone).outcome) { case Outcome.Some(42, `state`, dispose) =>
+      (onDone.dispose _).expects()
+      dispose()
+    }
+  }
+
+  it should "return an Outcome.Some object if onDone throws an exception" in {
+    val onDone = mock[OnDone[String, Int, Nothing]]
+    val expectedException = new Exception()
+    (onDone.onSuccess _).expects().throws(expectedException)
+    inside(Yield.Some(42, onDone).outcome) { case Outcome.Some(42, state, dispose) =>
+      state shouldBe State.Panic(expectedException)
+      (onDone.dispose _).expects()
+      dispose()
+    }
+  }
+
+  it should "return an Outcome.None object" in {
+    val onDone = mock[OnDone[String, Int, Nothing]]
+    val state = State.Success(mock[Stage[String, Int, Nothing]])
+    (onDone.onSuccess _).expects().returns(state)
+    inside(Yield.None(onDone).outcome) { case Outcome.None(`state`, dispose) =>
+      (onDone.dispose _).expects()
+      dispose()
+    }
+  }
+
+  it should "return an Outcome.None object if onDone throws an exception" in {
+    val onDone = mock[OnDone[String, Int, Nothing]]
+    val expectedException = new Exception()
+    (onDone.onSuccess _).expects().throws(expectedException)
+    inside(Yield.None(onDone).outcome) { case Outcome.None(state, dispose) =>
+      state shouldBe State.Panic(expectedException)
+      (onDone.dispose _).expects()
+      dispose()
+    }
+  }
 }
