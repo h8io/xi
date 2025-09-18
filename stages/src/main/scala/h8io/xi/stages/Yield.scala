@@ -6,6 +6,8 @@ sealed trait Yield[-I, +O, +E] {
   private[stages] def ~>[_O, _E >: E](stage: Stage[O, _O, _E]): Yield[I, _O, _E]
 
   private[stages] def `with`[_I <: I, _O >: O, _E >: E](onDone: OnDone[_I, _O, _E]): Yield[_I, _O, _E]
+
+  private[stages] def outcome: Outcome[I, O, E]
 }
 
 object Yield {
@@ -17,6 +19,11 @@ object Yield {
 
     private[stages] def `with`[_I <: I, _O >: O, _E >: E](onDone: OnDone[_I, _O, _E]): Some[_I, _O, _E] =
       Some(out, onDone)
+
+    private[stages] def outcome: Outcome.Some[I, O, E] = {
+      val safeOnDone = onDone.safe
+      Outcome.Some(out, safeOnDone.onSuccess(), safeOnDone.dispose _)
+    }
   }
 
   final case class None[-I, +O, +E](onDone: OnDone[I, O, E]) extends Yield[I, O, E] {
@@ -31,5 +38,10 @@ object Yield {
     }
 
     private[stages] def `with`[_I <: I, _O >: O, _E >: E](onDone: OnDone[_I, _O, _E]): None[_I, _O, _E] = None(onDone)
+
+    private[stages] def outcome: Outcome.None[I, O, E] = {
+      val safeOnDone = onDone.safe
+      Outcome.None(safeOnDone.safe.onSuccess(), safeOnDone.dispose _)
+    }
   }
 }

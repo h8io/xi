@@ -47,6 +47,11 @@ class OnDoneTest extends AnyFlatSpec with Matchers with Inside with MockFactory 
     onDone.safe.dispose()
   }
 
+  it should "return itself in safe method" in {
+    val onDone = mock[OnDone.Safe[Unit, Unit, Nothing]]
+    onDone.safe shouldBe onDone
+  }
+
   "Composed OnDone.Safe" should "return a correct state with onSuccess" in {
     val onDone1 = mock[OnDone.Safe[Unit, Int, Nothing]]
     val stage1 = mock[Stage[Unit, Int, Nothing]]

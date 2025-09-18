@@ -34,17 +34,16 @@ object OnDone {
   trait Safe[-I, +O, +E] extends OnDone[I, O, E] {
     self =>
 
-    final private[stages] def <~[_O, _E >: E](that: OnDone.Safe[O, _O, _E]): OnDone.Safe[I, _O, _E] =
-      new OnDone.Safe[I, _O, _E] {
-        def onSuccess(): State[I, _O, _E] = that.onSuccess() ~> self
-        def onComplete(): State[I, _O, _E] = that.onComplete() ~> self
-        def onError(): State[I, _O, _E] = that.onError() ~> self
-        def onPanic(): State[I, _O, _E] = that.onPanic() ~> self
-        def dispose(): Unit = {
-          that.dispose()
-          self.dispose()
-        }
+    final private[stages] def <~[_O, _E >: E](that: Safe[O, _O, _E]): Safe[I, _O, _E] = new Safe[I, _O, _E] {
+      def onSuccess(): State[I, _O, _E] = that.onSuccess() ~> self
+      def onComplete(): State[I, _O, _E] = that.onComplete() ~> self
+      def onError(): State[I, _O, _E] = that.onError() ~> self
+      def onPanic(): State[I, _O, _E] = that.onPanic() ~> self
+      def dispose(): Unit = {
+        that.dispose()
+        self.dispose()
       }
+    }
 
     final override private[stages] def safe: Safe[I, O, E] = this
   }
