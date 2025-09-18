@@ -10,7 +10,8 @@ final case class Repeat[-I, +O, +E](stage: Stage[I, O, E]) extends Stage[I, O, E
       yld.onDone.onSuccess() match {
         case State.Success(next) => repeat(next)
         case State.Complete(next) => yld `with` State.Success(Repeat(next)).onDone(yld.onDone.dispose _)
-        case failure: State.Failure[E] => yld `with` failure.onDone(yld.onDone.dispose _)
+        case State.Error(next, errors) => yld `with` State.Error(Repeat(next), errors).onDone(yld.onDone.dispose _)
+        case panic: State.Panic => yld `with` panic.onDone(yld.onDone.dispose _)
       }
     }
     repeat(stage)

@@ -24,7 +24,8 @@ object Yield {
       Yield.None(new OnDone[I, _O, _E] {
         def onSuccess(): State[I, _O, _E] = onDone.onSuccess() <~ State.Success(stage)
         def onComplete(): State[I, _O, _E] = onDone.onComplete() <~ State.Success(stage)
-        def onFailure(): State[I, _O, _E] = onDone.onFailure() <~ State.Success(stage)
+        def onError(): State[I, _O, _E] = onDone.onError() <~ State.Success(stage)
+        def onPanic(): State[I, _O, _E] = onDone.onPanic() <~ State.Success(stage)
         def dispose(): Unit = onDone.dispose()
       })
     }
