@@ -11,7 +11,7 @@ class StateTest extends AnyFlatSpec with Matchers with Inside with MockFactory {
     testOnDone(State.Success(mock[Stage[Unit, Unit, Nothing]]))
     testOnDone(State.Complete(mock[Stage[Unit, Unit, Nothing]]))
     testOnDone(State.Error(mock[Stage[Unit, Unit, Nothing]], "error message"))
-    testOnDone(State.Panic(new Exception()))
+    testOnDone(State.Panic(new Exception))
   }
 
   private def testOnDone[I, O, E](state: State[I, O, E]): Unit = {
@@ -63,7 +63,7 @@ class StateTest extends AnyFlatSpec with Matchers with Inside with MockFactory {
   }
 
   it should "become a Panic if it is composed with a Panic" in {
-    val panic = State.Panic(new Exception())
+    val panic = State.Panic(new Exception)
     State.Success(mock[Stage[String, Int, Nothing]]) <~ panic shouldBe panic
   }
 
@@ -119,7 +119,7 @@ class StateTest extends AnyFlatSpec with Matchers with Inside with MockFactory {
   }
 
   it should "become a Panic if it is composed with a Panic" in {
-    val panic = State.Panic(new Exception())
+    val panic = State.Panic(new Exception)
     State.Complete(mock[Stage[Unit, String, Nothing]]) <~ panic shouldBe panic
   }
 
@@ -178,7 +178,7 @@ class StateTest extends AnyFlatSpec with Matchers with Inside with MockFactory {
   }
 
   it should "become a Panic if it is composed with a Panic" in {
-    val panic = State.Panic(new Exception())
+    val panic = State.Panic(new Exception)
     State.Error(mock[Stage[Unit, String, Nothing]], "Error <~ Panic") <~ panic shouldBe panic
   }
 
@@ -198,17 +198,17 @@ class StateTest extends AnyFlatSpec with Matchers with Inside with MockFactory {
   }
 
   "Panic" should "remain the same Failure if it is composed with a Success" in {
-    val panic = State.Panic(new Exception())
+    val panic = State.Panic(new Exception)
     panic <~ State.Success(mock[Stage[Boolean, Byte, Nothing]]) shouldBe panic
   }
 
   it should "remain the same Failure if it is composed with the Complete" in {
-    val panic = State.Panic(new Exception())
+    val panic = State.Panic(new Exception)
     panic <~ State.Complete(mock[Stage[Int, String, Nothing]]) shouldBe panic
   }
 
   it should "remain a Panic if it is composed with a Error" in {
-    val panic = State.Panic(new Exception())
+    val panic = State.Panic(new Exception)
     panic <~ State.Error(mock[Stage[Double, Long, String]], "Panic <~ Error") shouldBe State.Panic(panic.exceptions)
   }
 
@@ -221,7 +221,7 @@ class StateTest extends AnyFlatSpec with Matchers with Inside with MockFactory {
   }
 
   it should "call onPanic in composition with OnDone" in {
-    val failure = State.Panic(new Exception("Failure ~> OnDone"))
+    val failure = State.Panic(new Exception)
     val onDone = mock[OnDone[Boolean, String, Nothing]]
     (onDone.onPanic _).expects().returns(State.Complete(mock[Stage[Boolean, String, Nothing]]))
     failure ~> onDone shouldBe failure
@@ -233,7 +233,7 @@ class StateTest extends AnyFlatSpec with Matchers with Inside with MockFactory {
   }
 
   "Panic" should "return a correct Panic object" in {
-    val exception = new Exception()
+    val exception = new Exception
     State.Panic(exception) shouldBe State.Panic(NonEmptyChain(exception))
   }
 }
