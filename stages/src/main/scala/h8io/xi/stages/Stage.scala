@@ -8,7 +8,12 @@ trait Stage[-I, +O, +E] extends (I => Yield[I, O, E]) {
   // The type parameters of Yield.None are kept for backward compatibility with Scala 2.12
   private[stages] def safe(in: I): Yield[I, O, E] =
     try this(in)
-    catch { case e: Exception => Yield.None[I, O, E](State.panic(e).onDone()) }
+    catch { case e: Exception => Yield.None[I, O, E](State.Panic(e).onDone()) }
+
+  final def execute(in: I): Yield[I, O, E] = {
+    val yld = safe(in)
+    yld `with` yld.onDone.onSuccess().onDone(yld.onDone.dispose _)
+  }
 }
 
 object Stage {

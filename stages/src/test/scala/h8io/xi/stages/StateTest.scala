@@ -10,8 +10,8 @@ class StateTest extends AnyFlatSpec with Matchers with Inside with MockFactory {
   "onDone" should "return a stable OnDone object" in {
     testOnDone(State.Success(mock[Stage[Unit, Unit, Nothing]]))
     testOnDone(State.Complete(mock[Stage[Unit, Unit, Nothing]]))
-    testOnDone(State.error("error message"))
-    testOnDone(State.panic(new Exception()))
+    testOnDone(State.Error(mock[Stage[Unit, Unit, Nothing]], "error message"))
+    testOnDone(State.Panic(new Exception()))
   }
 
   private def testOnDone[I, O, E](state: State[I, O, E]): Unit = {
@@ -19,7 +19,8 @@ class StateTest extends AnyFlatSpec with Matchers with Inside with MockFactory {
     val onDone = state.onDone(dispose)
     onDone.onSuccess() shouldBe state
     onDone.onComplete() shouldBe state
-    onDone.onFailure() shouldBe state
+    onDone.onError() shouldBe state
+    onDone.onPanic() shouldBe state
     (dispose.apply _).expects()
     onDone.dispose()
   }
@@ -48,9 +49,22 @@ class StateTest extends AnyFlatSpec with Matchers with Inside with MockFactory {
     }
   }
 
-  it should "become a Failure if it is composed with a Failure" in {
-    val failure = State.error("Success <~ Failure")
-    State.Success(mock[Stage[String, Int, Nothing]]) <~ failure shouldBe failure
+  it should "become an Error if it is composed with a Error" in {
+    val stage1 = mock[Stage[Unit, String, Nothing]]
+    val stage2 = mock[Stage[String, Int, Nothing]]
+    inside(State.Success(stage1) <~ State.Error(stage2, "Success <~ Error")) { case State.Error(stage, errors) =>
+      errors shouldBe NonEmptyChain("Success <~ Error")
+      inSequence {
+        (stage1.apply _).expects(()).returns(Yield.Some("xi", mock[OnDone[Unit, String, Nothing]]))
+        (stage2.apply _).expects("xi").returns(Yield.Some(42, mock[OnDone[String, Int, Nothing]]))
+      }
+      stage(()) should matchPattern { case Yield.Some(42, _) => }
+    }
+  }
+
+  it should "become a Panic if it is composed with a Panic" in {
+    val panic = State.Panic(new Exception())
+    State.Success(mock[Stage[String, Int, Nothing]]) <~ panic shouldBe panic
   }
 
   it should "call onSuccess in composition with OnDone" in {
@@ -79,7 +93,7 @@ class StateTest extends AnyFlatSpec with Matchers with Inside with MockFactory {
     }
   }
 
-  it should "remain a Complete if it is composed with the Complete" in {
+  it should "become a Complete if it is composed with the Complete" in {
     val stage1 = mock[Stage[Unit, String, Nothing]]
     val stage2 = mock[Stage[String, Int, Nothing]]
     inside(State.Complete(stage1) <~ State.Complete(stage2)) { case State.Complete(stage) =>
@@ -91,9 +105,22 @@ class StateTest extends AnyFlatSpec with Matchers with Inside with MockFactory {
     }
   }
 
-  it should "become a Failure if it is composed with a Failure" in {
-    val failure = State.panic(new Exception("Complete <~ Failure"))
-    State.Complete(mock[Stage[Unit, String, Nothing]]) <~ failure shouldBe failure
+  it should "become an Error if it is composed with a Error" in {
+    val stage1 = mock[Stage[Unit, String, Nothing]]
+    val stage2 = mock[Stage[String, Int, Nothing]]
+    inside(State.Complete(stage1) <~ State.Error(stage2, "Complete <~ Error")) { case State.Error(stage, errors) =>
+      errors shouldBe NonEmptyChain("Complete <~ Error")
+      inSequence {
+        (stage1.apply _).expects(()).returns(Yield.Some("xi", mock[OnDone[Unit, String, Nothing]]))
+        (stage2.apply _).expects("xi").returns(Yield.Some(42, mock[OnDone[String, Int, Nothing]]))
+      }
+      stage(()) should matchPattern { case Yield.Some(42, _) => }
+    }
+  }
+
+  it should "become a Panic if it is composed with a Panic" in {
+    val panic = State.Panic(new Exception())
+    State.Complete(mock[Stage[Unit, String, Nothing]]) <~ panic shouldBe panic
   }
 
   it should "call onComplete in composition with OnDone" in {
@@ -110,36 +137,103 @@ class StateTest extends AnyFlatSpec with Matchers with Inside with MockFactory {
     }
   }
 
-  "Failure" should "remain the same Failure if it is composed with a Success" in {
-    val failure = State.panic(new Exception("Failure <~ Success"))
-    failure <~ State.Success(mock[Stage[Boolean, Byte, Nothing]]) shouldBe failure
+  "Error" should "remain an Error if it is composed with a Success" in {
+    val stage1 = mock[Stage[Unit, String, Nothing]]
+    val stage2 = mock[Stage[String, Int, Nothing]]
+    inside(State.Error(stage1, "Error <~ Success") <~ State.Success(stage2)) { case State.Error(stage, errors) =>
+      errors shouldBe NonEmptyChain.one("Error <~ Success")
+      inSequence {
+        (stage1.apply _).expects(()).returns(Yield.Some("xi", mock[OnDone[Unit, String, Nothing]]))
+        (stage2.apply _).expects("xi").returns(Yield.Some(42, mock[OnDone[String, Int, Nothing]]))
+      }
+      stage(()) should matchPattern { case Yield.Some(42, _) => }
+    }
+  }
+
+  it should "remain an Error if it is composed with the Complete" in {
+    val stage1 = mock[Stage[Unit, String, Nothing]]
+    val stage2 = mock[Stage[String, Int, Nothing]]
+    inside(State.Error(stage1, "Error <~ Complete") <~ State.Complete(stage2)) { case State.Error(stage, errors) =>
+      errors shouldBe NonEmptyChain.one("Error <~ Complete")
+      inSequence {
+        (stage1.apply _).expects(()).returns(Yield.Some("xi", mock[OnDone[Unit, String, Nothing]]))
+        (stage2.apply _).expects("xi").returns(Yield.Some(42, mock[OnDone[String, Int, Nothing]]))
+      }
+      stage(()) should matchPattern { case Yield.Some(42, _) => }
+    }
+  }
+
+  it should "remain an Error if it is composed with a Error" in {
+    val stage1 = mock[Stage[Unit, String, Nothing]]
+    val stage2 = mock[Stage[String, Int, Nothing]]
+    inside(State.Error(stage1, "Error <~ Error (1)") <~ State.Error(stage2, "Error <~ Error (2)")) {
+      case State.Error(stage, errors) =>
+        errors shouldBe NonEmptyChain("Error <~ Error (1)", "Error <~ Error (2)")
+        inSequence {
+          (stage1.apply _).expects(()).returns(Yield.Some("xi", mock[OnDone[Unit, String, Nothing]]))
+          (stage2.apply _).expects("xi").returns(Yield.Some(42, mock[OnDone[String, Int, Nothing]]))
+        }
+        stage(()) should matchPattern { case Yield.Some(42, _) => }
+    }
+  }
+
+  it should "become a Panic if it is composed with a Panic" in {
+    val panic = State.Panic(new Exception())
+    State.Error(mock[Stage[Unit, String, Nothing]], "Error <~ Panic") <~ panic shouldBe panic
+  }
+
+  it should "call onError in composition with OnDone" in {
+    val onDone = mock[OnDone[Boolean, String, String]]
+    val stage1 = mock[Stage[Boolean, String, String]]
+    val stage2 = mock[Stage[String, Int, String]]
+    (onDone.onError _).expects().returns(State.Error(stage1, "Error ~> onDone (1)"))
+    inside(State.Error(stage2, "Error ~> onDone (2)") ~> onDone) { case State.Error(stage, errors) =>
+      errors shouldBe NonEmptyChain("Error ~> onDone (1)", "Error ~> onDone (2)")
+      inSequence {
+        (stage1.apply _).expects(true).returns(Yield.Some("xi", onDone))
+        (stage2.apply _).expects("xi").returns(Yield.Some(42, mock[OnDone[String, Int, Nothing]]))
+      }
+      stage(true) should matchPattern { case Yield.Some(42, _) => }
+    }
+  }
+
+  "Panic" should "remain the same Failure if it is composed with a Success" in {
+    val panic = State.Panic(new Exception())
+    panic <~ State.Success(mock[Stage[Boolean, Byte, Nothing]]) shouldBe panic
   }
 
   it should "remain the same Failure if it is composed with the Complete" in {
-    val failure = State.panic(new Exception("Failure <~ Complete"))
-    failure <~ State.Complete(mock[Stage[Int, String, Nothing]]) shouldBe failure
+    val panic = State.Panic(new Exception())
+    panic <~ State.Complete(mock[Stage[Int, String, Nothing]]) shouldBe panic
   }
 
-  it should "become a composed Failure if it is composed with a Failure" in {
-    val failure1 = State.panic(new Exception("Complete <~ Failure"))
-    val failure2 = State.error("Complete <~ Failure")
-    failure1 <~ failure2 shouldBe State.Failure(failure2.failures ++ failure1.failures)
+  it should "remain a Panic if it is composed with a Error" in {
+    val panic = State.Panic(new Exception())
+    panic <~ State.Error(mock[Stage[Double, Long, String]], "Panic <~ Error") shouldBe State.Panic(panic.exceptions)
   }
 
-  it should "call onFailure in composition with OnDone" in {
-    val failure = State.panic(new Exception("Failure ~> OnDone"))
+  it should "remain a Panic if it is composed with a Panic" in {
+    val exception1 = new Exception("the first panic")
+    val panic1 = State.Panic(exception1)
+    val exception2 = new Exception("the second panic")
+    val panic2 = State.Panic(exception2)
+    panic1 <~ panic2 shouldBe State.Panic(NonEmptyChain(exception2, exception1))
+  }
+
+  it should "call onPanic in composition with OnDone" in {
+    val failure = State.Panic(new Exception("Failure ~> OnDone"))
     val onDone = mock[OnDone[Boolean, String, Nothing]]
-    (onDone.onFailure _).expects().returns(State.Complete(mock[Stage[Boolean, String, Nothing]]))
+    (onDone.onPanic _).expects().returns(State.Complete(mock[Stage[Boolean, String, Nothing]]))
     failure ~> onDone shouldBe failure
   }
 
-  "error" should "create an errors Failure" in {
-    State.error("xi", "query", "language") shouldBe
-      State.Failure(NonEmptyChain(Right("xi"), Right("query"), Right("language")))
+  "Error" should "create a correct Error object" in {
+    val stage = mock[Stage[Double, Unit, List[String]]]
+    State.Error(stage, "xi") shouldBe State.Error(stage, NonEmptyChain("xi"))
   }
 
-  "failure" should "return a correct Failure object" in {
-    val exception = new Exception("We are failed")
-    State.panic(exception) shouldBe State.Failure(NonEmptyChain(Left(exception)))
+  "Panic" should "return a correct Panic object" in {
+    val exception = new Exception()
+    State.Panic(exception) shouldBe State.Panic(NonEmptyChain(exception))
   }
 }

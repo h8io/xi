@@ -2,8 +2,6 @@ package h8io.xi.stages
 
 import cats.data.NonEmptyChain
 
-import scala.annotation.nowarn
-
 sealed trait State[-I, +O, +E] {
   self =>
 
@@ -14,7 +12,8 @@ sealed trait State[-I, +O, +E] {
   def onDone(_dispose: () => Unit = () => {}): OnDone.Safe[I, O, E] = new OnDone.Safe[I, O, E] {
     def onSuccess(): State[I, O, E] = self
     def onComplete(): State[I, O, E] = self
-    def onFailure(): State[I, O, E] = self
+    def onError(): State[I, O, E] = self
+    def onPanic(): State[I, O, E] = self
 
     def dispose(): Unit = _dispose()
   }
@@ -23,7 +22,8 @@ sealed trait State[-I, +O, +E] {
 object State {
   final case class Success[-I, +O, +E](stage: Stage[I, O, E]) extends State[I, O, E] {
     private[stages] def <~[_O, _E >: E](that: State[O, _O, _E]): State[I, _O, _E] = that match {
-      case failure: Failure[?] => failure
+      case panic: Panic => panic
+      case Error(nextStage, errors) => Error(stage ~> nextStage, errors)
       case Complete(nextStage) => Complete(stage ~> nextStage)
       case Success(nextStage) => Success(stage ~> nextStage)
     }
@@ -31,9 +31,10 @@ object State {
     private[stages] def ~>[_I, _E >: E](onDone: OnDone[_I, I, _E]): State[_I, O, _E] = onDone.onSuccess() <~ this
   }
 
-  final case class Complete[I, O, E](stage: Stage[I, O, E]) extends State[I, O, E] {
-    private[stages] def <~[_O, _E >: E](state: State[O, _O, _E]): State[I, _O, _E] = state match {
-      case failure: Failure[?] => failure
+  final case class Complete[-I, +O, +E](stage: Stage[I, O, E]) extends State[I, O, E] {
+    private[stages] def <~[_O, _E >: E](that: State[O, _O, _E]): State[I, _O, _E] = that match {
+      case panic: Panic => panic
+      case Error(nextStage, errors) => Error(stage ~> nextStage, errors)
       case Complete(nextStage) => Complete(stage ~> nextStage)
       case Success(nextStage) => Complete(stage ~> nextStage)
     }
@@ -41,19 +42,27 @@ object State {
     private[stages] def ~>[_I, _E >: E](onDone: OnDone[_I, I, _E]): State[_I, O, _E] = onDone.onComplete() <~ this
   }
 
-  @nowarn("msg=access modifiers for `copy` method are copied from the case class constructor under Scala 3")
-  @nowarn("msg=access modifiers for `apply` method are copied from the case class constructor under Scala 3")
-  final case class Failure[+E] private (failures: NonEmptyChain[Either[Exception, E]]) extends State[Any, Nothing, E] {
-    private[stages] def <~[_O, _E >: E](state: State[Nothing, _O, _E]): Failure[_E] = state match {
-      case Failure(previous) => Failure(previous ++ failures)
+  final case class Error[-I, +O, +E](stage: Stage[I, O, E], errors: NonEmptyChain[E]) extends State[I, O, E] {
+    private[stages] def <~[_O, _E >: E](that: State[O, _O, _E]): State[I, _O, _E] = that match {
+      case panic: Panic => panic
+      case Error(nextStage, previousErrors) => Error(stage ~> nextStage, errors ++ previousErrors)
+      case Complete(nextStage) => Error(stage ~> nextStage, errors)
+      case Success(nextStage) => Error(stage ~> nextStage, errors)
+    }
+
+    private[stages] def ~>[_I, _E >: E](onDone: OnDone[_I, I, _E]): State[_I, O, _E] = onDone.onError() <~ this
+  }
+
+  def Error[I, O, E](stage: Stage[I, O, E], error: E): Error[I, O, E] = Error(stage, NonEmptyChain.one(error))
+
+  final case class Panic(exceptions: NonEmptyChain[Exception]) extends State[Any, Nothing, Nothing] {
+    private[stages] def <~[_O, _E](that: State[Nothing, _O, _E]): State.Panic = that match {
+      case Panic(previousExceptions) => Panic(previousExceptions ++ exceptions)
       case _ => this
     }
 
-    private[stages] def ~>[_I, _E >: E](onDone: OnDone[_I, Any, _E]): State[_I, Nothing, _E] =
-      onDone.onFailure() <~ this
+    private[stages] def ~>[_I, _E](onDone: OnDone[_I, Any, _E]): State[_I, Nothing, _E] = onDone.onPanic() <~ this
   }
 
-  def error[E](head: E, tail: E*): Failure[E] = Failure(NonEmptyChain(Right(head), (tail map Right.apply)*))
-
-  private[stages] def panic(e: Exception): Failure[Nothing] = Failure(NonEmptyChain(Left(e)))
+  def Panic(exception: Exception): Panic = Panic(NonEmptyChain.one(exception))
 }
