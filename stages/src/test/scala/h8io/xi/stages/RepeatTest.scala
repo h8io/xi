@@ -7,7 +7,7 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
 class RepeatTest extends AnyFlatSpec with Matchers with Inside with MockFactory {
-  "Repeat" should "be executed until the state `Complete`" in {
+  "Repeat" should "be executed until the state is Complete" in {
     val stage1 = mock[Stage[String, Int, Nothing]]
     val stage2 = mock[Stage[String, Int, Nothing]]
     val stage3 = mock[Stage[String, Int, Nothing]]
@@ -51,7 +51,7 @@ class RepeatTest extends AnyFlatSpec with Matchers with Inside with MockFactory 
     }
   }
 
-  it should "be executed until the state `Error`" in {
+  it should "be executed until the state is Error" in {
     val stage1 = mock[Stage[String, Int, String]]
     val stage2 = mock[Stage[String, Int, String]]
     val stage3 = mock[Stage[String, Int, String]]
@@ -97,7 +97,7 @@ class RepeatTest extends AnyFlatSpec with Matchers with Inside with MockFactory 
     }
   }
 
-  it should "be executed until the state `Panic`" in {
+  it should "be executed until the state is Panic" in {
     val stage1 = mock[Stage[String, Int, Nothing]]
     val stage2 = mock[Stage[String, Int, Nothing]]
     val stage3 = mock[Stage[String, Int, Nothing]]
