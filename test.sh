@@ -10,4 +10,4 @@ else
   COVERAGE_SUMMARY=
 fi
 
-sbt clean scalafmtSbtCheck scalafmtCheckAll +coverage +test $COVERAGE_AGGREGATE $COVERAGE_SUMMARY
+sbt scalafmtSbtCheck scalafmtCheckAll +clean +coverage +test $COVERAGE_AGGREGATE $COVERAGE_SUMMARY

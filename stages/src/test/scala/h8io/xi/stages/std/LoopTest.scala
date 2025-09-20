@@ -1,6 +1,7 @@
-package h8io.xi.stages
+package h8io.xi.stages.std
 
 import cats.data.NonEmptyChain
+import h8io.xi.stages.{OnDone, Stage, State, Yield}
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.Inside
 import org.scalatest.flatspec.AnyFlatSpec

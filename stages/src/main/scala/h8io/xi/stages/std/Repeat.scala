@@ -1,4 +1,6 @@
-package h8io.xi.stages
+package h8io.xi.stages.std
+
+import h8io.xi.stages.{Stage, State, Yield}
 
 import scala.annotation.tailrec
 
