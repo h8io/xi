@@ -143,7 +143,7 @@ class YieldTest extends AnyFlatSpec with Matchers with Inside with MockFactory {
     val stage2 = mock[Stage[Double, Int, String]]
 
     (f.apply _).expects(stage1).returns(stage2)
-    (onDone.onSuccess _).expects().returns(State.Success(stage1))
+    (onDone.onComplete _).expects().returns(State.Success(stage1))
     completed.onSuccess() shouldBe State.Complete(stage2)
 
     (f.apply _).expects(stage1).returns(stage2)

@@ -110,7 +110,7 @@ class OnDoneTest extends AnyFlatSpec with Matchers with Inside with MockFactory 
     val completed = onDone.complete(f)
 
     (f.apply _).expects(stage1).returns(stage2)
-    (onDone.onSuccess _).expects().returns(State.Success(stage1))
+    (onDone.onComplete _).expects().returns(State.Success(stage1))
     completed.onSuccess() shouldBe State.Complete(stage2)
 
     (f.apply _).expects(stage1).returns(stage2)

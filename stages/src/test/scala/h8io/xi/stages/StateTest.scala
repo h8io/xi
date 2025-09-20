@@ -227,15 +227,15 @@ class StateTest extends AnyFlatSpec with Matchers with Inside with MockFactory {
     failure ~> onDone shouldBe failure
   }
 
-  "lift" should "update the stage for the state Success" in { test(State.Success(_), _.lift(_)) }
+  "lift" should "update the stage for the state Success" in { test(State.Success(_), _.map(_)) }
 
-  it should "update the stage for the state Complete" in { test(State.Complete(_), _.lift(_)) }
+  it should "update the stage for the state Complete" in { test(State.Complete(_), _.map(_)) }
 
-  it should "update the stage for the state Error" in { test(State.Error(_, "error"), _.lift(_)) }
+  it should "update the stage for the state Error" in { test(State.Error(_, "error"), _.map(_)) }
 
   it should "update the stage for the state Panic" in {
     val exception = new Exception
-    test(_ => State.Panic(exception), _.lift(_), isNotPanic = false)
+    test(_ => State.Panic(exception), _.map(_), isNotPanic = false)
   }
 
   "complete" should "return the stage Complete with updated stage for the state Success" in {

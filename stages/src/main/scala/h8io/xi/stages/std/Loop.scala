@@ -15,7 +15,7 @@ final case class Loop[T, +E](stage: Stage[T, T, E]) extends Stage[T, T, E] {
             case Outcome.None(_, _) => outcome.toYield(State.Success(Loop(next)))
           }
         case State.Complete(next) => outcome.toYield(State.Success(Loop(next)))
-        case failure => outcome.toYield(failure.lift(Loop(_)))
+        case failure => outcome.toYield(failure.map(Loop(_)))
       }
     }
     loop(stage, in)

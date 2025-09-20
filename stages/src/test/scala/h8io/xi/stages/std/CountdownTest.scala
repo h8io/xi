@@ -19,7 +19,44 @@ class CountdownTest extends AnyFlatSpec with Matchers with Inside with MockFacto
     }
   }
 
-  "Countdown" should "return the state Complete after 3 iterations" in {
+  it should "return yield None with the state Complete if the counter is one and inner stage returns yield None" in {
+    val stage = mock[Stage[String, Long, Nothing]]
+    val onDone = mock[OnDone[String, Long, Nothing]]
+    (stage.apply _).expects("xi").returns(Yield.None(onDone))
+    inside(Countdown.Impl(1, 3, stage).apply("xi")) { case Yield.None(completed) =>
+      testCompletedOnDone(onDone, completed)
+    }
+  }
+
+  it should "return yield None with the state Complete if the counter is one and inner stage returns yield Some" in {
+    val stage = mock[Stage[String, Long, Nothing]]
+    val onDone = mock[OnDone[String, Long, Nothing]]
+    (stage.apply _).expects("xi").returns(Yield.Some(42, onDone))
+    inside(Countdown.Impl(1, 3, stage).apply("xi")) { case Yield.Some(42, completed) =>
+      testCompletedOnDone(onDone, completed)
+    }
+  }
+
+  private def testCompletedOnDone(
+      onDone: OnDone[String, Long, Nothing],
+      completed: OnDone[String, Long, Nothing]
+  ): Unit = {
+    val stage = mock[Stage[String, Long, Nothing]]
+    val state = State.Success(stage)
+    val expectedState = State.Complete(Countdown.Impl(3, 3, stage))
+    (onDone.onComplete _).expects().returns(state)
+    completed.onSuccess() shouldBe expectedState
+    (onDone.onComplete _).expects().returns(state)
+    completed.onComplete() shouldBe expectedState
+    (onDone.onError _).expects().returns(state)
+    completed.onError() shouldBe expectedState
+    (onDone.onPanic _).expects().returns(state)
+    completed.onPanic() shouldBe expectedState
+    (onDone.dispose _).expects()
+    completed.dispose()
+  }
+
+  it should "return the state Complete after 3 iterations" in {
     val stage1 = mock[Stage[String, Long, Nothing]]
     val initial = Countdown(3, stage1)
     val onDone1 = mock[OnDone[String, Long, Nothing]]
