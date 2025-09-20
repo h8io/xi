@@ -5,8 +5,6 @@ sealed trait Yield[-I, +O, +E] {
 
   private[stages] def ~>[_O, _E >: E](stage: Stage[O, _O, _E]): Yield[I, _O, _E]
 
-  private[stages] def `with`[_I <: I, _O >: O, _E >: E](onDone: OnDone[_I, _O, _E]): Yield[_I, _O, _E]
-
   private[stages] def lift[_I, _O >: O, _E >: E](f: Stage[I, O, E] => Stage[_I, _O, _E]): Yield[_I, _O, _E]
 
   private[stages] def complete[_I, _O >: O, _E >: E](f: Stage[I, O, E] => Stage[_I, _O, _E]): Yield[_I, _O, _E]
@@ -20,9 +18,6 @@ object Yield {
       case Some(_out, _onDone) => Some(_out, onDone.safe <~ _onDone.safe)
       case None(_onDone) => None(onDone.safe <~ _onDone.safe)
     }
-
-    private[stages] def `with`[_I <: I, _O >: O, _E >: E](onDone: OnDone[_I, _O, _E]): Some[_I, _O, _E] =
-      Some(out, onDone)
 
     private[stages] def lift[_I, _O >: O, _E >: E](f: Stage[I, O, E] => Stage[_I, _O, _E]): Some[_I, _O, _E] =
       Some(out, onDone.lift(f))
@@ -46,8 +41,6 @@ object Yield {
         def dispose(): Unit = onDone.dispose()
       })
     }
-
-    private[stages] def `with`[_I <: I, _O >: O, _E >: E](onDone: OnDone[_I, _O, _E]): None[_I, _O, _E] = None(onDone)
 
     private[stages] def lift[_I, _O >: O, _E >: E](f: Stage[I, O, E] => Stage[_I, _O, _E]): None[_I, _O, _E] =
       None(onDone.lift(f))

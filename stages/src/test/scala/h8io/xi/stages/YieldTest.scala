@@ -80,20 +80,6 @@ class YieldTest extends AnyFlatSpec with Matchers with Inside with MockFactory {
     }
   }
 
-  "Yield.Some.with" should "replace OnDone object" in {
-    val onDone1 = mock[OnDone[String, Int, Nothing]]
-    val onDone2 = mock[OnDone[String, Int, Nothing]]
-    onDone1 shouldNot equal(onDone2)
-    Yield.Some(42, onDone1) `with` onDone2 shouldEqual Yield.Some(42, onDone2)
-  }
-
-  "Yield.None.with" should "replace OnDone object" in {
-    val onDone1 = mock[OnDone[String, Int, Nothing]]
-    val onDone2 = mock[OnDone[String, Int, Nothing]]
-    onDone1 shouldNot equal(onDone2)
-    Yield.None(onDone1) `with` onDone2 shouldEqual Yield.None(onDone2)
-  }
-
   "Yield.Some.lift" should "return an Yield.Some with lifted onDone" in {
     val onDone = mock[OnDone[Long, Int, String]]
     val f = mock[Stage[Long, Int, String] => Stage[Double, Int, String]]
