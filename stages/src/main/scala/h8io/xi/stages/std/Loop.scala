@@ -1,10 +1,12 @@
-package h8io.xi.stages
+package h8io.xi.stages.std
+
+import h8io.xi.stages.{Outcome, Stage, State, Yield}
 
 import scala.annotation.tailrec
 
-final case class Loop[I, +E](stage: Stage[I, I, E]) extends Stage[I, I, E] {
-  def apply(in: I): Yield[I, I, E] = {
-    @tailrec def loop(stage: Stage[I, I, E], in: I): Yield[I, I, E] = {
+final case class Loop[T, +E](stage: Stage[T, T, E]) extends Stage[T, T, E] {
+  def apply(in: T): Yield[T, T, E] = {
+    @tailrec def loop(stage: Stage[T, T, E], in: T): Yield[T, T, E] = {
       val outcome = stage(in).outcome
       outcome.state match {
         case State.Success(next) =>
