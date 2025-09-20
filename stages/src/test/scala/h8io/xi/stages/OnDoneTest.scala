@@ -52,6 +52,83 @@ class OnDoneTest extends AnyFlatSpec with Matchers with Inside with MockFactory 
     onDone.safe shouldBe onDone
   }
 
+  "map" should "return mapped states" in {
+    val stage1 = mock[Stage[String, Int, Boolean]]
+    val stage2 = mock[Stage[Double, Float, String]]
+    val exception = new Exception
+    val mappedException = new RuntimeException
+    val f: PartialFunction[State[String, Int, Boolean], State[Double, Float, String]] = {
+      case State.Success(`stage1`) => State.Complete(stage2)
+      case State.Complete(`stage1`) => State.Error(stage2, "error")
+      case State.Error(`stage1`, errors) if errors == NonEmptyChain(true) => State.Panic(mappedException)
+      case State.Panic(exceptions) if exceptions == NonEmptyChain(exception) => State.Success(stage2)
+    }
+    val onDone = mock[OnDone[String, Int, Boolean]]
+    val mappedOnDone = onDone.map(f)
+    (onDone.onSuccess _).expects().returns(State.Success(stage1))
+    mappedOnDone.onSuccess() shouldBe State.Complete(stage2)
+    (onDone.onComplete _).expects().returns(State.Complete(stage1))
+    mappedOnDone.onComplete() shouldBe State.Error(stage2, "error")
+    (onDone.onError _).expects().returns(State.Error(stage1, true))
+    mappedOnDone.onError() shouldBe State.Panic(mappedException)
+    (onDone.onPanic _).expects().returns(State.Panic(exception))
+    mappedOnDone.onPanic() shouldBe State.Success(stage2)
+  }
+
+  "lift" should "return lifted states" in {
+    val stage1 = mock[Stage[String, Int, String]]
+    val stage2 = mock[Stage[Double, Float, String]]
+    val onDone = mock[OnDone[String, Int, String]]
+    val f = mock[Stage[String, Int, String] => Stage[Double, Float, String]]
+    val lifted = onDone.lift(f)
+
+    (f.apply _).expects(stage1).returns(stage2)
+    (onDone.onSuccess _).expects().returns(State.Success(stage1))
+    lifted.onSuccess() shouldBe State.Success(stage2)
+
+    (f.apply _).expects(stage1).returns(stage2)
+    (onDone.onComplete _).expects().returns(State.Complete(stage1))
+    lifted.onComplete() shouldBe State.Complete(stage2)
+
+    (f.apply _).expects(stage1).returns(stage2)
+    (onDone.onError _).expects().returns(State.Error(stage1, "error"))
+    lifted.onError() shouldBe State.Error(stage2, "error")
+
+    val panic = State.Panic(new Exception)
+    (onDone.onPanic _).expects().returns(panic)
+    lifted.onPanic() shouldBe panic
+
+    (onDone.dispose _).expects()
+    lifted.dispose()
+  }
+
+  "complete" should "return completed states" in {
+    val stage1 = mock[Stage[Double, Int, String]]
+    val stage2 = mock[Stage[String, Float, String]]
+    val onDone = mock[OnDone[Double, Int, String]]
+    val f = mock[Stage[Double, Int, String] => Stage[String, Float, String]]
+    val completed = onDone.complete(f)
+
+    (f.apply _).expects(stage1).returns(stage2)
+    (onDone.onComplete _).expects().returns(State.Success(stage1))
+    completed.onSuccess() shouldBe State.Complete(stage2)
+
+    (f.apply _).expects(stage1).returns(stage2)
+    (onDone.onComplete _).expects().returns(State.Complete(stage1))
+    completed.onComplete() shouldBe State.Complete(stage2)
+
+    (f.apply _).expects(stage1).returns(stage2)
+    (onDone.onError _).expects().returns(State.Error(stage1, "error"))
+    completed.onError() shouldBe State.Error(stage2, "error")
+
+    val panic = State.Panic(new Exception)
+    (onDone.onPanic _).expects().returns(panic)
+    completed.onPanic() shouldBe panic
+
+    (onDone.dispose _).expects()
+    completed.dispose()
+  }
+
   "Composed OnDone.Safe" should "return a correct state with onSuccess" in {
     val onDone1 = mock[OnDone.Safe[Unit, Int, Nothing]]
     val stage1 = mock[Stage[Unit, Int, Nothing]]

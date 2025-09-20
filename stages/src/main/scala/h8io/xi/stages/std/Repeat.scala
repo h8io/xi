@@ -13,8 +13,7 @@ final case class Repeat[-I, +O, +E](stage: Stage[I, O, E]) extends Stage[I, O, E
       outcome.state match {
         case State.Success(next) => repeat(next)
         case State.Complete(next) => outcome.toYield(State.Success(Repeat(next)))
-        case State.Error(next, errors) => outcome.toYield(State.Error(Repeat(next), errors))
-        case panic: State.Panic => outcome.toYield(panic)
+        case failure => outcome.toYield(failure.map(Repeat(_)))
       }
     }
     repeat(stage)
