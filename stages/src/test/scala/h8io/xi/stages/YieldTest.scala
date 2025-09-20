@@ -94,7 +94,89 @@ class YieldTest extends AnyFlatSpec with Matchers with Inside with MockFactory {
     Yield.None(onDone1) `with` onDone2 shouldEqual Yield.None(onDone2)
   }
 
-  "outcome" should "return an Outcome.Some object" in {
+  "Yield.Some.lift" should "return an Yield.Some with lifted onDone" in {
+    val onDone = mock[OnDone[Long, Int, String]]
+    val f = mock[Stage[Long, Int, String] => Stage[Double, Int, String]]
+    inside(Yield.Some(42, onDone).lift(f)) { case Yield.Some(42, lifted) => liftedOnDoneTest(onDone, lifted, f) }
+  }
+
+  "Yield.None.lift" should "return an Yield.None with lifted onDone" in {
+    val onDone = mock[OnDone[Long, Int, String]]
+    val f = mock[Stage[Long, Int, String] => Stage[Double, Int, String]]
+    inside(Yield.None(onDone).lift(f)) { case Yield.None(lifted) => liftedOnDoneTest(onDone, lifted, f) }
+  }
+
+  private def liftedOnDoneTest(
+      onDone: OnDone[Long, Int, String],
+      lifted: OnDone[Double, Int, String],
+      f: Stage[Long, Int, String] => Stage[Double, Int, String]
+  ): Unit = {
+    val stage1 = mock[Stage[Long, Int, String]]
+    val stage2 = mock[Stage[Double, Int, String]]
+
+    (f.apply _).expects(stage1).returns(stage2)
+    (onDone.onSuccess _).expects().returns(State.Success(stage1))
+    lifted.onSuccess() shouldBe State.Success(stage2)
+
+    (f.apply _).expects(stage1).returns(stage2)
+    (onDone.onComplete _).expects().returns(State.Complete(stage1))
+    lifted.onComplete() shouldBe State.Complete(stage2)
+
+    (f.apply _).expects(stage1).returns(stage2)
+    (onDone.onError _).expects().returns(State.Error(stage1, "error"))
+    lifted.onError() shouldBe State.Error(stage2, "error")
+
+    val panic = State.Panic(new Exception)
+    (onDone.onPanic _).expects().returns(panic)
+    lifted.onPanic() shouldBe panic
+
+    (onDone.dispose _).expects()
+    lifted.dispose()
+  }
+
+  "Yield.Some.complete" should "return an Yield.Some with completed onDone" in {
+    val onDone = mock[OnDone[Long, Int, String]]
+    val f = mock[Stage[Long, Int, String] => Stage[Double, Int, String]]
+    inside(Yield.Some(42, onDone).complete(f)) { case Yield.Some(42, completed) =>
+      completedOnDoneTest(onDone, completed, f)
+    }
+  }
+
+  "Yield.None.complete" should "return an Yield.None with completed onDone" in {
+    val onDone = mock[OnDone[Long, Int, String]]
+    val f = mock[Stage[Long, Int, String] => Stage[Double, Int, String]]
+    inside(Yield.None(onDone).complete(f)) { case Yield.None(completed) => completedOnDoneTest(onDone, completed, f) }
+  }
+
+  private def completedOnDoneTest(
+      onDone: OnDone[Long, Int, String],
+      completed: OnDone[Double, Int, String],
+      f: Stage[Long, Int, String] => Stage[Double, Int, String]
+  ): Unit = {
+    val stage1 = mock[Stage[Long, Int, String]]
+    val stage2 = mock[Stage[Double, Int, String]]
+
+    (f.apply _).expects(stage1).returns(stage2)
+    (onDone.onSuccess _).expects().returns(State.Success(stage1))
+    completed.onSuccess() shouldBe State.Complete(stage2)
+
+    (f.apply _).expects(stage1).returns(stage2)
+    (onDone.onComplete _).expects().returns(State.Complete(stage1))
+    completed.onComplete() shouldBe State.Complete(stage2)
+
+    (f.apply _).expects(stage1).returns(stage2)
+    (onDone.onError _).expects().returns(State.Error(stage1, "error"))
+    completed.onError() shouldBe State.Error(stage2, "error")
+
+    val panic = State.Panic(new Exception)
+    (onDone.onPanic _).expects().returns(panic)
+    completed.onPanic() shouldBe panic
+
+    (onDone.dispose _).expects()
+    completed.dispose()
+  }
+
+  "Yield.Some.outcome" should "return an Outcome.Some object" in {
     val onDone = mock[OnDone[String, Int, Nothing]]
     val state = State.Success(mock[Stage[String, Int, Nothing]])
     (onDone.onSuccess _).expects().returns(state)
@@ -115,7 +197,7 @@ class YieldTest extends AnyFlatSpec with Matchers with Inside with MockFactory {
     }
   }
 
-  it should "return an Outcome.None object" in {
+  "Yield.None.outcome" should "return an Outcome.None object" in {
     val onDone = mock[OnDone[String, Int, Nothing]]
     val state = State.Success(mock[Stage[String, Int, Nothing]])
     (onDone.onSuccess _).expects().returns(state)

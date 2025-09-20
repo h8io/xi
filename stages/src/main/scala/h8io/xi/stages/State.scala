@@ -9,7 +9,11 @@ sealed trait State[-I, +O, +E] {
 
   private[stages] def ~>[_I, _E >: E](onDone: OnDone[_I, I, _E]): State[_I, O, _E]
 
-  def onDone(_dispose: () => Unit = () => {}): OnDone.Safe[I, O, E] = new OnDone.Safe[I, O, E] {
+  private[stages] def lift[_I, _O, _E >: E](f: Stage[I, O, E] => Stage[_I, _O, _E]): State[_I, _O, _E]
+
+  private[stages] def complete[_I, _O, _E >: E](f: Stage[I, O, E] => Stage[_I, _O, _E]): State[_I, _O, _E]
+
+  final def onDone(_dispose: () => Unit = () => {}): OnDone.Safe[I, O, E] = new OnDone.Safe[I, O, E] {
     def onSuccess(): State[I, O, E] = self
     def onComplete(): State[I, O, E] = self
     def onError(): State[I, O, E] = self
@@ -29,6 +33,13 @@ object State {
     }
 
     private[stages] def ~>[_I, _E >: E](onDone: OnDone[_I, I, _E]): State[_I, O, _E] = onDone.onSuccess() <~ this
+
+    @inline
+    private[stages] def lift[_I, _O, _E >: E](f: Stage[I, O, E] => Stage[_I, _O, _E]): Success[_I, _O, _E] =
+      Success(f(stage))
+
+    private[stages] def complete[_I, _O, _E >: E](f: Stage[I, O, E] => Stage[_I, _O, _E]): Complete[_I, _O, _E] =
+      Complete(f(stage))
   }
 
   final case class Complete[-I, +O, +E](stage: Stage[I, O, E]) extends State[I, O, E] {
@@ -40,6 +51,12 @@ object State {
     }
 
     private[stages] def ~>[_I, _E >: E](onDone: OnDone[_I, I, _E]): State[_I, O, _E] = onDone.onComplete() <~ this
+
+    private[stages] def lift[_I, _O, _E >: E](f: Stage[I, O, E] => Stage[_I, _O, _E]): Complete[_I, _O, _E] =
+      Complete(f(stage))
+
+    private[stages] def complete[_I, _O, _E >: E](f: Stage[I, O, E] => Stage[_I, _O, _E]): Complete[_I, _O, _E] =
+      lift(f)
   }
 
   final case class Error[-I, +O, +E](stage: Stage[I, O, E], errors: NonEmptyChain[E]) extends State[I, O, E] {
@@ -51,6 +68,12 @@ object State {
     }
 
     private[stages] def ~>[_I, _E >: E](onDone: OnDone[_I, I, _E]): State[_I, O, _E] = onDone.onError() <~ this
+
+    @inline
+    private[stages] def lift[_I, _O, _E >: E](f: Stage[I, O, E] => Stage[_I, _O, _E]): Error[_I, _O, _E] =
+      Error(f(stage), errors)
+
+    private[stages] def complete[_I, _O, _E >: E](f: Stage[I, O, E] => Stage[_I, _O, _E]): Error[_I, _O, _E] = lift(f)
   }
 
   def Error[I, O, E](stage: Stage[I, O, E], error: E): Error[I, O, E] = Error(stage, NonEmptyChain.one(error))
@@ -62,6 +85,10 @@ object State {
     }
 
     private[stages] def ~>[_I, _E](onDone: OnDone[_I, Any, _E]): State[_I, Nothing, _E] = onDone.onPanic() <~ this
+
+    private[stages] def lift[_I, _O, _E](f: Stage[Any, Nothing, Nothing] => Stage[_I, _O, _E]): Panic = this
+
+    private[stages] def complete[_I, _O, _E](f: Stage[Any, Nothing, Nothing] => Stage[_I, _O, _E]): Panic = this
   }
 
   def Panic(exception: Exception): Panic = Panic(NonEmptyChain.one(exception))

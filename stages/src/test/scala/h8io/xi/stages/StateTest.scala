@@ -2,9 +2,9 @@ package h8io.xi.stages
 
 import cats.data.NonEmptyChain
 import org.scalamock.scalatest.MockFactory
-import org.scalatest.Inside
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.{Assertion, Inside}
 
 class StateTest extends AnyFlatSpec with Matchers with Inside with MockFactory {
   "onDone" should "return a stable OnDone object" in {
@@ -225,6 +225,50 @@ class StateTest extends AnyFlatSpec with Matchers with Inside with MockFactory {
     val onDone = mock[OnDone[Boolean, String, Nothing]]
     (onDone.onPanic _).expects().returns(State.Complete(mock[Stage[Boolean, String, Nothing]]))
     failure ~> onDone shouldBe failure
+  }
+
+  "lift" should "update the stage for the state Success" in { test(State.Success(_), _.lift(_)) }
+
+  it should "update the stage for the state Complete" in { test(State.Complete(_), _.lift(_)) }
+
+  it should "update the stage for the state Error" in { test(State.Error(_, "error"), _.lift(_)) }
+
+  it should "update the stage for the state Panic" in {
+    val exception = new Exception
+    test(_ => State.Panic(exception), _.lift(_), isNotPanic = false)
+  }
+
+  "complete" should "return the stage Complete with updated stage for the state Success" in {
+    val f = mock[Stage[Double, Int, String] => Stage[Double, Int, String]]
+    val stage1 = mock[Stage[Double, Int, String]]
+    val stage2 = mock[Stage[Double, Int, String]]
+    (f.apply _).expects(stage1).returns(stage2)
+    State.Success(stage1).complete(f) shouldBe State.Complete(stage2)
+  }
+
+  it should "update the stage for the state Complete" in { test(State.Complete(_), _.complete(_)) }
+
+  it should "update the stage for the state Error" in { test(State.Error(_, "error"), _.complete(_)) }
+
+  it should "update the stage for the state Panic" in {
+    val exception = new Exception
+    test(_ => State.Panic(exception), _.complete(_), isNotPanic = false)
+  }
+
+  private def test(
+      create: Stage[Double, Int, String] => State[Double, Int, String],
+      update: (State[Double, Int, String], Stage[Double, Int, String] => Stage[Double, Int, String]) => State[
+        Double,
+        Int,
+        String
+      ],
+      isNotPanic: Boolean = true
+  ): Assertion = {
+    val f = mock[Stage[Double, Int, String] => Stage[Double, Int, String]]
+    val stage1 = mock[Stage[Double, Int, String]]
+    val stage2 = mock[Stage[Double, Int, String]]
+    if (isNotPanic) (f.apply _).expects(stage1).returns(stage2)
+    update(create(stage1), f) shouldBe create(stage2)
   }
 
   "Error" should "create a correct Error object" in {
