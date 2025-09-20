@@ -138,4 +138,13 @@ class CountdownTest extends AnyFlatSpec with Matchers with Inside with MockFacto
 
     call(cdOnDone2) shouldBe State.Complete(Countdown.Impl(3, 3, stage3))
   }
+
+  it should "be disposed correctly if it is not finished" in {
+    val onDone = mock[OnDone[Unit, Int, String]]
+    val stage: Stage[Unit, Int, String] = _ => Yield.Some(42, onDone)
+    inside(Countdown(3, stage)(())) { case Yield.Some(42, cdOnDone) =>
+      (onDone.dispose _).expects()
+      cdOnDone.dispose()
+    }
+  }
 }
