@@ -80,13 +80,25 @@ class YieldTest extends AnyFlatSpec with Matchers with Inside with MockFactory {
     }
   }
 
-  "Yield.Some.lift" should "return an Yield.Some with lifted onDone" in {
+  "Yield.Some.map" should "return Yield.Some with updated onDone" in {
+    val newOnDone = mock[OnDone[Int, Long, String]]
+    Yield.Some[Int, Long, String](42, mock[OnDone[Int, Long, String]]).map(_ => newOnDone) shouldBe
+      Yield.Some[Int, Long, String](42, newOnDone)
+  }
+
+  "Yield.None.map" should "return Yield.None with updated onDone" in {
+    val newOnDone = mock[OnDone[Int, Long, String]]
+    Yield.None[Int, Long, String](mock[OnDone[Int, Long, String]]).map(_ => newOnDone) shouldBe
+      Yield.None[Int, Long, String](newOnDone)
+  }
+
+  "Yield.Some.lift" should "return Yield.Some with lifted onDone" in {
     val onDone = mock[OnDone[Long, Int, String]]
     val f = mock[Stage[Long, Int, String] => Stage[Double, Int, String]]
     inside(Yield.Some(42, onDone).lift(f)) { case Yield.Some(42, lifted) => liftedOnDoneTest(onDone, lifted, f) }
   }
 
-  "Yield.None.lift" should "return an Yield.None with lifted onDone" in {
+  "Yield.None.lift" should "return Yield.None with lifted onDone" in {
     val onDone = mock[OnDone[Long, Int, String]]
     val f = mock[Stage[Long, Int, String] => Stage[Double, Int, String]]
     inside(Yield.None(onDone).lift(f)) { case Yield.None(lifted) => liftedOnDoneTest(onDone, lifted, f) }
@@ -120,7 +132,7 @@ class YieldTest extends AnyFlatSpec with Matchers with Inside with MockFactory {
     lifted.dispose()
   }
 
-  "Yield.Some.complete" should "return an Yield.Some with completed onDone" in {
+  "Yield.Some.complete" should "return Yield.Some with completed onDone" in {
     val onDone = mock[OnDone[Long, Int, String]]
     val f = mock[Stage[Long, Int, String] => Stage[Double, Int, String]]
     inside(Yield.Some(42, onDone).complete(f)) { case Yield.Some(42, completed) =>
@@ -128,7 +140,7 @@ class YieldTest extends AnyFlatSpec with Matchers with Inside with MockFactory {
     }
   }
 
-  "Yield.None.complete" should "return an Yield.None with completed onDone" in {
+  "Yield.None.complete" should "return Yield.None with completed onDone" in {
     val onDone = mock[OnDone[Long, Int, String]]
     val f = mock[Stage[Long, Int, String] => Stage[Double, Int, String]]
     inside(Yield.None(onDone).complete(f)) { case Yield.None(completed) => completedOnDoneTest(onDone, completed, f) }
