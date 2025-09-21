@@ -6,11 +6,11 @@ import org.scalatest.Inside
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
-class CountdownTest extends AnyFlatSpec with Matchers with Inside with MockFactory {
-  "Countdown" should "return the yield None with the state Complete if the counter is zero" in {
+class LocalCountdownTest extends AnyFlatSpec with Matchers with Inside with MockFactory {
+  "LocalCountdown" should "return the yield None with the state Complete if the counter is zero" in {
     val stage = mock[Stage[String, Long, Nothing]]
-    inside(Countdown.Impl(0, 3, stage)("xi")) { case Yield.None(onDone) =>
-      val expectedState = State.Complete(Countdown.Impl(3, 3, stage))
+    inside(LocalCountdown.Impl(0, 3, stage)("xi")) { case Yield.None(onDone) =>
+      val expectedState = State.Complete(LocalCountdown.Impl(3, 3, stage))
       onDone.onSuccess() shouldBe expectedState
       onDone.onComplete() shouldBe expectedState
       onDone.onError() shouldBe expectedState
@@ -23,14 +23,16 @@ class CountdownTest extends AnyFlatSpec with Matchers with Inside with MockFacto
     val stage = mock[Stage[String, Long, Nothing]]
     val onDone = mock[OnDone[String, Long, Nothing]]
     (stage.apply _).expects("xi").returns(Yield.None(onDone))
-    inside(Countdown.Impl(1, 3, stage)("xi")) { case Yield.None(completed) => testCompletedOnDone(onDone, completed) }
+    inside(LocalCountdown.Impl(1, 3, stage)("xi")) { case Yield.None(completed) =>
+      testCompletedOnDone(onDone, completed)
+    }
   }
 
   it should "return yield None with the state Complete if the counter is one and inner stage returns yield Some" in {
     val stage = mock[Stage[String, Long, Nothing]]
     val onDone = mock[OnDone[String, Long, Nothing]]
     (stage.apply _).expects("xi").returns(Yield.Some(42, onDone))
-    inside(Countdown.Impl(1, 3, stage)("xi")) { case Yield.Some(42, completed) =>
+    inside(LocalCountdown.Impl(1, 3, stage)("xi")) { case Yield.Some(42, completed) =>
       testCompletedOnDone(onDone, completed)
     }
   }
@@ -41,7 +43,7 @@ class CountdownTest extends AnyFlatSpec with Matchers with Inside with MockFacto
   ): Unit = {
     val stage = mock[Stage[String, Long, Nothing]]
     val state = State.Success(stage)
-    val expectedState = State.Complete(Countdown.Impl(3, 3, stage))
+    val expectedState = State.Complete(LocalCountdown.Impl(3, 3, stage))
     (onDone.onComplete _).expects().returns(state)
     completed.onSuccess() shouldBe expectedState
     (onDone.onComplete _).expects().returns(state)
@@ -59,14 +61,14 @@ class CountdownTest extends AnyFlatSpec with Matchers with Inside with MockFacto
     val onDone1 = mock[OnDone[String, Long, Nothing]]
     (stage1.apply _).expects("xi").returns(Yield.Some(3, onDone1))
 
-    val (cdOnDone1, stage2) = inside(Countdown(3, stage1)("xi")) { case Yield.Some(3, onDone) =>
+    val (cdOnDone1, stage2) = inside(LocalCountdown(3, stage1)("xi")) { case Yield.Some(3, onDone) =>
       val stage = mock[Stage[String, Long, Nothing]]
       (onDone1.onSuccess _).expects().returns(State.Success(stage))
       (onDone, stage)
     }
 
     val (cdStage1, onDone2) = inside(cdOnDone1.onSuccess()) { case State.Success(stage) =>
-      stage shouldBe a[Countdown.Impl[?, ?, ?]]
+      stage shouldBe a[LocalCountdown.Impl[?, ?, ?]]
       val onDone = mock[OnDone[String, Long, Nothing]]
       (stage2.apply _).expects("query").returns(Yield.Some(17, onDone))
       (stage, onDone)
@@ -79,7 +81,7 @@ class CountdownTest extends AnyFlatSpec with Matchers with Inside with MockFacto
     }
 
     val (cdStage2, onDone3) = inside(cdOnDone2.onSuccess()) { case State.Success(stage) =>
-      stage shouldBe a[Countdown.Impl[?, ?, ?]]
+      stage shouldBe a[LocalCountdown.Impl[?, ?, ?]]
       val onDone = mock[OnDone[String, Long, Nothing]]
       (stage3.apply _).expects("language").returns(Yield.Some(42, onDone))
       (stage, onDone)
@@ -88,7 +90,7 @@ class CountdownTest extends AnyFlatSpec with Matchers with Inside with MockFacto
     inside(cdStage2("language")) { case Yield.Some(42, onDone) =>
       val stage = mock[Stage[String, Long, Nothing]]
       (onDone3.onComplete _).expects().returns(State.Success(stage))
-      onDone.onSuccess() shouldBe State.Complete(Countdown.Impl(3, 3, stage))
+      onDone.onSuccess() shouldBe State.Complete(LocalCountdown.Impl(3, 3, stage))
       (onDone3.dispose _).expects()
       onDone.dispose()
     }
@@ -117,7 +119,7 @@ class CountdownTest extends AnyFlatSpec with Matchers with Inside with MockFacto
     val onDone1 = mock[OnDone[Int, String, Nothing]]
     (stage1.apply _).expects(42).returns(Yield.Some("xi", onDone1))
 
-    val (cdOnDone1, stage2) = inside(Countdown(3, stage1)(42)) { case Yield.Some("xi", onDone) =>
+    val (cdOnDone1, stage2) = inside(LocalCountdown(3, stage1)(42)) { case Yield.Some("xi", onDone) =>
       val stage = mock[Stage[Int, String, Nothing]]
       (onDone1.onSuccess _).expects().returns(State.Success(stage))
       (onDone, stage)
@@ -128,7 +130,7 @@ class CountdownTest extends AnyFlatSpec with Matchers with Inside with MockFacto
       (stage2.apply _).expects(17).returns(Yield.Some("ql", onDone))
       (stage, onDone)
     }
-    cdStage2 shouldBe a[Countdown.Impl[?, ?, ?]]
+    cdStage2 shouldBe a[LocalCountdown.Impl[?, ?, ?]]
 
     val (cdOnDone2, stage3) = inside(cdStage2(17)) { case Yield.Some("ql", onDone) =>
       val stage = mock[Stage[Int, String, Nothing]]
@@ -136,13 +138,13 @@ class CountdownTest extends AnyFlatSpec with Matchers with Inside with MockFacto
       (onDone, stage)
     }
 
-    call(cdOnDone2) shouldBe State.Complete(Countdown.Impl(3, 3, stage3))
+    call(cdOnDone2) shouldBe State.Complete(LocalCountdown.Impl(3, 3, stage3))
   }
 
   it should "be disposed correctly if it is not finished" in {
     val onDone = mock[OnDone[Unit, Int, String]]
     val stage: Stage[Unit, Int, String] = _ => Yield.Some(42, onDone)
-    inside(Countdown(3, stage)(())) { case Yield.Some(42, cdOnDone) =>
+    inside(LocalCountdown(3, stage)(())) { case Yield.Some(42, cdOnDone) =>
       (onDone.dispose _).expects()
       cdOnDone.dispose()
     }
