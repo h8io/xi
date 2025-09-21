@@ -1,17 +1,18 @@
 package h8io.xi.stages.std
 
-import h8io.xi.stages.{OnDone, Stage, State, Yield}
+import h8io.xi.stages
+import h8io.xi.stages.{OnDone, Stage}
 
-object DeadEnd extends Stage[Any, Nothing, Nothing] with OnDone[Any, Nothing, Nothing] {
-  private val `yield` = Yield.None[Any, Nothing, Nothing](this)
-  private val state = State.Complete[Any, Nothing, Nothing](this)
+object DeadEnd extends Stage.Safe[Any, Nothing, Nothing] with OnDone.Safe[Any, Nothing, Nothing] {
+  val Yield = stages.Yield.None[Any, Nothing, Nothing](this)
+  val State = stages.State.Complete[Any, Nothing, Nothing](this)
 
-  def apply(in: Any): Yield[Any, Nothing, Nothing] = `yield`
+  def apply(in: Any): stages.Yield.None[Any, Nothing, Nothing] = Yield
 
-  override def onSuccess(): State[Any, Nothing, Nothing] = state
-  override def onComplete(): State[Any, Nothing, Nothing] = state
-  override def onError(): State[Any, Nothing, Nothing] = state
-  override def onPanic(): State[Any, Nothing, Nothing] = state
+  override def onSuccess(): stages.State.Complete[Any, Nothing, Nothing] = State
+  override def onComplete(): stages.State.Complete[Any, Nothing, Nothing] = State
+  override def onError(): stages.State.Complete[Any, Nothing, Nothing] = State
+  override def onPanic(): stages.State.Complete[Any, Nothing, Nothing] = State
 
   override def dispose(): Unit = {}
 }
