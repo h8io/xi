@@ -73,8 +73,33 @@ class OnDoneTest extends AnyFlatSpec with Matchers with Inside with MockFactory 
     mappedOnDone.onError() shouldBe State.Panic(mappedException)
     (onDone.onPanic _).expects().returns(State.Panic(exception))
     mappedOnDone.onPanic() shouldBe State.Success(stage2)
+  }
+
+  "lift" should "return lifted states" in {
+    val stage1 = mock[Stage[String, Int, String]]
+    val stage2 = mock[Stage[Double, Float, String]]
+    val onDone = mock[OnDone[String, Int, String]]
+    val f = mock[Stage[String, Int, String] => Stage[Double, Float, String]]
+    val lifted = onDone.lift(f)
+
+    (f.apply _).expects(stage1).returns(stage2)
+    (onDone.onSuccess _).expects().returns(State.Success(stage1))
+    lifted.onSuccess() shouldBe State.Success(stage2)
+
+    (f.apply _).expects(stage1).returns(stage2)
+    (onDone.onComplete _).expects().returns(State.Complete(stage1))
+    lifted.onComplete() shouldBe State.Complete(stage2)
+
+    (f.apply _).expects(stage1).returns(stage2)
+    (onDone.onError _).expects().returns(State.Error(stage1, "error"))
+    lifted.onError() shouldBe State.Error(stage2, "error")
+
+    val panic = State.Panic(new Exception)
+    (onDone.onPanic _).expects().returns(panic)
+    lifted.onPanic() shouldBe panic
+
     (onDone.dispose _).expects()
-    mappedOnDone.dispose()
+    lifted.dispose()
   }
 
   "complete" should "return completed states" in {

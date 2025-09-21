@@ -7,6 +7,9 @@ sealed trait Yield[-I, +O, +E] {
 
   private[stages] def map[_I, _O >: O, _E >: E](f: OnDone[I, O, E] => OnDone[_I, _O, _E]): Yield[_I, _O, _E]
 
+  final private[stages] def lift[_I, _O >: O, _E >: E](f: Stage[I, O, E] => Stage[_I, _O, _E]): Yield[_I, _O, _E] =
+    map(_.lift(f))
+
   final private[stages] def complete[_I, _O >: O, _E >: E](f: Stage[I, O, E] => Stage[_I, _O, _E]): Yield[_I, _O, _E] =
     map(_.complete(f))
 

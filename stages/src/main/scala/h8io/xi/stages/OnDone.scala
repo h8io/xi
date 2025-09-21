@@ -40,6 +40,8 @@ trait OnDone[-I, +O, +E] {
       def dispose(): Unit = self.dispose()
     }
 
+  private[stages] def lift[_I, _O, _E >: E](f: Stage[I, O, E] => Stage[_I, _O, _E]): OnDone[_I, _O, _E] = map(_.map(f))
+
   private[stages] def complete[_I, _O, _E >: E](f: Stage[I, O, E] => Stage[_I, _O, _E]): OnDone[_I, _O, _E] =
     new OnDone[_I, _O, _E] {
       def onSuccess(): State[_I, _O, _E] = self.onComplete().complete(f)
