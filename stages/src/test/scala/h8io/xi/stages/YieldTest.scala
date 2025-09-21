@@ -182,10 +182,10 @@ class YieldTest extends AnyFlatSpec with Matchers with Inside with MockFactory {
 
   it should "return an Outcome.Some object if onDone throws an exception" in {
     val onDone = mock[OnDone[String, Int, Nothing]]
-    val expectedException = new Exception
-    (onDone.onSuccess _).expects().throws(expectedException)
+    val expectedCause = new Exception
+    (onDone.onSuccess _).expects().throws(expectedCause)
     inside(Yield.Some(42, onDone).outcome) { case Outcome.Some(42, state, dispose) =>
-      state shouldBe State.Panic(expectedException)
+      state shouldBe State.Panic(expectedCause)
       (onDone.dispose _).expects()
       dispose()
     }
@@ -203,10 +203,10 @@ class YieldTest extends AnyFlatSpec with Matchers with Inside with MockFactory {
 
   it should "return an Outcome.None object if onDone throws an exception" in {
     val onDone = mock[OnDone[String, Int, Nothing]]
-    val expectedException = new Exception
-    (onDone.onSuccess _).expects().throws(expectedException)
+    val expectedCause = new Exception
+    (onDone.onSuccess _).expects().throws(expectedCause)
     inside(Yield.None(onDone).outcome) { case Outcome.None(state, dispose) =>
-      state shouldBe State.Panic(expectedException)
+      state shouldBe State.Panic(expectedCause)
       (onDone.dispose _).expects()
       dispose()
     }

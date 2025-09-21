@@ -80,9 +80,9 @@ object State {
 
   def Error[I, O, E](stage: Stage[I, O, E], error: E): Error[I, O, E] = Error(stage, NonEmptyChain.one(error))
 
-  final case class Panic(exceptions: NonEmptyChain[Exception]) extends State[Any, Nothing, Nothing] {
+  final case class Panic(causes: NonEmptyChain[Throwable]) extends State[Any, Nothing, Nothing] {
     private[stages] def <~[_O, _E](that: State[Nothing, _O, _E]): State.Panic = that match {
-      case Panic(previousExceptions) => Panic(previousExceptions ++ exceptions)
+      case Panic(previousCauses) => Panic(previousCauses ++ causes)
       case _ => this
     }
 
@@ -93,5 +93,5 @@ object State {
     private[stages] def complete[_I, _O, _E](f: Stage[Any, Nothing, Nothing] => Stage[_I, _O, _E]): Panic = this
   }
 
-  def Panic(exception: Exception): Panic = Panic(NonEmptyChain.one(exception))
+  def Panic(cause: Throwable): Panic = Panic(NonEmptyChain.one(cause))
 }

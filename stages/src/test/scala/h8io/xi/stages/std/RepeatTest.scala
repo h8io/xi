@@ -107,8 +107,8 @@ class RepeatTest extends AnyFlatSpec with Matchers with Inside with MockFactory 
     val onDone3 = mock[OnDone[String, Int, Nothing]]
     val state1 = State.Success(stage2)
     val state2 = State.Success(stage3)
-    val expectedException = new Exception
-    val state3 = State.Panic(expectedException)
+    val expectedCause = new Exception
+    val state3 = State.Panic(expectedCause)
     inSequence {
       (stage1.apply _).expects("xi").returns(Yield.Some(3, onDone1))
       (onDone1.onSuccess _).expects().returns(state1)
@@ -118,8 +118,8 @@ class RepeatTest extends AnyFlatSpec with Matchers with Inside with MockFactory 
       (onDone3.onSuccess _).expects().returns(state3)
     }
     inside(Repeat(stage1)("xi")) { case Yield.Some(42, onDone) =>
-      inside(onDone.onSuccess()) { case State.Panic(exceptions) =>
-        exceptions shouldBe NonEmptyChain(expectedException)
+      inside(onDone.onSuccess()) { case State.Panic(causes) =>
+        causes shouldBe NonEmptyChain(expectedCause)
         (onDone3.dispose _).expects()
         onDone.dispose()
       }

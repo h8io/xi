@@ -151,8 +151,8 @@ class LoopTest extends AnyFlatSpec with Matchers with Inside with MockFactory {
     val onDone3 = mock[OnDone[Int, Int, Nothing]]
     val state1 = State.Success(stage2)
     val state2 = State.Success(stage3)
-    val expectedException = new Exception
-    val state3 = State.Panic(expectedException)
+    val expectedCause = new Exception
+    val state3 = State.Panic(expectedCause)
     inSequence {
       (stage1.apply _).expects(1).returns(Yield.Some(2, onDone1))
       (onDone1.onSuccess _).expects().returns(state1)
@@ -162,8 +162,8 @@ class LoopTest extends AnyFlatSpec with Matchers with Inside with MockFactory {
       (onDone3.onSuccess _).expects().returns(state3)
     }
     inside(Loop(stage1)(1)) { case Yield.Some(4, onDone) =>
-      inside(onDone.onSuccess()) { case State.Panic(exceptions) =>
-        exceptions shouldBe NonEmptyChain(expectedException)
+      inside(onDone.onSuccess()) { case State.Panic(causes) =>
+        causes shouldBe NonEmptyChain(expectedCause)
         (onDone3.dispose _).expects()
         onDone.dispose()
       }

@@ -209,7 +209,7 @@ class StateTest extends AnyFlatSpec with Matchers with Inside with MockFactory {
 
   it should "remain a Panic if it is composed with a Error" in {
     val panic = State.Panic(new Exception)
-    panic <~ State.Error(mock[Stage[Double, Long, String]], "Panic <~ Error") shouldBe State.Panic(panic.exceptions)
+    panic <~ State.Error(mock[Stage[Double, Long, String]], "Panic <~ Error") shouldBe State.Panic(panic.causes)
   }
 
   it should "remain a Panic if it is composed with a Panic" in {
