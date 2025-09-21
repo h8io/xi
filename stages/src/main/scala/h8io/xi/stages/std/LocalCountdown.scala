@@ -16,7 +16,7 @@ object LocalCountdown {
           override def dispose(): Unit = onDone.dispose()
         }
       }
-      else Yield.None(State.Complete(Impl(n, n, stage)).onDone(() => {}))
+      else Yield.None(State.Complete(Impl(n, n, stage)).onDone)
 
     @inline private def reset(stage: Stage[I, O, E]): Impl[I, O, E] = Impl(n, n, stage)
   }

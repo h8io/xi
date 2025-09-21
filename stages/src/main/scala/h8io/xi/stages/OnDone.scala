@@ -8,7 +8,7 @@ trait OnDone[-I, +O, +E] {
   def onError(): State[I, O, E]
   def onPanic(): State[I, O, E]
 
-  def dispose(): Unit
+  def dispose(): Unit = {}
 
   private[stages] def safe: OnDone.Safe[I, O, E] = new OnDone.Safe[I, O, E] {
     def onSuccess(): State[I, O, E] =
@@ -27,7 +27,7 @@ trait OnDone[-I, +O, +E] {
       try self.onPanic()
       catch { case e: Exception => State.Panic(e) }
 
-    def dispose(): Unit = self.dispose()
+    override def dispose(): Unit = self.dispose()
   }
 
   private[stages] def map[_I, _O, _E](f: State[I, O, E] => State[_I, _O, _E]): OnDone[_I, _O, _E] =
@@ -37,7 +37,7 @@ trait OnDone[-I, +O, +E] {
       def onError(): State[_I, _O, _E] = f(self.onError())
       def onPanic(): State[_I, _O, _E] = f(self.onPanic())
 
-      def dispose(): Unit = self.dispose()
+      override def dispose(): Unit = self.dispose()
     }
 
   private[stages] def lift[_I, _O, _E >: E](f: Stage[I, O, E] => Stage[_I, _O, _E]): OnDone[_I, _O, _E] = map(_.map(f))
@@ -49,7 +49,7 @@ trait OnDone[-I, +O, +E] {
       def onError(): State[_I, _O, _E] = self.onError().complete(f)
       def onPanic(): State[_I, _O, _E] = self.onPanic().complete(f)
 
-      def dispose(): Unit = self.dispose()
+      override def dispose(): Unit = self.dispose()
     }
 }
 
@@ -63,7 +63,7 @@ object OnDone {
       def onError(): State[I, _O, _E] = that.onError() ~> self
       def onPanic(): State[I, _O, _E] = that.onPanic() ~> self
 
-      def dispose(): Unit = {
+      override def dispose(): Unit = {
         that.dispose()
         self.dispose()
       }

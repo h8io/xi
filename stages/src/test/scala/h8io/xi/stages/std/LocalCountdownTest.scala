@@ -96,20 +96,17 @@ class LocalCountdownTest extends AnyFlatSpec with Matchers with Inside with Mock
     }
   }
 
-  it should "return the state Complete on complete" in {
+  it should "return the state Complete on complete" in
     testCompletedState(
       _.onComplete(),
       (onDone, stage) => (onDone.onComplete _).expects().returns(State.Complete(stage))
     )
-  }
 
-  it should "return the state Complete on error" in {
+  it should "return the state Complete on error" in
     testCompletedState(_.onError(), (onDone, stage) => (onDone.onError _).expects().returns(State.Complete(stage)))
-  }
 
-  it should "return the state Complete on panic" in {
+  it should "return the state Complete on panic" in
     testCompletedState(_.onPanic(), (onDone, stage) => (onDone.onPanic _).expects().returns(State.Complete(stage)))
-  }
 
   private def testCompletedState(
       call: OnDone[Int, String, Nothing] => State[Int, String, Nothing],

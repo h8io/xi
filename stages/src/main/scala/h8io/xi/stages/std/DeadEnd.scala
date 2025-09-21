@@ -13,6 +13,4 @@ object DeadEnd extends Stage.Safe[Any, Nothing, Nothing] with OnDone.Safe[Any, N
   override def onComplete(): stages.State.Complete[Any, Nothing, Nothing] = State
   override def onError(): stages.State.Complete[Any, Nothing, Nothing] = State
   override def onPanic(): stages.State.Complete[Any, Nothing, Nothing] = State
-
-  override def dispose(): Unit = {}
 }

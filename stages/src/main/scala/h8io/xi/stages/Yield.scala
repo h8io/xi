@@ -34,15 +34,8 @@ object Yield {
   }
 
   final case class None[-I, +O, +E](onDone: OnDone[I, O, E]) extends Yield[I, O, E] {
-    private[stages] def ~>[_O, _E >: E](stage: Stage[O, _O, _E]): Yield.None[I, _O, _E] = {
-      Yield.None(new OnDone[I, _O, _E] {
-        def onSuccess(): State[I, _O, _E] = onDone.onSuccess() <~ State.Success(stage)
-        def onComplete(): State[I, _O, _E] = onDone.onComplete() <~ State.Success(stage)
-        def onError(): State[I, _O, _E] = onDone.onError() <~ State.Success(stage)
-        def onPanic(): State[I, _O, _E] = onDone.onPanic() <~ State.Success(stage)
-        def dispose(): Unit = onDone.dispose()
-      })
-    }
+    private[stages] def ~>[_O, _E >: E](stage: Stage[O, _O, _E]): Yield.None[I, _O, _E] =
+      Yield.None(onDone map (_ <~ State.Success(stage)))
 
     @inline
     private[stages] def map[_I, _O >: O, _E >: E](f: OnDone[I, O, E] => OnDone[_I, _O, _E]): None[_I, _O, _E] =

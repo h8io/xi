@@ -6,7 +6,7 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
 class DeadEndTest extends AnyFlatSpec with Matchers with Inside {
-  "DeadEnd" should "always return Yield.None and State.Complete, referred to itself" in {
+  "DeadEnd" should "always return Yield.None and State.Complete, referred to itself" in
     inside(DeadEnd("xi")) { case Yield.None(onDone) =>
       val expectedState = State.Complete(DeadEnd)
       onDone.onSuccess() shouldBe expectedState
@@ -15,5 +15,4 @@ class DeadEndTest extends AnyFlatSpec with Matchers with Inside {
       onDone.onPanic() shouldBe expectedState
       onDone.dispose()
     }
-  }
 }

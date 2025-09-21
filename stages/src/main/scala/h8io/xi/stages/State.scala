@@ -7,19 +7,21 @@ sealed trait State[-I, +O, +E] {
 
   private[stages] def <~[_O, _E >: E](that: State[O, _O, _E]): State[I, _O, _E]
 
-  private[stages] def ~>[_I, _E >: E](onDone: OnDone[_I, I, _E]): State[_I, O, _E]
+  private[stages] def ~>[_I, _E >: E](onDone: OnDone.Safe[_I, I, _E]): State[_I, O, _E]
 
   private[stages] def map[_I, _O, _E >: E](f: Stage[I, O, E] => Stage[_I, _O, _E]): State[_I, _O, _E]
 
   private[stages] def complete[_I, _O, _E >: E](f: Stage[I, O, E] => Stage[_I, _O, _E]): State[_I, _O, _E]
 
-  final def onDone(_dispose: () => Unit = () => {}): OnDone.Safe[I, O, E] = new OnDone.Safe[I, O, E] {
+  final def onDone: OnDone.Safe[I, O, E] = onDone { () => }
+
+  final def onDone(_dispose: () => Unit): OnDone.Safe[I, O, E] = new OnDone.Safe[I, O, E] {
     def onSuccess(): State[I, O, E] = self
     def onComplete(): State[I, O, E] = self
     def onError(): State[I, O, E] = self
     def onPanic(): State[I, O, E] = self
 
-    def dispose(): Unit = _dispose()
+    override def dispose(): Unit = _dispose()
   }
 }
 
@@ -32,7 +34,7 @@ object State {
       case Success(nextStage) => Success(stage ~> nextStage)
     }
 
-    private[stages] def ~>[_I, _E >: E](onDone: OnDone[_I, I, _E]): State[_I, O, _E] = onDone.onSuccess() <~ this
+    private[stages] def ~>[_I, _E >: E](onDone: OnDone.Safe[_I, I, _E]): State[_I, O, _E] = onDone.onSuccess() <~ this
 
     @inline
     private[stages] def map[_I, _O, _E >: E](f: Stage[I, O, E] => Stage[_I, _O, _E]): Success[_I, _O, _E] =
@@ -50,7 +52,7 @@ object State {
       case Success(nextStage) => Complete(stage ~> nextStage)
     }
 
-    private[stages] def ~>[_I, _E >: E](onDone: OnDone[_I, I, _E]): State[_I, O, _E] = onDone.onComplete() <~ this
+    private[stages] def ~>[_I, _E >: E](onDone: OnDone.Safe[_I, I, _E]): State[_I, O, _E] = onDone.onComplete() <~ this
 
     private[stages] def map[_I, _O, _E >: E](f: Stage[I, O, E] => Stage[_I, _O, _E]): Complete[_I, _O, _E] =
       Complete(f(stage))
@@ -67,7 +69,7 @@ object State {
       case Success(nextStage) => Error(stage ~> nextStage, errors)
     }
 
-    private[stages] def ~>[_I, _E >: E](onDone: OnDone[_I, I, _E]): State[_I, O, _E] = onDone.onError() <~ this
+    private[stages] def ~>[_I, _E >: E](onDone: OnDone.Safe[_I, I, _E]): State[_I, O, _E] = onDone.onError() <~ this
 
     @inline
     private[stages] def map[_I, _O, _E >: E](f: Stage[I, O, E] => Stage[_I, _O, _E]): Error[_I, _O, _E] =
@@ -84,7 +86,7 @@ object State {
       case _ => this
     }
 
-    private[stages] def ~>[_I, _E](onDone: OnDone[_I, Any, _E]): State[_I, Nothing, _E] = onDone.onPanic() <~ this
+    private[stages] def ~>[_I, _E](onDone: OnDone.Safe[_I, Any, _E]): State[_I, Nothing, _E] = onDone.onPanic() <~ this
 
     private[stages] def map[_I, _O, _E](f: Stage[Any, Nothing, Nothing] => Stage[_I, _O, _E]): Panic = this
 

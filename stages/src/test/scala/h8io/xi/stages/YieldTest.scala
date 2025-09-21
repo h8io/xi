@@ -45,21 +45,17 @@ class YieldTest extends AnyFlatSpec with Matchers with Inside with MockFactory {
     }
   }
 
-  "Composed Yield.None" should "produce a correct state on success" in {
+  "Composed Yield.None" should "produce a correct state on success" in
     testCombined(mockOnDone => (mockOnDone.onSuccess _).expects(), _.onSuccess())
-  }
 
-  it should "produce a correct state on complete" in {
+  it should "produce a correct state on complete" in
     testCombined(mockOnDone => (mockOnDone.onComplete _).expects(), _.onComplete())
-  }
 
-  it should "produce a correct state on error" in {
+  it should "produce a correct state on error" in
     testCombined(mockOnDone => (mockOnDone.onError _).expects(), _.onError())
-  }
 
-  it should "produce a correct state on panic" in {
+  it should "produce a correct state on panic" in
     testCombined(mockOnDone => (mockOnDone.onPanic _).expects(), _.onPanic())
-  }
 
   private def testCombined(
       mockCall: OnDone[Unit, String, Nothing] => CallHandler0[State[Unit, String, Nothing]],
