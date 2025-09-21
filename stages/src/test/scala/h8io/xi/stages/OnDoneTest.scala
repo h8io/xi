@@ -9,40 +9,40 @@ import org.scalatest.matchers.should.Matchers
 class OnDoneTest extends AnyFlatSpec with Matchers with Inside with MockFactory {
   "Safe OnDone" should "not throw an exception with onSuccess" in {
     val onDone = mock[OnDone[Unit, Unit, Nothing]]
-    val expectedException = new Exception("onSuccess exception")
-    (onDone.onSuccess _).expects().throws(expectedException).twice()
-    the[Exception] thrownBy onDone.onSuccess() shouldBe expectedException
-    onDone.safe.onSuccess() shouldBe State.Panic(expectedException)
+    val expectedCause = new Exception("onSuccess exception")
+    (onDone.onSuccess _).expects().throws(expectedCause).twice()
+    the[Exception] thrownBy onDone.onSuccess() shouldBe expectedCause
+    onDone.safe.onSuccess() shouldBe State.Panic(expectedCause)
     (onDone.dispose _).expects()
     onDone.safe.dispose()
   }
 
   it should "not throw an exception with onComplete" in {
     val onDone = mock[OnDone[Unit, Unit, Nothing]]
-    val expectedException = new Exception("onComplete exception")
-    (onDone.onComplete _).expects().throws(expectedException).twice()
-    the[Exception] thrownBy onDone.onComplete() shouldBe expectedException
-    onDone.safe.onComplete() shouldBe State.Panic(expectedException)
+    val expectedCause = new Exception("onComplete exception")
+    (onDone.onComplete _).expects().throws(expectedCause).twice()
+    the[Exception] thrownBy onDone.onComplete() shouldBe expectedCause
+    onDone.safe.onComplete() shouldBe State.Panic(expectedCause)
     (onDone.dispose _).expects()
     onDone.safe.dispose()
   }
 
   it should "not throw an exception with onError" in {
     val onDone = mock[OnDone[Unit, Unit, Nothing]]
-    val expectedException = new Exception("onError exception")
-    (onDone.onError _).expects().throws(expectedException).twice()
-    the[Exception] thrownBy onDone.onError() shouldBe expectedException
-    onDone.safe.onError() shouldBe State.Panic(expectedException)
+    val expectedCause = new Exception("onError exception")
+    (onDone.onError _).expects().throws(expectedCause).twice()
+    the[Exception] thrownBy onDone.onError() shouldBe expectedCause
+    onDone.safe.onError() shouldBe State.Panic(expectedCause)
     (onDone.dispose _).expects()
     onDone.safe.dispose()
   }
 
   it should "not throw an exception with onPanic" in {
     val onDone = mock[OnDone[Unit, Unit, Nothing]]
-    val expectedException = new Exception("onPanic exception")
-    (onDone.onPanic _).expects().throws(expectedException).twice()
-    the[Exception] thrownBy onDone.onPanic() shouldBe expectedException
-    onDone.safe.onPanic() shouldBe State.Panic(expectedException)
+    val expectedCause = new Exception("onPanic exception")
+    (onDone.onPanic _).expects().throws(expectedCause).twice()
+    the[Exception] thrownBy onDone.onPanic() shouldBe expectedCause
+    onDone.safe.onPanic() shouldBe State.Panic(expectedCause)
     (onDone.dispose _).expects()
     onDone.safe.dispose()
   }
@@ -55,13 +55,13 @@ class OnDoneTest extends AnyFlatSpec with Matchers with Inside with MockFactory 
   "map" should "return mapped states" in {
     val stage1 = mock[Stage[String, Int, Boolean]]
     val stage2 = mock[Stage[Double, Float, String]]
-    val exception = new Exception
-    val mappedException = new RuntimeException
+    val cause = new Exception
+    val mappedCause = new RuntimeException
     val f: PartialFunction[State[String, Int, Boolean], State[Double, Float, String]] = {
       case State.Success(`stage1`) => State.Complete(stage2)
       case State.Complete(`stage1`) => State.Error(stage2, "error")
-      case State.Error(`stage1`, errors) if errors == NonEmptyChain(true) => State.Panic(mappedException)
-      case State.Panic(exceptions) if exceptions == NonEmptyChain(exception) => State.Success(stage2)
+      case State.Error(`stage1`, errors) if errors == NonEmptyChain(true) => State.Panic(mappedCause)
+      case State.Panic(causes) if causes == NonEmptyChain(cause) => State.Success(stage2)
     }
     val onDone = mock[OnDone[String, Int, Boolean]]
     val mappedOnDone = onDone.map(f)
@@ -70,11 +70,36 @@ class OnDoneTest extends AnyFlatSpec with Matchers with Inside with MockFactory 
     (onDone.onComplete _).expects().returns(State.Complete(stage1))
     mappedOnDone.onComplete() shouldBe State.Error(stage2, "error")
     (onDone.onError _).expects().returns(State.Error(stage1, true))
-    mappedOnDone.onError() shouldBe State.Panic(mappedException)
-    (onDone.onPanic _).expects().returns(State.Panic(exception))
+    mappedOnDone.onError() shouldBe State.Panic(mappedCause)
+    (onDone.onPanic _).expects().returns(State.Panic(cause))
     mappedOnDone.onPanic() shouldBe State.Success(stage2)
+  }
+
+  "lift" should "return lifted states" in {
+    val stage1 = mock[Stage[String, Int, String]]
+    val stage2 = mock[Stage[Double, Float, String]]
+    val onDone = mock[OnDone[String, Int, String]]
+    val f = mock[Stage[String, Int, String] => Stage[Double, Float, String]]
+    val lifted = onDone.lift(f)
+
+    (f.apply _).expects(stage1).returns(stage2)
+    (onDone.onSuccess _).expects().returns(State.Success(stage1))
+    lifted.onSuccess() shouldBe State.Success(stage2)
+
+    (f.apply _).expects(stage1).returns(stage2)
+    (onDone.onComplete _).expects().returns(State.Complete(stage1))
+    lifted.onComplete() shouldBe State.Complete(stage2)
+
+    (f.apply _).expects(stage1).returns(stage2)
+    (onDone.onError _).expects().returns(State.Error(stage1, "error"))
+    lifted.onError() shouldBe State.Error(stage2, "error")
+
+    val panic = State.Panic(new Exception)
+    (onDone.onPanic _).expects().returns(panic)
+    lifted.onPanic() shouldBe panic
+
     (onDone.dispose _).expects()
-    mappedOnDone.dispose()
+    lifted.dispose()
   }
 
   "complete" should "return completed states" in {
@@ -162,12 +187,12 @@ class OnDoneTest extends AnyFlatSpec with Matchers with Inside with MockFactory 
   it should "return a correct state with onPanic" in {
     val onDone1 = mock[OnDone.Safe[Unit, Int, String]]
     val onDone2 = mock[OnDone.Safe[Int, String, String]]
-    val expectedException = new Exception("panic")
+    val expectedCause = new Exception("panic")
     inSequence {
-      (onDone2.onPanic _).expects().returns(State.Panic(expectedException))
+      (onDone2.onPanic _).expects().returns(State.Panic(expectedCause))
       (onDone1.onPanic _).expects().returns(State.Error(mock[Stage[Unit, Int, String]], "error"))
     }
-    (onDone1 <~ onDone2).onPanic() shouldBe State.Panic(expectedException)
+    (onDone1 <~ onDone2).onPanic() shouldBe State.Panic(expectedCause)
   }
 
   it should "correctly compose dispose" in {

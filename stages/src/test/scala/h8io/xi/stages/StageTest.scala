@@ -7,11 +7,11 @@ import org.scalatest.matchers.should.Matchers
 
 class StageTest extends AnyFlatSpec with Matchers with Inside with MockFactory {
   "Safe stage `apply` method" should "not throw an error if it was created from common stage" in {
-    val expectedException = new Exception("stage failure")
-    val stage: Stage[Unit, Nothing, Nothing] = _ => throw expectedException
-    the[Exception] thrownBy stage(()) shouldBe expectedException
+    val expectedCause = new Exception("stage failure")
+    val stage: Stage[Unit, Nothing, Nothing] = _ => throw expectedCause
+    the[Exception] thrownBy stage(()) shouldBe expectedCause
     inside(stage.safe(())) { case Yield.None(onDone) =>
-      val expectedState = State.Panic(expectedException)
+      val expectedState = State.Panic(expectedCause)
       onDone.onSuccess() shouldBe expectedState
       onDone.onComplete() shouldBe expectedState
       onDone.onError() shouldBe expectedState
@@ -19,10 +19,10 @@ class StageTest extends AnyFlatSpec with Matchers with Inside with MockFactory {
   }
 
   it should "throw an exception if it is unsafe even with safe method" in {
-    val expectedException = new Exception("safe stage failure")
-    val stage: Stage.Safe[Unit, Nothing, Nothing] = _ => throw expectedException
-    the[Exception] thrownBy stage(()) shouldBe expectedException
-    the[Exception] thrownBy stage.safe(()) shouldBe expectedException
+    val expectedCause = new Exception("safe stage failure")
+    val stage: Stage.Safe[Unit, Nothing, Nothing] = _ => throw expectedCause
+    the[Exception] thrownBy stage(()) shouldBe expectedCause
+    the[Exception] thrownBy stage.safe(()) shouldBe expectedCause
   }
 
   "Composed stage `apply` method" should "should not call the second stage if the first one returns Yield.None" in {

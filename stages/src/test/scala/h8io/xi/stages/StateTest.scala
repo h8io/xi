@@ -68,7 +68,7 @@ class StateTest extends AnyFlatSpec with Matchers with Inside with MockFactory {
   }
 
   it should "call onSuccess in composition with OnDone" in {
-    val onDone = mock[OnDone[String, Int, Nothing]]
+    val onDone = mock[OnDone.Safe[String, Int, Nothing]]
     val stage1 = mock[Stage[String, Int, Nothing]]
     val stage2 = mock[Stage[Int, Boolean, Nothing]]
     (onDone.onComplete _).expects().returns(State.Complete(stage1))
@@ -124,7 +124,7 @@ class StateTest extends AnyFlatSpec with Matchers with Inside with MockFactory {
   }
 
   it should "call onComplete in composition with OnDone" in {
-    val onDone = mock[OnDone[Boolean, String, Nothing]]
+    val onDone = mock[OnDone.Safe[Boolean, String, Nothing]]
     val stage1 = mock[Stage[Boolean, String, Nothing]]
     val stage2 = mock[Stage[String, Int, Nothing]]
     (onDone.onComplete _).expects().returns(State.Complete(stage1))
@@ -183,7 +183,7 @@ class StateTest extends AnyFlatSpec with Matchers with Inside with MockFactory {
   }
 
   it should "call onError in composition with OnDone" in {
-    val onDone = mock[OnDone[Boolean, String, String]]
+    val onDone = mock[OnDone.Safe[Boolean, String, String]]
     val stage1 = mock[Stage[Boolean, String, String]]
     val stage2 = mock[Stage[String, Int, String]]
     (onDone.onError _).expects().returns(State.Error(stage1, "Error ~> onDone (1)"))
@@ -209,7 +209,7 @@ class StateTest extends AnyFlatSpec with Matchers with Inside with MockFactory {
 
   it should "remain a Panic if it is composed with a Error" in {
     val panic = State.Panic(new Exception)
-    panic <~ State.Error(mock[Stage[Double, Long, String]], "Panic <~ Error") shouldBe State.Panic(panic.exceptions)
+    panic <~ State.Error(mock[Stage[Double, Long, String]], "Panic <~ Error") shouldBe State.Panic(panic.causes)
   }
 
   it should "remain a Panic if it is composed with a Panic" in {
@@ -222,16 +222,16 @@ class StateTest extends AnyFlatSpec with Matchers with Inside with MockFactory {
 
   it should "call onPanic in composition with OnDone" in {
     val failure = State.Panic(new Exception)
-    val onDone = mock[OnDone[Boolean, String, Nothing]]
+    val onDone = mock[OnDone.Safe[Boolean, String, Nothing]]
     (onDone.onPanic _).expects().returns(State.Complete(mock[Stage[Boolean, String, Nothing]]))
     failure ~> onDone shouldBe failure
   }
 
-  "lift" should "update the stage for the state Success" in { test(State.Success(_), _.map(_)) }
+  "lift" should "update the stage for the state Success" in test(State.Success(_), _.map(_))
 
-  it should "update the stage for the state Complete" in { test(State.Complete(_), _.map(_)) }
+  it should "update the stage for the state Complete" in test(State.Complete(_), _.map(_))
 
-  it should "update the stage for the state Error" in { test(State.Error(_, "error"), _.map(_)) }
+  it should "update the stage for the state Error" in test(State.Error(_, "error"), _.map(_))
 
   it should "update the stage for the state Panic" in {
     val exception = new Exception
@@ -246,9 +246,9 @@ class StateTest extends AnyFlatSpec with Matchers with Inside with MockFactory {
     State.Success(stage1).complete(f) shouldBe State.Complete(stage2)
   }
 
-  it should "update the stage for the state Complete" in { test(State.Complete(_), _.complete(_)) }
+  it should "update the stage for the state Complete" in test(State.Complete(_), _.complete(_))
 
-  it should "update the stage for the state Error" in { test(State.Error(_, "error"), _.complete(_)) }
+  it should "update the stage for the state Error" in test(State.Error(_, "error"), _.complete(_))
 
   it should "update the stage for the state Panic" in {
     val exception = new Exception

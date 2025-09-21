@@ -2,8 +2,8 @@ package h8io.xi.stages.std
 
 import h8io.xi.stages.{OnDone, Stage, State, Yield}
 
-object Countdown {
-  private[stages] final case class Impl[I, O, E](i: Long, n: Long, stage: Stage[I, O, E]) extends Stage[I, O, E] {
+object LocalCountdown {
+  private[stages] final case class Impl[I, O, E](i: Long, n: Long, stage: Stage[I, O, E]) extends Stage.Safe[I, O, E] {
     def apply(in: I): Yield[I, O, E] =
       if (i == 1) stage.safe(in).complete(reset)
       else if (i > 1) stage.safe(in).map { onDone =>
@@ -16,7 +16,7 @@ object Countdown {
           override def dispose(): Unit = onDone.dispose()
         }
       }
-      else Yield.None(State.Complete(Impl(n, n, stage)).onDone(() => {}))
+      else Yield.None(State.Complete(Impl(n, n, stage)).onDone)
 
     @inline private def reset(stage: Stage[I, O, E]): Impl[I, O, E] = Impl(n, n, stage)
   }

@@ -45,21 +45,17 @@ class YieldTest extends AnyFlatSpec with Matchers with Inside with MockFactory {
     }
   }
 
-  "Composed Yield.None" should "produce a correct state on success" in {
+  "Composed Yield.None" should "produce a correct state on success" in
     testCombined(mockOnDone => (mockOnDone.onSuccess _).expects(), _.onSuccess())
-  }
 
-  it should "produce a correct state on complete" in {
+  it should "produce a correct state on complete" in
     testCombined(mockOnDone => (mockOnDone.onComplete _).expects(), _.onComplete())
-  }
 
-  it should "produce a correct state on error" in {
+  it should "produce a correct state on error" in
     testCombined(mockOnDone => (mockOnDone.onError _).expects(), _.onError())
-  }
 
-  it should "produce a correct state on panic" in {
+  it should "produce a correct state on panic" in
     testCombined(mockOnDone => (mockOnDone.onPanic _).expects(), _.onPanic())
-  }
 
   private def testCombined(
       mockCall: OnDone[Unit, String, Nothing] => CallHandler0[State[Unit, String, Nothing]],
@@ -90,6 +86,46 @@ class YieldTest extends AnyFlatSpec with Matchers with Inside with MockFactory {
     val newOnDone = mock[OnDone[Int, Long, String]]
     Yield.None[Int, Long, String](mock[OnDone[Int, Long, String]]).map(_ => newOnDone) shouldBe
       Yield.None[Int, Long, String](newOnDone)
+  }
+
+  "Yield.Some.lift" should "return Yield.Some with lifted onDone" in {
+    val onDone = mock[OnDone[Long, Int, String]]
+    val f = mock[Stage[Long, Int, String] => Stage[Double, Int, String]]
+    inside(Yield.Some(42, onDone).lift(f)) { case Yield.Some(42, lifted) => liftedOnDoneTest(onDone, lifted, f) }
+  }
+
+  "Yield.None.lift" should "return Yield.None with lifted onDone" in {
+    val onDone = mock[OnDone[Long, Int, String]]
+    val f = mock[Stage[Long, Int, String] => Stage[Double, Int, String]]
+    inside(Yield.None(onDone).lift(f)) { case Yield.None(lifted) => liftedOnDoneTest(onDone, lifted, f) }
+  }
+
+  private def liftedOnDoneTest(
+      onDone: OnDone[Long, Int, String],
+      lifted: OnDone[Double, Int, String],
+      f: Stage[Long, Int, String] => Stage[Double, Int, String]
+  ): Unit = {
+    val stage1 = mock[Stage[Long, Int, String]]
+    val stage2 = mock[Stage[Double, Int, String]]
+
+    (f.apply _).expects(stage1).returns(stage2)
+    (onDone.onSuccess _).expects().returns(State.Success(stage1))
+    lifted.onSuccess() shouldBe State.Success(stage2)
+
+    (f.apply _).expects(stage1).returns(stage2)
+    (onDone.onComplete _).expects().returns(State.Complete(stage1))
+    lifted.onComplete() shouldBe State.Complete(stage2)
+
+    (f.apply _).expects(stage1).returns(stage2)
+    (onDone.onError _).expects().returns(State.Error(stage1, "error"))
+    lifted.onError() shouldBe State.Error(stage2, "error")
+
+    val panic = State.Panic(new Exception)
+    (onDone.onPanic _).expects().returns(panic)
+    lifted.onPanic() shouldBe panic
+
+    (onDone.dispose _).expects()
+    lifted.dispose()
   }
 
   "Yield.Some.complete" should "return Yield.Some with completed onDone" in {
@@ -146,10 +182,10 @@ class YieldTest extends AnyFlatSpec with Matchers with Inside with MockFactory {
 
   it should "return an Outcome.Some object if onDone throws an exception" in {
     val onDone = mock[OnDone[String, Int, Nothing]]
-    val expectedException = new Exception
-    (onDone.onSuccess _).expects().throws(expectedException)
+    val expectedCause = new Exception
+    (onDone.onSuccess _).expects().throws(expectedCause)
     inside(Yield.Some(42, onDone).outcome) { case Outcome.Some(42, state, dispose) =>
-      state shouldBe State.Panic(expectedException)
+      state shouldBe State.Panic(expectedCause)
       (onDone.dispose _).expects()
       dispose()
     }
@@ -167,10 +203,10 @@ class YieldTest extends AnyFlatSpec with Matchers with Inside with MockFactory {
 
   it should "return an Outcome.None object if onDone throws an exception" in {
     val onDone = mock[OnDone[String, Int, Nothing]]
-    val expectedException = new Exception
-    (onDone.onSuccess _).expects().throws(expectedException)
+    val expectedCause = new Exception
+    (onDone.onSuccess _).expects().throws(expectedCause)
     inside(Yield.None(onDone).outcome) { case Outcome.None(state, dispose) =>
-      state shouldBe State.Panic(expectedException)
+      state shouldBe State.Panic(expectedCause)
       (onDone.dispose _).expects()
       dispose()
     }

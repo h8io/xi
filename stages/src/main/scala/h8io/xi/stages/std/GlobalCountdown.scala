@@ -1,0 +1,7 @@
+package h8io.xi.stages.std
+
+import h8io.xi.stages.{Stage, Yield}
+
+final case class GlobalCountdown[-I, +O, +E](i: Long, stage: Stage[I, O, E]) extends Stage.Safe[I, O, E] {
+  def apply(in: I): Yield[I, O, E] = if (i > 0) stage.safe(in).lift(GlobalCountdown(i - 1, _)) else DeadEnd.Yield
+}
