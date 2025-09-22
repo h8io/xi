@@ -22,8 +22,8 @@ object Yield {
       case None(_onDone) => None(onDone.safe <~ _onDone.safe)
     }
 
-    @inline
-    def map[_I, _O >: O, _E >: E](f: OnDone[I, O, E] => OnDone[_I, _O, _E]): Some[_I, _O, _E] = Some(out, f(onDone))
+    @inline def map[_I, _O >: O, _E >: E](f: OnDone[I, O, E] => OnDone[_I, _O, _E]): Some[_I, _O, _E] =
+      Some(out, f(onDone))
 
     private[stages] def outcome: Outcome.Some[I, O, E] = {
       val safeOnDone = onDone.safe
@@ -35,8 +35,7 @@ object Yield {
     private[stages] def ~>[_O, _E >: E](stage: Stage[O, _O, _E]): Yield.None[I, _O, _E] =
       Yield.None(onDone map (_ <~ State.Success(stage)))
 
-    @inline
-    def map[_I, _O >: O, _E >: E](f: OnDone[I, O, E] => OnDone[_I, _O, _E]): None[_I, _O, _E] = None(f(onDone))
+    @inline def map[_I, _O >: O, _E >: E](f: OnDone[I, O, E] => OnDone[_I, _O, _E]): None[_I, _O, _E] = None(f(onDone))
 
     private[stages] def outcome: Outcome.None[I, O, E] = {
       val safeOnDone = onDone.safe
