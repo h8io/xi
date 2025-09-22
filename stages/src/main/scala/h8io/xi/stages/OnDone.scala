@@ -58,7 +58,7 @@ object OnDone {
   trait Safe[-I, +O, +E] extends OnDone[I, O, E] {
     self =>
 
-    final private[stages] def <~[_O, _E >: E](that: Safe[O, _O, _E]): Safe[I, _O, _E] =
+    private[stages] final def <~[_O, _E >: E](that: Safe[O, _O, _E]): Safe[I, _O, _E] =
       new Safe[I, _O, _E] {
         def onSuccess(): State[I, _O, _E] = that.onSuccess() ~> self
         def onComplete(): State[I, _O, _E] = that.onComplete() ~> self
@@ -71,7 +71,7 @@ object OnDone {
         }
       }
 
-    final override private[stages] def safe: Safe[I, O, E] = this
+    override private[stages] final def safe: Safe[I, O, E] = this
 
     final def safeMap[_I, _O, _E](f: State[I, O, E] => State[_I, _O, _E]): OnDone.Safe[_I, _O, _E] =
       new OnDone.Safe[_I, _O, _E] {
