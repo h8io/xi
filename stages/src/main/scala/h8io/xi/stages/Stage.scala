@@ -13,6 +13,6 @@ trait Stage[-I, +O, +E] extends (I => Yield[I, O, E]) {
 
 object Stage {
   trait Safe[-I, +O, +E] extends Stage[I, O, E] {
-    final override private[stages] def safe(in: I): Yield[I, O, E] = this(in)
+    override private[stages] final def safe(in: I): Yield[I, O, E] = this(in)
   }
 }
