@@ -5,11 +5,11 @@ import h8io.xi.stages.{Stage, State, Yield}
 import scala.concurrent.duration.FiniteDuration
 
 object LocalSoftClockdown {
-  private case class Head[-I, +O, +E](duration: Long, stage: Stage[I, O, E]) extends Stage.Safe[I, O, E] {
+  private final case class Head[-I, +O, +E](duration: Long, stage: Stage[I, O, E]) extends Stage.Safe[I, O, E] {
     def apply(in: I): Yield[I, O, E] = stage.safe(in).lift(Tail(System.nanoTime(), this, _))
   }
 
-  private case class Tail[-I, +O, +E](ts: Long, head: Head[I, O, E], stage: Stage[I, O, E])
+  private final case class Tail[-I, +O, +E](ts: Long, head: Head[I, O, E], stage: Stage[I, O, E])
       extends Stage.Safe[I, O, E] {
     override def apply(in: I): Yield[I, O, E] =
       if (System.nanoTime() - ts < head.duration) stage.safe(in).lift(Tail(ts, head, _))
