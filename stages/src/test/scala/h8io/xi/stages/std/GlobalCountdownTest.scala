@@ -49,7 +49,10 @@ class GlobalCountdownTest extends AnyFlatSpec with Matchers with Inside with Moc
       inside(onDone.onError()) { case State.Error(stage, errors) =>
         stage shouldBe a[DeadEnd]
         errors shouldBe NonEmptyChain.one("error")
-        stage("dead end") shouldBe DeadEnd.Yield
+        inside(stage("dead end")) { case Yield.None(onDone) =>
+          (onDone3.dispose _).expects()
+          onDone.dispose()
+        }
       }
     }
   }
