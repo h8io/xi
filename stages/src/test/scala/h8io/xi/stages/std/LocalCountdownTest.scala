@@ -146,4 +146,9 @@ class LocalCountdownTest extends AnyFlatSpec with Matchers with Inside with Mock
       cdOnDone.dispose()
     }
   }
+
+  it should "become DeadEnd if n is not positive" in {
+    LocalCountdown(0, mock[Stage[Unit, Unit, Exception]]) shouldBe DeadEnd
+    LocalCountdown(-13, mock[Stage[Unit, Unit, Exception]]) shouldBe DeadEnd
+  }
 }
