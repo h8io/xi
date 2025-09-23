@@ -25,7 +25,7 @@ class GlobalCountdownTest extends AnyFlatSpec with Matchers with Inside with Moc
     }
 
     val (cdStage2, onDone2) = inside(cdOnDone1.onSuccess()) { case State.Success(stage) =>
-      stage shouldBe a[GlobalCountdown[?, ?, ?]]
+      stage shouldBe a[GlobalCountdown.Impl[?, ?, ?]]
       val onDone = mock[OnDone[String, Int, String]]("OnDone 2")
       (stage2.apply _).expects("query").returns(Yield.Some(17, onDone))
       (stage, onDone)
@@ -38,7 +38,7 @@ class GlobalCountdownTest extends AnyFlatSpec with Matchers with Inside with Moc
     }
 
     val (cdStage3, onDone3) = inside(cdOnDone2.onComplete()) { case State.Complete(stage) =>
-      stage shouldBe a[GlobalCountdown[?, ?, ?]]
+      stage shouldBe a[GlobalCountdown.Impl[?, ?, ?]]
       val onDone = mock[OnDone[String, Int, String]]("OnDone 3")
       (stage3.apply _).expects("language").returns(Yield.Some(3, onDone))
       (stage, onDone)
@@ -47,7 +47,7 @@ class GlobalCountdownTest extends AnyFlatSpec with Matchers with Inside with Moc
     inside(cdStage3("language")) { case Yield.Some(3, onDone) =>
       (onDone3.onError _).expects().returns(State.Error(mock[Stage[String, Int, String]]("Stage 4"), "error"))
       inside(onDone.onError()) { case State.Error(stage, errors) =>
-        stage shouldBe a[GlobalCountdown[?, ?, ?]]
+        stage shouldBe a[DeadEnd]
         errors shouldBe NonEmptyChain.one("error")
         stage("dead end") shouldBe DeadEnd.Yield
       }
