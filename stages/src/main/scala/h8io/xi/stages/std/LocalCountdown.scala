@@ -21,5 +21,5 @@ object LocalCountdown {
     @inline private def reset(stage: Stage[I, O, E]): Impl[I, O, E] = Impl(n, n, stage)
   }
 
-  def apply[I, O, E](n: Long, stage: Stage[I, O, E]): Stage[I, O, E] = Impl(n, n, stage)
+  def apply[I, O, E](n: Long, stage: Stage[I, O, E]): Stage.Safe[I, O, E] = if (n > 0) Impl(n, n, stage) else DeadEnd
 }
