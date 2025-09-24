@@ -174,7 +174,7 @@ class YieldTest extends AnyFlatSpec with Matchers with Inside with MockFactory {
     val onDone = mock[OnDone[String, Int, Nothing]]
     val state = State.Success(mock[Stage[String, Int, Nothing]])
     (onDone.onSuccess _).expects().returns(state)
-    inside(Yield.Some(42, onDone).outcome) { case Outcome.Some(42, `state`, dispose) =>
+    inside(Yield.Some(42, onDone).outcome()) { case Outcome.Some(42, `state`, dispose) =>
       (onDone.dispose _).expects()
       dispose()
     }
@@ -184,7 +184,7 @@ class YieldTest extends AnyFlatSpec with Matchers with Inside with MockFactory {
     val onDone = mock[OnDone[String, Int, Nothing]]
     val expectedCause = new Exception
     (onDone.onSuccess _).expects().throws(expectedCause)
-    inside(Yield.Some(42, onDone).outcome) { case Outcome.Some(42, state, dispose) =>
+    inside(Yield.Some(42, onDone).outcome()) { case Outcome.Some(42, state, dispose) =>
       state shouldBe State.Panic(expectedCause)
       (onDone.dispose _).expects()
       dispose()
@@ -195,7 +195,7 @@ class YieldTest extends AnyFlatSpec with Matchers with Inside with MockFactory {
     val onDone = mock[OnDone[String, Int, Nothing]]
     val state = State.Success(mock[Stage[String, Int, Nothing]])
     (onDone.onSuccess _).expects().returns(state)
-    inside(Yield.None(onDone).outcome) { case Outcome.None(`state`, dispose) =>
+    inside(Yield.None(onDone).outcome()) { case Outcome.None(`state`, dispose) =>
       (onDone.dispose _).expects()
       dispose()
     }
@@ -205,7 +205,7 @@ class YieldTest extends AnyFlatSpec with Matchers with Inside with MockFactory {
     val onDone = mock[OnDone[String, Int, Nothing]]
     val expectedCause = new Exception
     (onDone.onSuccess _).expects().throws(expectedCause)
-    inside(Yield.None(onDone).outcome) { case Outcome.None(state, dispose) =>
+    inside(Yield.None(onDone).outcome()) { case Outcome.None(state, dispose) =>
       state shouldBe State.Panic(expectedCause)
       (onDone.dispose _).expects()
       dispose()

@@ -12,7 +12,7 @@ sealed trait Yield[-I, +O, +E] {
   final def complete[_I, _O >: O, _E >: E](f: Stage[I, O, E] => Stage[_I, _O, _E]): Yield[_I, _O, _E] =
     map(_.complete(f))
 
-  private[stages] def outcome: Outcome[I, O, E]
+  private[stages] def outcome(): Outcome[I, O, E]
 }
 
 object Yield {
@@ -26,7 +26,7 @@ object Yield {
     @inline def map[_I, _O >: O, _E >: E](f: OnDone[I, O, E] => OnDone[_I, _O, _E]): Some[_I, _O, _E] =
       Some(out, f(onDone))
 
-    private[stages] def outcome: Outcome.Some[I, O, E] = {
+    private[stages] def outcome(): Outcome.Some[I, O, E] = {
       val safeOnDone = onDone.safe
       Outcome.Some(out, safeOnDone.onSuccess(), safeOnDone.dispose _)
     }
@@ -38,7 +38,7 @@ object Yield {
 
     @inline def map[_I, _O >: O, _E >: E](f: OnDone[I, O, E] => OnDone[_I, _O, _E]): None[_I, _O, _E] = None(f(onDone))
 
-    private[stages] def outcome: Outcome.None[I, O, E] = {
+    private[stages] def outcome(): Outcome.None[I, O, E] = {
       val safeOnDone = onDone.safe
       Outcome.None(safeOnDone.safe.onSuccess(), safeOnDone.dispose _)
     }
