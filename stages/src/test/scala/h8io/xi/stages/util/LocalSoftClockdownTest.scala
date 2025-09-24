@@ -42,7 +42,7 @@ class LocalSoftClockdownTest extends AnyFlatSpec with Matchers with Inside with 
       val ts = Random.nextLong()
       (now.apply _).expects().returns(ts)
       cdOnDone.onSuccess() should matchPattern {
-        case State.Success(LocalSoftClockdown.Tail(`ts`, `head`, `nextStage`)) =>
+        case State.Success(LocalSoftClockdown.Tail(`ts`, `now`, 1, `nextStage`)) =>
       }
     }
   }

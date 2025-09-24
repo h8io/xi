@@ -7,14 +7,14 @@ import scala.concurrent.duration.FiniteDuration
 object LocalSoftClockdown {
   private[stages] final case class Head[-I, +O, +E](now: () => Long, duration: Long, stage: Stage[I, O, E])
       extends Stage.Safe[I, O, E] {
-    def apply(in: I): Yield[I, O, E] = stage.safe(in).lift(Tail(now(), this, _))
+    def apply(in: I): Yield[I, O, E] = stage.safe(in).lift(Tail(now(), now, duration, _))
   }
 
-  private[stages] final case class Tail[-I, +O, +E](ts: Long, head: Head[I, O, E], stage: Stage[I, O, E])
+  private[stages] final case class Tail[-I, +O, +E](ts: Long, now: () => Long, duration: Long, stage: Stage[I, O, E])
       extends Stage.Safe[I, O, E] {
     override def apply(in: I): Yield[I, O, E] =
-      if (head.now() - ts < head.duration) stage.safe(in).lift(Tail(ts, head, _))
-      else Yield.None(State.Complete(head).onDone)
+      if (now() - ts < duration) stage.safe(in).lift(Tail(ts, now, duration, _))
+      else Yield.None(State.Complete(Head(now, duration, stage)).onDone)
   }
 
   def apply[I, O, E](duration: FiniteDuration, stage: Stage[I, O, E]): Stage.Safe[I, O, E] =
