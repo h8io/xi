@@ -1,4 +1,4 @@
-package h8io.xi.stages.std
+package h8io.xi.stages.util
 
 import h8io.xi.stages.{State, Yield}
 import org.scalatest.Inside
