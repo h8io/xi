@@ -6,6 +6,8 @@ import org.scalatest.Inside
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
+import scala.concurrent.duration.Duration
+
 class OnDoneTest extends AnyFlatSpec with Matchers with Inside with MockFactory {
   "Safe OnDone" should "not throw an exception with onSuccess" in {
     val onDone = mock[OnDone[Unit, Unit, Nothing]]
@@ -50,6 +52,15 @@ class OnDoneTest extends AnyFlatSpec with Matchers with Inside with MockFactory 
   it should "return itself in safe method" in {
     val onDone = mock[OnDone.Safe[Unit, Unit, Nothing]]
     onDone.safe shouldBe onDone
+  }
+
+  it should "do nothing in the default dispose" in {
+    noException should be thrownBy new OnDone[Boolean, Duration, Long] {
+      override def onSuccess(): State[Boolean, Duration, Long] = ???
+      override def onComplete(): State[Boolean, Duration, Long] = ???
+      override def onError(): State[Boolean, Duration, Long] = ???
+      override def onPanic(): State[Boolean, Duration, Long] = ???
+    }.dispose()
   }
 
   "map" should "return mapped states" in {
