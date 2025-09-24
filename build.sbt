@@ -1,13 +1,29 @@
 import Dependencies.*
-
-val scala212 = "2.12.20"
-val scala213 = "2.13.16"
-
-ThisBuild / scalaVersion := scala213
-ThisBuild / crossScalaVersions := List(scala212, scala213)
+import sbt.url
 
 ThisBuild / organization := "io.h8"
-ThisBuild / version := "0.1.0"
+ThisBuild / organizationName := "H8IO"
+ThisBuild / organizationHomepage := Some(url("https://github.com/h8io/"))
+ThisBuild / homepage := Some(url("https://github.com/h8io/xi"))
+
+ThisBuild / licenses := List("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0.txt"))
+
+ThisBuild / versionScheme := Some("semver-spec")
+
+ThisBuild / developers := List(
+  Developer(
+    id = "eshu",
+    name = "Pavel",
+    email = "tjano.xibalba@gmail.com",
+    url = url("https://github.com/eshu/")))
+
+ThisBuild / scmInfo := Some(
+  ScmInfo(
+    url("https://github.com/h8io/sbt-scoverage-summary"),
+    "scm:git@github.com:h8io/sbt-scoverage-summary.git"))
+
+ThisBuild / scalaVersion := "2.13.16"
+ThisBuild / crossScalaVersions += "2.12.20"
 
 ThisBuild / scalacOptions ++=
   Seq("-Xsource:3", "--deprecation", "--feature", "--unchecked", "-Xlint:_", "-Xfatal-warnings")
@@ -17,6 +33,8 @@ ThisBuild / scalacOptions ++=
     case Some((2, 13)) => Seq("--explain-types", "--language:_", "-Wunused:_", "-Wdead-code")
     case _ => Seq("-Ywarn-unused", "-Ywarn-dead-code", "-Ywarn-unused:-nowarn")
   })
+
+ThisBuild / javacOptions ++= Seq("-target", "8")
 
 ThisBuild / libraryDependencies ++= Cats ++ TestBundle
 
