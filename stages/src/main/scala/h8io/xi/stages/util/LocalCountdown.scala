@@ -11,9 +11,9 @@ object LocalCountdown {
       else stage.safe(in).map { onDone =>
         new OnDone[I, O, E] {
           def onSuccess(): State[I, O, E] = onDone.onSuccess().map(Impl(i - 1, n, _))
-          def onComplete(): State[I, O, E] = onDone.onComplete().map(Impl(n, n, _))
-          def onError(): State[I, O, E] = onDone.onError().map(Impl(n, n, _))
-          def onPanic(): State[I, O, E] = onDone.onPanic().map(Impl(n, n, _))
+          def onComplete(): State[I, O, E] = onDone.onComplete().complete(Impl(n, n, _))
+          def onError(): State[I, O, E] = onDone.onError().complete(Impl(n, n, _))
+          def onPanic(): State[I, O, E] = onDone.onPanic().complete(Impl(n, n, _))
 
           override def dispose(): Unit = onDone.dispose()
         }
