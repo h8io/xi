@@ -73,4 +73,8 @@ object OnDone {
 
     override private[stages] final def safe: Safe[I, O, E] = this
   }
+
+  type Endo[T, +E] = OnDone[T, T, E]
+
+  type SafeEndo[T, +E] = OnDone.Safe[T, T, E]
 }

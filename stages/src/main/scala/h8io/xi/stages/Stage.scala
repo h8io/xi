@@ -15,4 +15,8 @@ object Stage {
   trait Safe[-I, +O, +E] extends Stage[I, O, E] {
     override private[stages] final def safe(in: I): Yield[I, O, E] = this(in)
   }
+
+  type Endo[T, +E] = Stage[T, T, E]
+
+  type SafeEndo[T, +E] = Stage.Safe[T, T, E]
 }

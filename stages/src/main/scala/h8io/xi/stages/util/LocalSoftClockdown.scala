@@ -1,20 +1,48 @@
 package h8io.xi.stages.util
 
-import h8io.xi.stages.{Stage, State, Yield}
+import h8io.xi.stages.{OnDone, Stage, State, Yield}
 
 import scala.concurrent.duration.FiniteDuration
 
 object LocalSoftClockdown {
-  private[stages] final case class Head[-I, +O, +E](now: () => Long, duration: Long, stage: Stage[I, O, E])
+  private[util] final case class Head[-I, +O, +E](now: () => Long, duration: Long, stage: Stage[I, O, E])
       extends Stage.Safe[I, O, E] {
-    def apply(in: I): Yield[I, O, E] = stage.safe(in).lift(Tail(now(), now, duration, _))
+    def apply(in: I): Yield[I, O, E] = {
+      val `yield` = stage.safe(in)
+      `yield`.lift(Tail(now(), now, duration, `yield`.onDone.dispose _, _))
+    }
   }
 
-  private[stages] final case class Tail[-I, +O, +E](ts: Long, now: () => Long, duration: Long, stage: Stage[I, O, E])
-      extends Stage.Safe[I, O, E] {
+  private[util] final case class Tail[-I, +O, +E](
+      ts: Long,
+      now: () => Long,
+      duration: Long,
+      dispose: () => Unit,
+      stage: Stage[I, O, E]
+  ) extends Stage.Safe[I, O, E] {
+    self =>
+
     override def apply(in: I): Yield[I, O, E] =
-      if (now() - ts < duration) stage.safe(in).lift(Tail(ts, now, duration, _))
-      else Yield.None(State.Complete(Head(now, duration, stage)).onDone)
+      if (overdue()) Yield.None(State.Complete(Head(now, duration, stage)).onDone(dispose))
+      else stage.safe(in) map { onDone =>
+        new OnDone[I, O, E] {
+          def onSuccess(): State[I, O, E] = {
+            val state = onDone.onSuccess()
+            if (overdue()) state.complete(Head(now, duration, _))
+            else state.map(Tail(ts, now, duration, onDone.dispose _, _))
+          }
+
+          def onComplete(): State[I, O, E] = onDone.onComplete().complete(Head(now, duration, _))
+
+          def onError(): State[I, O, E] = onDone.onError().complete(Head(now, duration, _))
+
+          def onPanic(): State[I, O, E] = onDone.onPanic().complete(Head(now, duration, _))
+
+          override def dispose(): Unit = onDone.dispose()
+        }
+      }
+
+    @inline private def overdue(): Boolean = now() - ts >= duration
   }
 
   def apply[I, O, E](duration: FiniteDuration, stage: Stage[I, O, E]): Stage.Safe[I, O, E] =

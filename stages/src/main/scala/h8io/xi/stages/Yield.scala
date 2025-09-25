@@ -43,4 +43,6 @@ object Yield {
       Outcome.None(safeOnDone.safe.onSuccess(), safeOnDone.dispose _)
     }
   }
+
+  type Endo[T, +E] = Yield[T, T, E]
 }
