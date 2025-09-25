@@ -1,7 +1,7 @@
 package h8io.xi.stages.util
 
 import cats.data.NonEmptyChain
-import h8io.xi.stages.{OnDone, Stage, State, Yield}
+import h8io.xi.stages.{Condition, OnDone, Stage, State, Yield}
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.Inside
 import org.scalatest.flatspec.AnyFlatSpec
@@ -32,7 +32,7 @@ class LoopTest extends AnyFlatSpec with Matchers with Inside with MockFactory {
       (stage3.apply _).expects(6).returns(Yield.None(onDone3))
       (onDone3.onSuccess _).expects().returns(state3)
     }
-    inside(Loop(stage1)(1)) { case Yield.None(onDone) =>
+    inside(Loop(Condition.True, stage1)(1)) { case Yield.None(onDone) =>
       inside(onDone.onSuccess()) { case State.Success(stage) =>
         stage shouldBe a[Loop[?, ?]]
         inSequence {
@@ -76,7 +76,7 @@ class LoopTest extends AnyFlatSpec with Matchers with Inside with MockFactory {
       (stage3.apply _).expects(6).returns(Yield.Some(24, onDone3))
       (onDone3.onSuccess _).expects().returns(state3)
     }
-    inside(Loop(stage1)(1)) { case Yield.Some(24, onDone) =>
+    inside(Loop(Condition.True, stage1)(1)) { case Yield.Some(24, onDone) =>
       inside(onDone.onSuccess()) { case State.Success(stage) =>
         stage shouldBe a[Loop[?, ?]]
         inSequence {
@@ -120,7 +120,7 @@ class LoopTest extends AnyFlatSpec with Matchers with Inside with MockFactory {
       (stage3.apply _).expects(2).returns(Yield.Some(3, onDone3))
       (onDone3.onSuccess _).expects().returns(state3)
     }
-    inside(Loop(stage1)(1)) { case Yield.Some(3, onDone) =>
+    inside(Loop(Condition.True, stage1)(1)) { case Yield.Some(3, onDone) =>
       inside(onDone.onSuccess()) { case State.Error(stage, errors) =>
         errors shouldBe NonEmptyChain("the first error")
         stage shouldBe a[Loop[?, ?]]
@@ -161,7 +161,7 @@ class LoopTest extends AnyFlatSpec with Matchers with Inside with MockFactory {
       (stage3.apply _).expects(3).returns(Yield.Some(4, onDone3))
       (onDone3.onSuccess _).expects().returns(state3)
     }
-    inside(Loop(stage1)(1)) { case Yield.Some(4, onDone) =>
+    inside(Loop(Condition.True, stage1)(1)) { case Yield.Some(4, onDone) =>
       inside(onDone.onSuccess()) { case State.Panic(causes) =>
         causes shouldBe NonEmptyChain(expectedCause)
         (onDone3.dispose _).expects()
