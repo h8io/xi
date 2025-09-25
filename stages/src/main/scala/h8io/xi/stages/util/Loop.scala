@@ -1,10 +1,10 @@
-package h8io.xi.stages.std
+package h8io.xi.stages.util
 
 import h8io.xi.stages.{Outcome, Stage, State, Yield}
 
 import scala.annotation.tailrec
 
-final case class Loop[T, +E](stage: Stage[T, T, E]) extends Stage.Safe[T, T, E] {
+final case class Loop[T, +E](stage: Stage.Endo[T, E]) extends Stage.SafeEndo[T, E] {
   def apply(in: T): Yield[T, T, E] = {
     @tailrec def loop(stage: Stage[T, T, E], in: T): Yield[T, T, E] = {
       val outcome = stage.safe(in).outcome()

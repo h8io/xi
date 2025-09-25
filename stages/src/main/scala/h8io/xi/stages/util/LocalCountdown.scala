@@ -1,10 +1,9 @@
-package h8io.xi.stages.std
+package h8io.xi.stages.util
 
 import h8io.xi.stages.{OnDone, Stage, State, Yield}
 
 object LocalCountdown {
-  private[stages] final case class Impl[-I, +O, +E](i: Long, n: Long, stage: Stage[I, O, E])
-      extends Stage.Safe[I, O, E] {
+  private[util] final case class Impl[-I, +O, +E](i: Long, n: Long, stage: Stage[I, O, E]) extends Stage.Safe[I, O, E] {
     def apply(in: I): Yield[I, O, E] =
       if (i == 1) stage.safe(in).complete(Impl(n, n, _))
       else if (i > 1) stage.safe(in).map { onDone =>

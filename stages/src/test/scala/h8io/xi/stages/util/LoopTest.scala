@@ -1,4 +1,4 @@
-package h8io.xi.stages.std
+package h8io.xi.stages.util
 
 import cats.data.NonEmptyChain
 import h8io.xi.stages.{OnDone, Stage, State, Yield}
