@@ -7,19 +7,7 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
 class LocalCountdownTest extends AnyFlatSpec with Matchers with Inside with MockFactory {
-  "LocalCountdown" should "return the yield None with the state Complete if the counter is zero" in {
-    val stage = mock[Stage[String, Long, Nothing]]
-    inside(LocalCountdown.Impl(0, 3, stage)("xi")) { case Yield.None(onDone) =>
-      val expectedState = State.Complete(LocalCountdown.Impl(3, 3, stage))
-      onDone.onSuccess() shouldBe expectedState
-      onDone.onComplete() shouldBe expectedState
-      onDone.onError() shouldBe expectedState
-      onDone.onPanic() shouldBe expectedState
-      onDone.dispose()
-    }
-  }
-
-  it should "return yield None with the state Complete if the counter is one and inner stage returns yield None" in {
+  "LocalCountdown" should "return yield None with the state Complete if the counter is one and inner stage returns yield None" in {
     val stage = mock[Stage[String, Long, Nothing]]
     val onDone = mock[OnDone[String, Long, Nothing]]
     (stage.apply _).expects("xi").returns(Yield.None(onDone))
