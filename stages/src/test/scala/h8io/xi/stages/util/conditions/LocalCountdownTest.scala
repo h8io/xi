@@ -21,7 +21,7 @@ class LocalCountdownTest extends AnyFlatSpec with Matchers with MockFactory {
 
   it should "return false on check if i == 0" in { LocalCountdown.Impl(0, 3).check shouldBe false }
 
-  it should "decrement i on advance" in { LocalCountdown.Impl(3, 17).advance shouldBe LocalCountdown.Impl(2, 17) }
+  it should "decrement i on advance" in { LocalCountdown.Impl(3, 17).advance() shouldBe LocalCountdown.Impl(2, 17) }
 
-  it should "set i to n on reset" in { LocalCountdown.Impl(5, 42).reset shouldBe LocalCountdown.Impl(42, 42) }
+  it should "set i to n on reset" in { LocalCountdown.Impl(5, 42).reset() shouldBe LocalCountdown.Impl(42, 42) }
 }

@@ -8,8 +8,8 @@ object LocalCountdown {
     assume(0 <= i && i <= n, s"i must be in [0, $n], got i=$i")
 
     def check: Boolean = i > 0
-    def advance: Condition = Impl(i - 1, n)
-    def reset: Condition = Impl(n, n)
+    def advance(): Condition = Impl(i - 1, n)
+    def reset: () => Condition = () => Impl(n, n)
   }
 
   def apply(n: Long): Condition = if (n > 0) Impl(n, n) else Condition.False

@@ -12,13 +12,13 @@ final case class Loop[T, +E](conditionThunk: () => Condition, stage: Stage.Endo[
         outcome.state match {
           case State.Success(updated) =>
             outcome match {
-              case Outcome.Some(out, _, _) => loop(condition.advance, updated, out, outcome.dispose)
-              case Outcome.None(_, _) => outcome.toYield(State.Success(Loop(() => condition.reset, updated)))
+              case Outcome.Some(out, _, _) => loop(condition.advance(), updated, out, outcome.dispose)
+              case Outcome.None(_, _) => outcome.toYield(State.Success(Loop(condition.reset, updated)))
             }
-          case State.Complete(updated) => outcome.toYield(State.Success(Loop(() => condition.reset, updated)))
-          case failure => outcome.toYield(failure.map(Loop(() => condition.reset, _)))
+          case State.Complete(updated) => outcome.toYield(State.Success(Loop(condition.reset, updated)))
+          case failure => outcome.toYield(failure.map(Loop(condition.reset, _)))
         }
-      } else Yield.Some(in, State.Success(Loop(() => condition.reset, stage)).onDone(dispose))
+      } else Yield.Some(in, State.Success(Loop(condition.reset, stage)).onDone(dispose))
 
     loop(conditionThunk(), stage, in, { () => })
   }

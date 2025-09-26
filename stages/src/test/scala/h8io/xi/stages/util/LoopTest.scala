@@ -16,42 +16,46 @@ class LoopTest extends AnyFlatSpec with Matchers with Inside with MockFactory {
     val stage2 = mock[Stage.Endo[Int, Nothing]]("Stage 2")
     val onDone1 = mock[OnDone[Int, Int, Nothing]]("OnDone 1")
     val state1 = State.Success(stage2)
+    val reset1 = mock[() => Condition]("Condition.reset 1")
 
     inSequence {
       (() => condition1.check).expects().returns(true)
       (stage1.apply _).expects(-1).returns(Yield.Some(1, onDone1))
       (onDone1.onSuccess _).expects().returns(state1)
-      (() => condition1.advance).expects().returns(condition2)
+      (condition1.advance _).expects().returns(condition2)
       (() => condition2.check).expects().returns(false)
-      (() => condition2.reset).expects().returns(condition3).repeat(4)
+      (() => condition2.reset).expects().returns(reset1)
     }
 
-    def checkState(state: State[Int, Int, Nothing], condition: Condition, stage: Stage[Int, Int, Nothing]): Assertion =
-      inside(state) { case State.Success(Loop(thunk, `stage`)) => thunk() shouldBe condition }
+    def checkState(
+        state: State[Int, Int, Nothing],
+        reset: () => Condition,
+        stage: Stage[Int, Int, Nothing]): Assertion =
+      state should matchPattern { case State.Success(Loop(`reset`, `stage`)) => }
 
     val loop = inside(Loop(() => condition1, stage1)(-1)) { case Yield.Some(1, onDone) =>
       val state = onDone.onSuccess()
-      checkState(state, condition3, stage2)
-      checkState(onDone.onComplete(), condition3, stage2)
-      checkState(onDone.onError(), condition3, stage2)
-      checkState(onDone.onPanic(), condition3, stage2)
+      checkState(state, reset1, stage2)
+      checkState(onDone.onComplete(), reset1, stage2)
+      checkState(onDone.onError(), reset1, stage2)
+      checkState(onDone.onPanic(), reset1, stage2)
       (onDone1.dispose _).expects()
       onDone.dispose()
       inside(state) { case State.Success(stage) => stage }
     }
 
-    val condition4 = mock[Condition]("Condition 4")
+    val reset2 = mock[() => Condition]("Condition.reset 2")
     inSequence {
-      (() => condition2.reset).expects().returns(condition3)
+      (reset1.apply _).expects().returns(condition3)
       (() => condition3.check).expects().returns(false)
-      (() => condition3.reset).expects().returns(condition4).repeat(4)
+      (() => condition3.reset).expects().returns(reset2)
     }
 
     inside(loop(13)) { case Yield.Some(13, onDone) =>
-      checkState(onDone.onSuccess(), condition4, stage2)
-      checkState(onDone.onComplete(), condition4, stage2)
-      checkState(onDone.onError(), condition4, stage2)
-      checkState(onDone.onPanic(), condition4, stage2)
+      checkState(onDone.onSuccess(), reset2, stage2)
+      checkState(onDone.onComplete(), reset2, stage2)
+      checkState(onDone.onError(), reset2, stage2)
+      checkState(onDone.onPanic(), reset2, stage2)
       onDone.dispose()
     }
   }
