@@ -3,64 +3,12 @@ package h8io.xi.stages.util
 import cats.data.NonEmptyChain
 import h8io.xi.stages.*
 import org.scalamock.scalatest.MockFactory
+import org.scalatest.Inside
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.{Assertion, Inside}
 
 class LoopTest extends AnyFlatSpec with Matchers with Inside with MockFactory {
-  "Loop" should "be executed while condition is true" in {
-    val condition1 = mock[Condition]("Condition 1")
-    val condition2 = mock[Condition]("Condition 2")
-    val condition3 = mock[Condition]("Condition 3")
-    val stage1 = mock[Stage.Endo[Int, Nothing]]("Stage 1")
-    val stage2 = mock[Stage.Endo[Int, Nothing]]("Stage 2")
-    val onDone1 = mock[OnDone.Endo[Int, Nothing]]("OnDone 1")
-    val state1 = State.Success(stage2)
-    val reset1 = mock[() => Condition]("Condition.reset 1")
-
-    inSequence {
-      (() => condition1.check).expects().returns(true)
-      (stage1.apply _).expects(-1).returns(Yield.Some(1, onDone1))
-      (onDone1.onSuccess _).expects().returns(state1)
-      (condition1.advance _).expects().returns(condition2)
-      (() => condition2.check).expects().returns(false)
-      (() => condition2.reset).expects().returns(reset1)
-    }
-
-    def checkState(
-        state: State[Int, Int, Nothing],
-        reset: () => Condition,
-        stage: Stage.Endo[Int, Nothing]): Assertion =
-      state should matchPattern { case State.Success(Loop(`reset`, `stage`)) => }
-
-    val loop = inside(Loop(() => condition1, stage1)(-1)) { case Yield.Some(1, onDone) =>
-      val state = onDone.onSuccess()
-      checkState(state, reset1, stage2)
-      checkState(onDone.onComplete(), reset1, stage2)
-      checkState(onDone.onError(), reset1, stage2)
-      checkState(onDone.onPanic(), reset1, stage2)
-      (onDone1.dispose _).expects()
-      onDone.dispose()
-      inside(state) { case State.Success(stage) => stage }
-    }
-
-    val reset2 = mock[() => Condition]("Condition.reset 2")
-    inSequence {
-      (reset1.apply _).expects().returns(condition3)
-      (() => condition3.check).expects().returns(false)
-      (() => condition3.reset).expects().returns(reset2)
-    }
-
-    inside(loop(13)) { case Yield.Some(13, onDone) =>
-      checkState(onDone.onSuccess(), reset2, stage2)
-      checkState(onDone.onComplete(), reset2, stage2)
-      checkState(onDone.onError(), reset2, stage2)
-      checkState(onDone.onPanic(), reset2, stage2)
-      onDone.dispose()
-    }
-  }
-
-  it should "be executed until the result is Yield.None" in {
+  "Loop" should "be executed until the result is Yield.None" in {
     val stage1 = mock[Stage.Endo[Int, Nothing]]("Stage 1")
     val stage2 = mock[Stage.Endo[Int, Nothing]]("Stage 2")
     val stage3 = mock[Stage.Endo[Int, Nothing]]("Stage 3")
@@ -87,7 +35,7 @@ class LoopTest extends AnyFlatSpec with Matchers with Inside with MockFactory {
     }
     val loop = inside(Loop(stage1)(1)) { case Yield.None(onDone) =>
       inside(onDone.onSuccess()) { case State.Success(stage) =>
-        inside(stage) { case Loop(thunk, `stage4`) => thunk() == Condition.True }
+        stage shouldBe Loop(stage4)
         stage
       }
     }
@@ -100,7 +48,7 @@ class LoopTest extends AnyFlatSpec with Matchers with Inside with MockFactory {
     }
     inside(loop(7)) { case Yield.None(onDone) =>
       inside(onDone.onSuccess()) { case State.Success(stage) =>
-        inside(stage) { case Loop(thunk, state5.stage) => thunk() == Condition.True }
+        stage shouldBe Loop(state5.stage)
         (onDone5.dispose _).expects()
         onDone.dispose()
       }
@@ -134,7 +82,7 @@ class LoopTest extends AnyFlatSpec with Matchers with Inside with MockFactory {
     }
     val loop = inside(Loop(stage1)(1)) { case Yield.Some(24, onDone) =>
       inside(onDone.onSuccess()) { case State.Success(stage) =>
-        inside(stage) { case Loop(thunk, `stage4`) => thunk() == Condition.True }
+        stage shouldBe Loop(stage4)
         stage
       }
     }
@@ -147,7 +95,7 @@ class LoopTest extends AnyFlatSpec with Matchers with Inside with MockFactory {
     }
     inside(loop(7)) { case Yield.None(onDone) =>
       inside(onDone.onSuccess()) { case State.Success(stage) =>
-        inside(stage) { case Loop(thunk, state5.stage) => thunk() == Condition.True }
+        stage shouldBe Loop(state5.stage)
         (onDone5.dispose _).expects()
         onDone.dispose()
       }
@@ -182,7 +130,7 @@ class LoopTest extends AnyFlatSpec with Matchers with Inside with MockFactory {
     val loop = inside(Loop(stage1)(1)) { case Yield.Some(3, onDone) =>
       inside(onDone.onSuccess()) { case State.Error(stage, errors) =>
         errors shouldBe NonEmptyChain("the first error")
-        inside(stage) { case Loop(thunk, `stage4`) => thunk() == Condition.True }
+        stage shouldBe Loop(stage4)
         stage
       }
     }
@@ -196,7 +144,7 @@ class LoopTest extends AnyFlatSpec with Matchers with Inside with MockFactory {
     inside(loop(5)) { case Yield.None(onDone) =>
       inside(onDone.onSuccess()) { case State.Error(stage, errors) =>
         errors shouldBe NonEmptyChain("the second error")
-        inside(stage) { case Loop(thunk, state5.stage) => thunk() == Condition.True }
+        stage shouldBe Loop(state5.stage)
         (onDone5.dispose _).expects()
         onDone.dispose()
       }
@@ -229,10 +177,5 @@ class LoopTest extends AnyFlatSpec with Matchers with Inside with MockFactory {
         onDone.dispose()
       }
     }
-  }
-
-  "apply without condition" should "return an infinite loop" in {
-    val stage = mock[Stage.Endo[Unit, Nothing]]
-    Loop(stage) shouldBe Loop(Condition.True, stage)
   }
 }
