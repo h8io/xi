@@ -7,7 +7,7 @@ import scala.concurrent.duration.FiniteDuration
 object LocalSoftClockdown {
   private[util] final case class Head[-I, +O, +E](now: () => Long, duration: Long, stage: Stage[I, O, E])
       extends Stage.Safe[I, O, E] {
-    assume(duration > 0, s"Duration value should be positive: $duration")
+    assume(duration > 0, s"Duration must be positive, got duration = $duration")
 
     def apply(in: I): Yield[I, O, E] = {
       val `yield` = stage.safe(in)
@@ -37,9 +37,7 @@ object LocalSoftClockdown {
           }
 
           def onComplete(): State[I, O, E] = onDone.onComplete().complete(Head(now, duration, _))
-
           def onError(): State[I, O, E] = onDone.onError().complete(Head(now, duration, _))
-
           def onPanic(): State[I, O, E] = onDone.onPanic().complete(Head(now, duration, _))
 
           override def dispose(): Unit = onDone.dispose()

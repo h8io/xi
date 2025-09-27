@@ -4,7 +4,8 @@ import h8io.xi.stages.{OnDone, Stage, State, Yield}
 
 object LocalCountdown {
   private[util] final case class Impl[-I, +O, +E](i: Long, n: Long, stage: Stage[I, O, E]) extends Stage.Safe[I, O, E] {
-    assume(i > 0, s"Counter value should be positive: $i")
+    assume(n > 0, s"n must be positive, got n = $n")
+    assume(0 <= i && i <= n, s"i must be in [0, $n], got i = $i")
 
     def apply(in: I): Yield[I, O, E] =
       if (i == 1) stage.safe(in).complete(Impl(n, n, _))

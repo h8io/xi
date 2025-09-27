@@ -1,6 +1,6 @@
 package h8io.xi.stages.util
 
-import h8io.xi.stages.{Outcome, Stage, State, Yield}
+import h8io.xi.stages.*
 
 import scala.annotation.tailrec
 
@@ -9,12 +9,12 @@ final case class Loop[T, +E](stage: Stage.Endo[T, E]) extends Stage.SafeEndo[T, 
     @tailrec def loop(stage: Stage[T, T, E], in: T): Yield[T, T, E] = {
       val outcome = stage.safe(in).outcome()
       outcome.state match {
-        case State.Success(next) =>
+        case State.Success(updated) =>
           outcome match {
-            case Outcome.Some(out, _, _) => loop(next, out)
-            case Outcome.None(_, _) => outcome.toYield(State.Success(Loop(next)))
+            case Outcome.Some(out, _, _) => loop(updated, out)
+            case Outcome.None(_, _) => outcome.toYield(State.Success(Loop(updated)))
           }
-        case State.Complete(next) => outcome.toYield(State.Success(Loop(next)))
+        case State.Complete(updated) => outcome.toYield(State.Success(Loop(updated)))
         case failure => outcome.toYield(failure.map(Loop(_)))
       }
     }
