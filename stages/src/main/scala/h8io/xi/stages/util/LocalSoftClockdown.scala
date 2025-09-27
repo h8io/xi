@@ -37,9 +37,7 @@ object LocalSoftClockdown {
           }
 
           def onComplete(): State[I, O, E] = onDone.onComplete().complete(Head(now, duration, _))
-
           def onError(): State[I, O, E] = onDone.onError().complete(Head(now, duration, _))
-
           def onPanic(): State[I, O, E] = onDone.onPanic().complete(Head(now, duration, _))
 
           override def dispose(): Unit = onDone.dispose()
