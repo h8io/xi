@@ -4,7 +4,7 @@ import h8io.xi.stages.{Stage, Yield}
 
 object GlobalCountdown {
   private[util] final case class Impl[-I, +O, +E](i: Long, stage: Stage[I, O, E]) extends Stage.Safe[I, O, E] {
-    assume(i > 0, s"Counter value should be positive: $i")
+    assume(i > 0, s"i must be positive, got i = $i")
 
     def apply(in: I): Yield[I, O, E] = {
       val `yield` = stage.safe(in)

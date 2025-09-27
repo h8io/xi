@@ -7,7 +7,7 @@ import scala.concurrent.duration.FiniteDuration
 object LocalSoftClockdown {
   private[util] final case class Head[-I, +O, +E](now: () => Long, duration: Long, stage: Stage[I, O, E])
       extends Stage.Safe[I, O, E] {
-    assume(duration > 0, s"Duration value should be positive: $duration")
+    assume(duration > 0, s"Duration must be positive, got duration = $duration")
 
     def apply(in: I): Yield[I, O, E] = {
       val `yield` = stage.safe(in)
