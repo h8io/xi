@@ -14,7 +14,7 @@ class LoopTest extends AnyFlatSpec with Matchers with Inside with MockFactory {
     val condition3 = mock[Condition]("Condition 3")
     val stage1 = mock[Stage.Endo[Int, Nothing]]("Stage 1")
     val stage2 = mock[Stage.Endo[Int, Nothing]]("Stage 2")
-    val onDone1 = mock[OnDone[Int, Int, Nothing]]("OnDone 1")
+    val onDone1 = mock[OnDone.Endo[Int, Nothing]]("OnDone 1")
     val state1 = State.Success(stage2)
     val reset1 = mock[() => Condition]("Condition.reset 1")
 
@@ -30,7 +30,7 @@ class LoopTest extends AnyFlatSpec with Matchers with Inside with MockFactory {
     def checkState(
         state: State[Int, Int, Nothing],
         reset: () => Condition,
-        stage: Stage[Int, Int, Nothing]): Assertion =
+        stage: Stage.Endo[Int, Nothing]): Assertion =
       state should matchPattern { case State.Success(Loop(`reset`, `stage`)) => }
 
     val loop = inside(Loop(() => condition1, stage1)(-1)) { case Yield.Some(1, onDone) =>
@@ -61,21 +61,21 @@ class LoopTest extends AnyFlatSpec with Matchers with Inside with MockFactory {
   }
 
   it should "be executed until the result is Yield.None" in {
-    val stage1 = mock[Stage[Int, Int, Nothing]]("Stage 1")
-    val stage2 = mock[Stage[Int, Int, Nothing]]("Stage 2")
-    val stage3 = mock[Stage[Int, Int, Nothing]]("Stage 3")
-    val stage4 = mock[Stage[Int, Int, Nothing]]("Stage 4")
-    val stage5 = mock[Stage[Int, Int, Nothing]]("Stage 5")
-    val onDone1 = mock[OnDone[Int, Int, Nothing]]("OnDone 1")
-    val onDone2 = mock[OnDone[Int, Int, Nothing]]("OnDone 2")
-    val onDone3 = mock[OnDone[Int, Int, Nothing]]("OnDone 3")
-    val onDone4 = mock[OnDone[Int, Int, Nothing]]("OnDone 4")
-    val onDone5 = mock[OnDone[Int, Int, Nothing]]("OnDone 5")
+    val stage1 = mock[Stage.Endo[Int, Nothing]]("Stage 1")
+    val stage2 = mock[Stage.Endo[Int, Nothing]]("Stage 2")
+    val stage3 = mock[Stage.Endo[Int, Nothing]]("Stage 3")
+    val stage4 = mock[Stage.Endo[Int, Nothing]]("Stage 4")
+    val stage5 = mock[Stage.Endo[Int, Nothing]]("Stage 5")
+    val onDone1 = mock[OnDone.Endo[Int, Nothing]]("OnDone 1")
+    val onDone2 = mock[OnDone.Endo[Int, Nothing]]("OnDone 2")
+    val onDone3 = mock[OnDone.Endo[Int, Nothing]]("OnDone 3")
+    val onDone4 = mock[OnDone.Endo[Int, Nothing]]("OnDone 4")
+    val onDone5 = mock[OnDone.Endo[Int, Nothing]]("OnDone 5")
     val state1 = State.Success(stage2)
     val state2 = State.Success(stage3)
     val state3 = State.Success(stage4)
     val state4 = State.Success(stage5)
-    val state5 = State.Success(mock[Stage[Int, Int, Nothing]]("Stage 6"))
+    val state5 = State.Success(mock[Stage.Endo[Int, Nothing]]("Stage 6"))
 
     inSequence {
       (stage1.apply _).expects(1).returns(Yield.Some(2, onDone1))
@@ -108,21 +108,21 @@ class LoopTest extends AnyFlatSpec with Matchers with Inside with MockFactory {
   }
 
   it should "be executed until the state is Complete" in {
-    val stage1 = mock[Stage[Int, Int, Nothing]]("Stage 1")
-    val stage2 = mock[Stage[Int, Int, Nothing]]("Stage 2")
-    val stage3 = mock[Stage[Int, Int, Nothing]]("Stage 3")
-    val stage4 = mock[Stage[Int, Int, Nothing]]("Stage 4")
-    val stage5 = mock[Stage[Int, Int, Nothing]]("Stage 5")
-    val onDone1 = mock[OnDone[Int, Int, Nothing]]("OnDone 1")
-    val onDone2 = mock[OnDone[Int, Int, Nothing]]("OnDone 2")
-    val onDone3 = mock[OnDone[Int, Int, Nothing]]("OnDone 3")
-    val onDone4 = mock[OnDone[Int, Int, Nothing]]("OnDone 4")
-    val onDone5 = mock[OnDone[Int, Int, Nothing]]("OnDone 5")
+    val stage1 = mock[Stage.Endo[Int, Nothing]]("Stage 1")
+    val stage2 = mock[Stage.Endo[Int, Nothing]]("Stage 2")
+    val stage3 = mock[Stage.Endo[Int, Nothing]]("Stage 3")
+    val stage4 = mock[Stage.Endo[Int, Nothing]]("Stage 4")
+    val stage5 = mock[Stage.Endo[Int, Nothing]]("Stage 5")
+    val onDone1 = mock[OnDone.Endo[Int, Nothing]]("OnDone 1")
+    val onDone2 = mock[OnDone.Endo[Int, Nothing]]("OnDone 2")
+    val onDone3 = mock[OnDone.Endo[Int, Nothing]]("OnDone 3")
+    val onDone4 = mock[OnDone.Endo[Int, Nothing]]("OnDone 4")
+    val onDone5 = mock[OnDone.Endo[Int, Nothing]]("OnDone 5")
     val state1 = State.Success(stage2)
     val state2 = State.Success(stage3)
     val state3 = State.Complete(stage4)
     val state4 = State.Success(stage5)
-    val state5 = State.Complete(mock[Stage[Int, Int, Nothing]]("Stage 6"))
+    val state5 = State.Complete(mock[Stage.Endo[Int, Nothing]]("Stage 6"))
 
     inSequence {
       (stage1.apply _).expects(1).returns(Yield.Some(2, onDone1))
@@ -155,21 +155,21 @@ class LoopTest extends AnyFlatSpec with Matchers with Inside with MockFactory {
   }
 
   it should "be executed until the state is Error" in {
-    val stage1 = mock[Stage[Int, Int, String]]("Stage 1")
-    val stage2 = mock[Stage[Int, Int, String]]("Stage 2")
-    val stage3 = mock[Stage[Int, Int, String]]("Stage 3")
-    val stage4 = mock[Stage[Int, Int, String]]("Stage 4")
-    val stage5 = mock[Stage[Int, Int, String]]("Stage 5")
-    val onDone1 = mock[OnDone[Int, Int, String]]("OnDone 1")
-    val onDone2 = mock[OnDone[Int, Int, String]]("OnDone 2")
-    val onDone3 = mock[OnDone[Int, Int, String]]("OnDone 3")
-    val onDone4 = mock[OnDone[Int, Int, String]]("OnDone 4")
-    val onDone5 = mock[OnDone[Int, Int, String]]("OnDone 5")
+    val stage1 = mock[Stage.Endo[Int, String]]("Stage 1")
+    val stage2 = mock[Stage.Endo[Int, String]]("Stage 2")
+    val stage3 = mock[Stage.Endo[Int, String]]("Stage 3")
+    val stage4 = mock[Stage.Endo[Int, String]]("Stage 4")
+    val stage5 = mock[Stage.Endo[Int, String]]("Stage 5")
+    val onDone1 = mock[OnDone.Endo[Int, String]]("OnDone 1")
+    val onDone2 = mock[OnDone.Endo[Int, String]]("OnDone 2")
+    val onDone3 = mock[OnDone.Endo[Int, String]]("OnDone 3")
+    val onDone4 = mock[OnDone.Endo[Int, String]]("OnDone 4")
+    val onDone5 = mock[OnDone.Endo[Int, String]]("OnDone 5")
     val state1 = State.Success(stage2)
     val state2 = State.Success(stage3)
     val state3 = State.Error(stage4, "the first error")
     val state4 = State.Success(stage5)
-    val state5 = State.Error(mock[Stage[Int, Int, String]]("Stage 6"), "the second error")
+    val state5 = State.Error(mock[Stage.Endo[Int, String]]("Stage 6"), "the second error")
 
     inSequence {
       (stage1.apply _).expects(1).returns(Yield.Some(1, onDone1))
@@ -204,12 +204,12 @@ class LoopTest extends AnyFlatSpec with Matchers with Inside with MockFactory {
   }
 
   it should "be executed until the state is Panic" in {
-    val stage1 = mock[Stage[Int, Int, Nothing]]("Stage 1")
-    val stage2 = mock[Stage[Int, Int, Nothing]]("Stage 2")
-    val stage3 = mock[Stage[Int, Int, Nothing]]("Stage 3")
-    val onDone1 = mock[OnDone[Int, Int, Nothing]]("OnDone 1")
-    val onDone2 = mock[OnDone[Int, Int, Nothing]]("OnDone 2")
-    val onDone3 = mock[OnDone[Int, Int, Nothing]]("OnDone 3")
+    val stage1 = mock[Stage.Endo[Int, Nothing]]("Stage 1")
+    val stage2 = mock[Stage.Endo[Int, Nothing]]("Stage 2")
+    val stage3 = mock[Stage.Endo[Int, Nothing]]("Stage 3")
+    val onDone1 = mock[OnDone.Endo[Int, Nothing]]("OnDone 1")
+    val onDone2 = mock[OnDone.Endo[Int, Nothing]]("OnDone 2")
+    val onDone3 = mock[OnDone.Endo[Int, Nothing]]("OnDone 3")
     val state1 = State.Success(stage2)
     val state2 = State.Success(stage3)
     val expectedCause = new Exception
