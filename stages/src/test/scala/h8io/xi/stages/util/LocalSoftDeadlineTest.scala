@@ -217,4 +217,35 @@ class LocalSoftDeadlineTest extends AnyFlatSpec with Matchers with Inside with M
         dlOnDone
     }
   }
+
+  it should "return the last Yield out on overdue" in {
+    val stage = mock[Stage[Boolean, String, Nothing]]
+    val onDone = mock[OnDone[Boolean, String, Nothing]]
+    val now = () => 42L
+    inside(
+      LocalSoftDeadline.Tail(
+        0,
+        now,
+        42,
+        Yield.Some(
+          "xi",
+          State.Success(
+            LocalSoftDeadline.Tail(
+              0,
+              () => 21,
+              42,
+              Yield.None(mock[OnDone[Boolean, String, Nothing]]), mock[Stage[Boolean, String, Nothing]])
+          ).onDone(onDone.dispose _)
+        ),
+        stage
+      )(true)) { case Yield.Some("xi", dlOnDone) =>
+      val expectedState = State.Complete(LocalSoftDeadline.Head(now, 42, stage))
+      dlOnDone.onSuccess() shouldBe expectedState
+      dlOnDone.onComplete() shouldBe expectedState
+      dlOnDone.onError() shouldBe expectedState
+      dlOnDone.onPanic() shouldBe expectedState
+      (onDone.dispose _).expects()
+      dlOnDone.dispose()
+    }
+  }
 }
