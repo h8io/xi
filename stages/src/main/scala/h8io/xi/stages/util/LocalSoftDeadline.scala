@@ -4,14 +4,14 @@ import h8io.xi.stages.{OnDone, Stage, State, Yield}
 
 import scala.concurrent.duration.FiniteDuration
 
-object LocalSoftClockdown {
+object LocalSoftDeadline {
   private[util] final case class Head[-I, +O, +E](now: () => Long, duration: Long, stage: Stage[I, O, E])
       extends Stage.Safe[I, O, E] {
     assume(duration > 0, s"Duration must be positive, got duration = $duration")
 
     def apply(in: I): Yield[I, O, E] = {
       val `yield` = stage.safe(in)
-      `yield`.lift(Tail(now(), now, duration, `yield`.onDone.dispose _, _))
+      `yield`.lift(Tail(now(), now, duration, `yield`, _))
     }
   }
 
@@ -19,28 +19,31 @@ object LocalSoftClockdown {
       ts: Long,
       now: () => Long,
       duration: Long,
-      dispose: () => Unit,
+      last: Yield[I, O, E],
       stage: Stage[I, O, E]
   ) extends Stage.Safe[I, O, E] {
     self =>
 
-    assume(duration > 0, s"Duration value should be positive: $duration")
+    assume(duration > 0, s"Duration must be positive, got duration = $duration")
 
     override def apply(in: I): Yield[I, O, E] =
-      if (overdue()) Yield.None(State.Complete(Head(now, duration, stage)).onDone(dispose))
-      else stage.safe(in) map { onDone =>
-        new OnDone[I, O, E] {
-          def onSuccess(): State[I, O, E] = {
-            val state = onDone.onSuccess()
-            if (overdue()) state.complete(Head(now, duration, _))
-            else state.map(Tail(ts, now, duration, onDone.dispose _, _))
+      if (overdue()) last.map(onDone => State.Complete(Head(now, duration, stage)).onDone(onDone.dispose _))
+      else {
+        val `yield` = stage.safe(in)
+        `yield`.map { onDone =>
+          new OnDone[I, O, E] {
+            def onSuccess(): State[I, O, E] = {
+              val state = onDone.onSuccess()
+              if (overdue()) state.complete(Head(now, duration, _))
+              else state.map(Tail(ts, now, duration, `yield`, _))
+            }
+
+            def onComplete(): State[I, O, E] = onDone.onComplete().complete(Head(now, duration, _))
+            def onError(): State[I, O, E] = onDone.onError().complete(Head(now, duration, _))
+            def onPanic(): State[I, O, E] = onDone.onPanic().complete(Head(now, duration, _))
+
+            override def dispose(): Unit = onDone.dispose()
           }
-
-          def onComplete(): State[I, O, E] = onDone.onComplete().complete(Head(now, duration, _))
-          def onError(): State[I, O, E] = onDone.onError().complete(Head(now, duration, _))
-          def onPanic(): State[I, O, E] = onDone.onPanic().complete(Head(now, duration, _))
-
-          override def dispose(): Unit = onDone.dispose()
         }
       }
 

@@ -11,21 +11,21 @@ import java.time.*
 import scala.concurrent.duration.DurationInt
 import scala.util.Random
 
-class LocalSoftClockdownTest extends AnyFlatSpec with Matchers with Inside with MockFactory {
-  "LocalSoftClockdown" should "return DeadEnd if duration is not positive" in {
-    LocalSoftClockdown(0.hour, mock[Stage[Long, Instant, String]])(0) shouldBe DeadEnd.Yield
-    LocalSoftClockdown(-1.minute, mock[Stage[Long, Instant, String]])(0) shouldBe DeadEnd.Yield
-    LocalSoftClockdown(java.time.Duration.ZERO, mock[Stage[Long, Instant, String]])(0) shouldBe DeadEnd.Yield
-    LocalSoftClockdown(java.time.Duration.ofDays(-1), mock[Stage[Long, Instant, String]])(0) shouldBe DeadEnd.Yield
+class LocalSoftDeadlineTest extends AnyFlatSpec with Matchers with Inside with MockFactory {
+  "LocalSoftDeadline" should "return DeadEnd if duration is not positive" in {
+    LocalSoftDeadline(0.hour, mock[Stage[Long, Instant, String]])(0) shouldBe DeadEnd.Yield
+    LocalSoftDeadline(-1.minute, mock[Stage[Long, Instant, String]])(0) shouldBe DeadEnd.Yield
+    LocalSoftDeadline(java.time.Duration.ZERO, mock[Stage[Long, Instant, String]])(0) shouldBe DeadEnd.Yield
+    LocalSoftDeadline(java.time.Duration.ofDays(-1), mock[Stage[Long, Instant, String]])(0) shouldBe DeadEnd.Yield
   }
 
   it should "return Head if duration is positive" in {
     val stage = mock[Stage[Instant, LocalDateTime, Nothing]]
-    inside(LocalSoftClockdown(1.nanosecond, stage)) {
-      case LocalSoftClockdown.Head(now, 1L, `stage`) => (now() - now()) should be < 0L
+    inside(LocalSoftDeadline(1.nanosecond, stage)) {
+      case LocalSoftDeadline.Head(now, 1L, `stage`) => (now() - now()) should be < 0L
     }
-    inside(LocalSoftClockdown(java.time.Duration.ofMillis(42), stage)) {
-      case LocalSoftClockdown.Head(now, 42000000L, `stage`) => (now() - now()) should be < 0L
+    inside(LocalSoftDeadline(java.time.Duration.ofMillis(42), stage)) {
+      case LocalSoftDeadline.Head(now, 42000000L, `stage`) => (now() - now()) should be < 0L
     }
   }
 
@@ -36,15 +36,15 @@ class LocalSoftClockdownTest extends AnyFlatSpec with Matchers with Inside with 
     val in = ZoneId.of("Asia/Kathmandu")
     val out = ZonedDateTime.now(in)
     (stage.apply _).expects(in).returns(Yield.Some(out, onDone))
-    inside(LocalSoftClockdown.Head(now, 1, stage)(in)) { case Yield.Some(`out`, cdOnDone) =>
+    inside(LocalSoftDeadline.Head(now, 1, stage)(in)) { case Yield.Some(`out`, dlOnDone) =>
       val nextStage = mock[Stage[ZoneId, ZonedDateTime, Nothing]]
       (onDone.onSuccess _).expects().returns(State.Success(nextStage))
       val ts = Random.nextLong()
       (now.apply _).expects().returns(ts)
-      inside(cdOnDone.onSuccess()) {
-        case State.Success(LocalSoftClockdown.Tail(`ts`, `now`, 1, dispose, `nextStage`)) =>
+      inside(dlOnDone.onSuccess()) {
+        case State.Success(LocalSoftDeadline.Tail(`ts`, `now`, 1, last, `nextStage`)) =>
           (onDone.dispose _).expects()
-          dispose()
+          last.onDone.dispose()
       }
     }
   }
@@ -65,21 +65,22 @@ class LocalSoftClockdownTest extends AnyFlatSpec with Matchers with Inside with 
     (stage1.apply _).expects(in1).returns(Yield.Some(out1, onDone1))
     (now.apply _).expects().returns(startTime + 17)
 
-    val cdOnDone1 = inside(LocalSoftClockdown.Tail(startTime, now, 42, onDone1.dispose _, stage1)(in1)) {
-      case Yield.Some(`out1`, cdOnDone) =>
-        (onDone1.dispose _).expects()
-        cdOnDone.dispose()
-        cdOnDone
-    }
+    val dlOnDone1 =
+      inside(LocalSoftDeadline.Tail(startTime, now, 42, Yield.None(State.Success(DeadEnd).onDone), stage1)(in1)) {
+        case Yield.Some(`out1`, dlOnDone) =>
+          (onDone1.dispose _).expects()
+          dlOnDone.dispose()
+          dlOnDone
+      }
 
     val stage2 = mock[Stage[ZoneOffset, OffsetDateTime, Nothing]]("Stage 2")
     (onDone1.onSuccess _).expects().returns(State.Success(stage2))
     (now.apply _).expects().returns(startTime + 21)
 
-    val cdStage2 = inside(cdOnDone1.onSuccess()) { case State.Success(cdStage) => cdStage }
-    inside(cdStage2) { case LocalSoftClockdown.Tail(`startTime`, `now`, 42, dispose, `stage2`) =>
+    val dlStage2 = inside(dlOnDone1.onSuccess()) { case State.Success(dlStage) => dlStage }
+    inside(dlStage2) { case LocalSoftDeadline.Tail(`startTime`, `now`, 42, last, `stage2`) =>
       (onDone1.dispose _).expects()
-      dispose()
+      last.onDone.dispose()
     }
 
     val onDone2 = mock[OnDone[ZoneOffset, OffsetDateTime, Nothing]]("OnDone 2")
@@ -87,24 +88,24 @@ class LocalSoftClockdownTest extends AnyFlatSpec with Matchers with Inside with 
     (stage2.apply _).expects(in2).returns(Yield.None(onDone2))
     (now.apply _).expects().returns(startTime + 30)
 
-    val cdOnDone2 = inside(cdStage2(in2)) { case Yield.None(cdOnDone) => cdOnDone }
+    val dlOnDone2 = inside(dlStage2(in2)) { case Yield.None(dlOnDone) => dlOnDone }
 
     val stage3 = mock[Stage[ZoneOffset, OffsetDateTime, Nothing]]("Stage 3")
     (onDone2.onSuccess _).expects().returns(State.Success(stage3))
     (now.apply _).expects().returns(startTime + 41)
 
-    val cdStage3 = inside(cdOnDone2.onSuccess()) { case State.Success(cdStage) => cdStage }
-    inside(cdStage3) { case LocalSoftClockdown.Tail(`startTime`, `now`, 42, dispose, `stage3`) =>
+    val dlStage3 = inside(dlOnDone2.onSuccess()) { case State.Success(dlStage) => dlStage }
+    inside(dlStage3) { case LocalSoftDeadline.Tail(`startTime`, `now`, 42, last, `stage3`) =>
       (onDone2.dispose _).expects()
-      dispose()
+      last.onDone.dispose()
     }
 
     (now.apply _).expects().returns(startTime + 42)
 
-    inside(cdStage3(ZoneOffset.of("+12:00"))) { case Yield.None(cdOnDone) =>
-      cdOnDone.onSuccess() should matchPattern { case State.Complete(LocalSoftClockdown.Head(`now`, 42, `stage3`)) => }
+    inside(dlStage3(ZoneOffset.of("+12:00"))) { case Yield.None(dlOnDone) =>
+      dlOnDone.onSuccess() should matchPattern { case State.Complete(LocalSoftDeadline.Head(`now`, 42, `stage3`)) => }
       (onDone2.dispose _).expects()
-      cdOnDone.dispose()
+      dlOnDone.dispose()
     }
   }
 
@@ -124,21 +125,22 @@ class LocalSoftClockdownTest extends AnyFlatSpec with Matchers with Inside with 
     (stage1.apply _).expects(in1).returns(Yield.Some(out1, onDone1))
     (now.apply _).expects().returns(startTime + 17)
 
-    val cdOnDone1 = inside(LocalSoftClockdown.Tail(startTime, now, 42, onDone1.dispose _, stage1)(in1)) {
-      case Yield.Some(`out1`, cdOnDone) =>
-        (onDone1.dispose _).expects()
-        cdOnDone.dispose()
-        cdOnDone
-    }
+    val dlOnDone1 =
+      inside(LocalSoftDeadline.Tail(startTime, now, 42, Yield.None(State.Success(DeadEnd).onDone), stage1)(in1)) {
+        case Yield.Some(`out1`, dlOnDone) =>
+          (onDone1.dispose _).expects()
+          dlOnDone.dispose()
+          dlOnDone
+      }
 
     val stage2 = mock[Stage[ZoneId, OffsetDateTime, Nothing]]("Stage 2")
     (onDone1.onSuccess _).expects().returns(State.Success(stage2))
     (now.apply _).expects().returns(startTime + 21)
 
-    val cdStage2 = inside(cdOnDone1.onSuccess()) { case State.Success(cdStage) => cdStage }
-    inside(cdStage2) { case LocalSoftClockdown.Tail(`startTime`, `now`, 42, dispose, `stage2`) =>
+    val dlStage2 = inside(dlOnDone1.onSuccess()) { case State.Success(dlStage) => dlStage }
+    inside(dlStage2) { case LocalSoftDeadline.Tail(`startTime`, `now`, 42, last, `stage2`) =>
       (onDone1.dispose _).expects()
-      dispose()
+      last.onDone.dispose()
     }
 
     val onDone2 = mock[OnDone[ZoneId, OffsetDateTime, Nothing]]("OnDone 2")
@@ -146,20 +148,20 @@ class LocalSoftClockdownTest extends AnyFlatSpec with Matchers with Inside with 
     (stage2.apply _).expects(in2).returns(Yield.None(onDone2))
     (now.apply _).expects().returns(startTime + 30)
 
-    val cdOnDone2 = inside(cdStage2(in2)) { case Yield.None(cdOnDone) =>
+    val dlOnDone2 = inside(dlStage2(in2)) { case Yield.None(dlOnDone) =>
       (onDone2.dispose _).expects()
-      cdOnDone.dispose()
-      cdOnDone
+      dlOnDone.dispose()
+      dlOnDone
     }
 
     val stage3 = mock[Stage[ZoneId, OffsetDateTime, Nothing]]("Stage 3")
     (onDone2.onSuccess _).expects().returns(State.Success(stage3))
     (now.apply _).expects().returns(startTime + 33)
 
-    val cdStage3 = inside(cdOnDone2.onSuccess()) { case State.Success(cdStage) => cdStage }
-    inside(cdStage3) { case LocalSoftClockdown.Tail(`startTime`, `now`, 42, dispose, `stage3`) =>
+    val dlStage3 = inside(dlOnDone2.onSuccess()) { case State.Success(dlStage) => dlStage }
+    inside(dlStage3) { case LocalSoftDeadline.Tail(`startTime`, `now`, 42, last, `stage3`) =>
       (onDone2.dispose _).expects()
-      dispose()
+      last.onDone.dispose()
     }
 
     val onDone3 = mock[OnDone[ZoneId, OffsetDateTime, Nothing]]("OnDone 3")
@@ -168,22 +170,22 @@ class LocalSoftClockdownTest extends AnyFlatSpec with Matchers with Inside with 
     (stage3.apply _).expects(in3).returns(Yield.Some(out3, onDone3))
     (now.apply _).expects().returns(startTime + 40)
 
-    val cdOnDone4 = inside(cdStage3(in3)) {
-      case Yield.Some(`out3`, cdOnDone) =>
+    val dlOnDone4 = inside(dlStage3(in3)) {
+      case Yield.Some(`out3`, dlOnDone) =>
         (onDone3.dispose _).expects()
-        cdOnDone.dispose()
-        cdOnDone
+        dlOnDone.dispose()
+        dlOnDone
     }
 
     val stage4 = mock[Stage[ZoneId, OffsetDateTime, Nothing]]("Stage 4")
     (onDone3.onSuccess _).expects().returns(State.Success(stage4))
     (now.apply _).expects().returns(startTime + 43)
 
-    val cdStage4 = inside(cdOnDone4.onSuccess()) { case State.Complete(cdStage) => cdStage }
-    cdStage4 shouldBe LocalSoftClockdown.Head(`now`, 42, `stage4`)
+    val dlStage4 = inside(dlOnDone4.onSuccess()) { case State.Complete(dlStage) => dlStage }
+    dlStage4 shouldBe LocalSoftDeadline.Head(`now`, 42, `stage4`)
 
     (onDone3.dispose _).expects()
-    cdOnDone4.dispose()
+    dlOnDone4.dispose()
   }
 
   it should "return Head as a next stage on onComplete OnDone call" in
@@ -205,14 +207,45 @@ class LocalSoftClockdownTest extends AnyFlatSpec with Matchers with Inside with 
     val out = ZonedDateTime.now(in)
     (stage.apply _).expects(in).returns(Yield.Some(out, onDone))
     (now.apply _).expects().returns(17)
-    inside(LocalSoftClockdown.Tail(0, now, 42, onDone.dispose _, stage)(in)) {
-      case Yield.Some(`out`, cdOnDone) =>
+    inside(LocalSoftDeadline.Tail(0, now, 42, Yield.None(State.Success(DeadEnd).onDone), stage)(in)) {
+      case Yield.Some(`out`, dlOnDone) =>
         val updatedStage = mock[Stage[ZoneId, ZonedDateTime, String]]("Updated stage")
         callHandler(onDone).returns(State.Success(updatedStage))
-        call(cdOnDone) shouldBe State.Complete(LocalSoftClockdown.Head(now, 42, updatedStage))
+        call(dlOnDone) shouldBe State.Complete(LocalSoftDeadline.Head(now, 42, updatedStage))
         (onDone.dispose _).expects()
-        cdOnDone.dispose()
-        cdOnDone
+        dlOnDone.dispose()
+        dlOnDone
+    }
+  }
+
+  it should "return the last Yield out on overdue" in {
+    val stage = mock[Stage[Boolean, String, Nothing]]
+    val onDone = mock[OnDone[Boolean, String, Nothing]]
+    val now = () => 42L
+    inside(
+      LocalSoftDeadline.Tail(
+        0,
+        now,
+        42,
+        Yield.Some(
+          "xi",
+          State.Success(
+            LocalSoftDeadline.Tail(
+              0,
+              () => 21,
+              42,
+              Yield.None(mock[OnDone[Boolean, String, Nothing]]), mock[Stage[Boolean, String, Nothing]])
+          ).onDone(onDone.dispose _)
+        ),
+        stage
+      )(true)) { case Yield.Some("xi", dlOnDone) =>
+      val expectedState = State.Complete(LocalSoftDeadline.Head(now, 42, stage))
+      dlOnDone.onSuccess() shouldBe expectedState
+      dlOnDone.onComplete() shouldBe expectedState
+      dlOnDone.onError() shouldBe expectedState
+      dlOnDone.onPanic() shouldBe expectedState
+      (onDone.dispose _).expects()
+      dlOnDone.dispose()
     }
   }
 }
