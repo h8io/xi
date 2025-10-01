@@ -23,11 +23,11 @@ object State {
       }
   }
 
-  final case class Error[E](errors: NonEmptyChain[E]) extends State[E] {
+  final case class Error[E](causes: NonEmptyChain[E]) extends State[E] {
     override private[stages] def ~>[_E >: E](next: State[_E]): State[_E] =
       next match {
         case Success | Complete => this
-        case Error(nextErrors) => Error(errors ++ nextErrors)
+        case Error(nextCauses) => Error(causes ++ nextCauses)
         case that => that
       }
   }
