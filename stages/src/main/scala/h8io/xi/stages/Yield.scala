@@ -16,6 +16,6 @@ object Yield {
 
   final case class None[-I, +O, +E](state: State[E], onDone: OnDone[I, O, E]) extends Yield[I, O, E] {
     private[stages] def ~>[_O, _E >: E](next: Stage[O, _O, _E]): Yield.None[I, _O, _E] =
-      Yield.None(state, onDone ~> next)
+      Yield.None(state, onDone <~ next)
   }
 }

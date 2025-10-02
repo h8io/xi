@@ -8,6 +8,5 @@ trait Generators {
     Arbitrary(catsLawsArbitraryForNonEmptyChain[E].arbitrary.map(State.Error(_)))
 
   implicit def genState[E: Arbitrary]: Arbitrary[State[E]] =
-    Arbitrary(
-      Gen.oneOf(Gen.const(State.Success: State[E]), Gen.const(State.Complete: State[E]), genStateError[E].arbitrary))
+    Arbitrary(Gen.oneOf(Gen.const(State.Success: State[E]), Gen.const(State.Complete), genStateError[E].arbitrary))
 }

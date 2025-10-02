@@ -13,7 +13,7 @@ trait Stage[-I, +O, +E] extends (I => Yield[I, O, E]) {
 }
 
 object Stage {
-  type Endo[-I, +O <: I, +E] = Stage[I, O, E]
+  type Endo[T, +E] = Stage[T, T, E]
 
   final case class AndThen[-I, OI, +O, +E](previous: Stage[I, OI, E], next: Stage[OI, O, E]) extends Stage[I, O, E] {
     def apply(in: I): Yield[I, O, E] =

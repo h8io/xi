@@ -46,5 +46,5 @@ val stages = (project in file("stages")).settings(name := "xi-stages")
 val cfg = (project in file("cfg"))
   .settings(name := "xi-cfg", libraryDependencies += "com.typesafe" % "config" % "1.4.5")
 
-val root = (project in file(".")).settings(name := "xi").aggregate(stages, `old-stages`, cfg)
+val root = (project in file(".")).settings(name := "xi").aggregate(stages, cfg)
   .enablePlugins(ScoverageSummaryPlugin)

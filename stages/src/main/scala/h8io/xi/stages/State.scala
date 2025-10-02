@@ -4,6 +4,8 @@ import cats.data.NonEmptyChain
 
 sealed trait State[+E] {
   private[stages] def ~>[_E >: E](next: State[_E]): State[_E]
+
+  private[stages] def apply[I, O, _E](onDone: OnDone[I, O, _E]): Stage[I, O, _E]
 }
 
 object State {
@@ -13,6 +15,8 @@ object State {
         case Success => this
         case that => that
       }
+
+    private[stages] def apply[I, O, _E](onDone: OnDone[I, O, _E]): Stage[I, O, _E] = onDone.onSuccess()
   }
 
   case object Complete extends State[Nothing] {
@@ -21,14 +25,17 @@ object State {
         case Success | Complete => this
         case that => that
       }
+
+    private[stages] def apply[I, O, _E](onDone: OnDone[I, O, _E]): Stage[I, O, _E] = onDone.onComplete()
   }
 
   final case class Error[E](causes: NonEmptyChain[E]) extends State[E] {
-    override private[stages] def ~>[_E >: E](next: State[_E]): State[_E] =
+    private[stages] def ~>[_E >: E](next: State[_E]): State[_E] =
       next match {
         case Success | Complete => this
         case Error(nextCauses) => Error(causes ++ nextCauses)
-        case that => that
       }
+
+    private[stages] def apply[I, O, _E](onDone: OnDone[I, O, _E]): Stage[I, O, _E] = onDone.onError()
   }
 }
