@@ -26,5 +26,7 @@ object Stage {
       next.dispose()
       previous.dispose()
     }
+
+    override def toString(): String = s"$previous ~> $next"
   }
 }
