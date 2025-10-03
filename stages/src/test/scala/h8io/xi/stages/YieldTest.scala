@@ -128,7 +128,7 @@ class YieldTest
         Yield.None(mappedState, mappedOnDone)
     }
 
-  "mapOnDone" should "transform Some content" in
+  "mapOnDone" should "transform Some content (state and onDone)" in
     forAll { (out: LocalDateTime, initialState: State[Long], mappedState: State[Exception]) =>
       val initialOnDone = mock[OnDone[Long, LocalDateTime, Long]]("initial OnDone")
       val mappedOnDone = mock[OnDone[String, LocalDateTime, Exception]]("mapped OnDone")
@@ -139,14 +139,34 @@ class YieldTest
         Yield.Some(out, mappedState, mappedOnDone)
     }
 
-  it should "transform None content" in
+  it should "transform Some content (onDone)" in
+    forAll { (out: LocalDateTime, state: State[Long]) =>
+      val initialOnDone = mock[OnDone[Long, LocalDateTime, Long]]("initial OnDone")
+      val mappedOnDone = mock[OnDone[String, LocalDateTime, Long]]("mapped OnDone")
+      val mapOnDone =
+        mock[OnDone[Long, LocalDateTime, Long] => OnDone[String, LocalDateTime, Long]]("mapOnDone")
+      (mapOnDone.apply _).expects(initialOnDone).returns(mappedOnDone)
+      Yield.Some(out, state, initialOnDone).mapOnDone(mapOnDone) shouldBe Yield.Some(out, state, mappedOnDone)
+    }
+
+  it should "transform None content (state and onDone)" in
     forAll { (initialState: State[Exception], mappedState: State[String]) =>
       val initialOnDone = mock[OnDone[ZonedDateTime, OffsetDateTime, Exception]]("initial OnDone")
       val mappedOnDone = mock[OnDone[Duration, OffsetDateTime, String]]("mapped OnDone")
       val mapOnDone =
         mock[OnDone[ZonedDateTime, OffsetDateTime, Exception] => OnDone[Duration, OffsetDateTime, String]]("mapOnDone")
       (mapOnDone.apply _).expects(initialOnDone).returns(mappedOnDone)
-      Yield.None(initialState, initialOnDone).mapOnDone[Duration, OffsetDateTime, String](
-        mappedState, mapOnDone) shouldBe Yield.None(mappedState, mappedOnDone)
+      Yield.None(initialState, initialOnDone).mapOnDone(mappedState, mapOnDone) shouldBe
+        Yield.None(mappedState, mappedOnDone)
+    }
+
+  it should "transform None content (onDone)" in
+    forAll { (state: State[Int]) =>
+      val initialOnDone = mock[OnDone[ZonedDateTime, OffsetDateTime, Int]]("initial OnDone")
+      val mappedOnDone = mock[OnDone[Duration, OffsetDateTime, Int]]("mapped OnDone")
+      val mapOnDone =
+        mock[OnDone[ZonedDateTime, OffsetDateTime, Int] => OnDone[Duration, OffsetDateTime, Int]]("mapOnDone")
+      (mapOnDone.apply _).expects(initialOnDone).returns(mappedOnDone)
+      Yield.None(state, initialOnDone).mapOnDone(mapOnDone) shouldBe Yield.None(state, mappedOnDone)
     }
 }

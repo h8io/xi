@@ -3,7 +3,8 @@ package h8io.xi.stages.util
 import h8io.xi.stages
 import h8io.xi.stages.{OnDone, Stage, State}
 
-sealed class DeadEnd(_dispose: () => Unit) extends Stage[Any, Nothing, Nothing] with OnDone[Any, Nothing, Nothing] {
+sealed case class DeadEnd(_dispose: () => Unit)
+    extends Stage[Any, Nothing, Nothing] with OnDone[Any, Nothing, Nothing] {
   final val Yield: stages.Yield.None[Any, Nothing, Nothing] =
     stages.Yield.None[Any, Nothing, Nothing](State.Complete, this)
 
@@ -15,5 +16,3 @@ sealed class DeadEnd(_dispose: () => Unit) extends Stage[Any, Nothing, Nothing] 
 
   override final def dispose(): Unit = _dispose()
 }
-
-object DeadEnd extends DeadEnd({ () => })

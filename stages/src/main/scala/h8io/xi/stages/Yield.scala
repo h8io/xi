@@ -12,6 +12,9 @@ sealed trait Yield[-I, +O, +E] {
   private[stages] def mapOnDone[_I, _O >: O, _E](
       state: State[_E],
       mapOnDone: OnDone[I, O, E] => OnDone[_I, _O, _E]): Yield[_I, _O, _E]
+
+  private[stages] def mapOnDone[_I, _O >: O, _E >: E](
+      mapOnDone: OnDone[I, O, E] => OnDone[_I, _O, _E]): Yield[_I, _O, _E]
 }
 
 object Yield {
@@ -32,6 +35,10 @@ object Yield {
         state: State[_E],
         mapOnDone: OnDone[I, O, E] => OnDone[_I, _O, _E]): Yield.Some[_I, _O, _E] =
       Yield.Some(out, state, mapOnDone(onDone))
+
+    override private[stages] def mapOnDone[_I, _O >: O, _E >: E](
+        mapOnDone: OnDone[I, O, E] => OnDone[_I, _O, _E]): Yield.Some[_I, _O, _E] =
+      Yield.Some(out, state, mapOnDone(onDone))
   }
 
   final case class None[-I, +O, +E](state: State[E], onDone: OnDone[I, O, E]) extends Yield[I, O, E] {
@@ -46,6 +53,9 @@ object Yield {
 
     private[stages] def mapOnDone[_I, _O >: O, _E](
         state: State[_E],
+        mapOnDone: OnDone[I, O, E] => OnDone[_I, _O, _E]): Yield.None[_I, _O, _E] = Yield.None(state, mapOnDone(onDone))
+
+    override private[stages] def mapOnDone[_I, _O >: O, _E >: E](
         mapOnDone: OnDone[I, O, E] => OnDone[_I, _O, _E]): Yield.None[_I, _O, _E] = Yield.None(state, mapOnDone(onDone))
   }
 }

@@ -10,7 +10,7 @@ import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 class DeadEndTest extends AnyFlatSpec with Matchers with MockFactory with ScalaCheckPropertyChecks {
   "DeadEnd" should "return None for any argument" in {
     val dispose = mock[() => Unit]
-    val stage = new DeadEnd(dispose)
+    val stage = DeadEnd(dispose)
     stage.Yield shouldBe Yield.None(Complete, stage)
     stage("xi") shouldBe stage.Yield
     stage(42) shouldBe stage.Yield

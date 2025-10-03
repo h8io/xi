@@ -89,13 +89,13 @@ class KeepLastOutputTest
       }
     }
 
-  "None.dispose" should "call stage's dispose" in {
+  "dispose" should "call stage's dispose for None" in {
     val stage = mock[Stage[Any, Nothing, Nothing]]
     (stage.dispose _).expects()
     noException should be thrownBy KeepLastOutput.None(stage).dispose()
   }
 
-  "Some.dispose" should "call stage's dispose" in {
+  it should "call stage's dispose for Some" in {
     val stage = mock[Stage[Any, Nothing, Nothing]]
     (stage.dispose _).expects()
     noException should be thrownBy KeepLastOutput.Some(mock[AnyRef], stage).dispose()
