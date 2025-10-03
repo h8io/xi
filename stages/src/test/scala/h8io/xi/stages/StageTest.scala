@@ -1,6 +1,6 @@
 package h8io.xi.stages
 
-import h8io.xi.stages.Stage.AndThen
+import h8io.xi.stages.Stage.{AndThen, Decorator}
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.Inside
 import org.scalatest.flatspec.AnyFlatSpec
@@ -107,5 +107,14 @@ class StageTest
       (previousStage.dispose _).expects()
     }
     AndThen(previousStage, nextStage).dispose()
+  }
+
+  "Decorator's dispose" should "call underlying stage's dispose method" in {
+    val underlying = mock[Stage[Any, Nothing, Nothing]]
+    (underlying.dispose _).expects()
+    noException should be thrownBy new Decorator[Any, Nothing, Nothing] {
+      val stage: Stage[Any, Nothing, Nothing] = underlying
+      def apply(in: Any): Yield[Any, Nothing, Nothing] = throw new NoSuchMethodError
+    }.dispose()
   }
 }

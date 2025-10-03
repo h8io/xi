@@ -29,4 +29,10 @@ object Stage {
 
     override def toString(): String = s"$previous ~> $next"
   }
+
+  trait Decorator[-I, +O, +E] extends Stage[I, O, E] {
+    val stage: Stage[I, O, E]
+
+    override def dispose(): Unit = stage.dispose()
+  }
 }
