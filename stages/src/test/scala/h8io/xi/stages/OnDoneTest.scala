@@ -5,15 +5,16 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
 import java.sql.Timestamp
-import java.time.Instant
+import java.time.{Instant, ZoneId, ZonedDateTime}
+import java.util.UUID
 
 class OnDoneTest extends AnyFlatSpec with Matchers with MockFactory {
-  "<~" should "combine OnDone objects correctly" in {
+  "combine method" should "combine OnDone objects correctly" in {
     val previousOnDone = mock[OnDone[String, Instant, Exception]]
     val previousStage = mock[Stage[String, Instant, Exception]]
     val nextOnDone = mock[OnDone[Instant, Long, Exception]]
     val nextStage = mock[Stage[Instant, Long, Exception]]
-    val onDone = previousOnDone <~ nextOnDone
+    val onDone = previousOnDone combine nextOnDone
     val stage = previousStage ~> nextStage
 
     inSequence {
@@ -39,7 +40,7 @@ class OnDoneTest extends AnyFlatSpec with Matchers with MockFactory {
     val previousOnDone = mock[OnDone[String, Instant, Exception]]
     val previousStage = mock[Stage[String, Instant, Exception]]
     val nextStage = mock[Stage[Instant, Long, Exception]]
-    val onDone = previousOnDone <~ nextStage
+    val onDone = previousOnDone combine nextStage
     val stage = previousStage ~> nextStage
 
     (previousOnDone.onSuccess _).expects().returns(previousStage)
@@ -58,5 +59,28 @@ class OnDoneTest extends AnyFlatSpec with Matchers with MockFactory {
     onDone.onSuccess() shouldBe stage
     onDone.onComplete() shouldBe stage
     onDone.onError() shouldBe stage
+  }
+
+  "map" should "transform stages correctly" in {
+    val onDone = mock[OnDone[Long, Instant, UUID]]
+    val f = mock[Stage[Long, Instant, UUID] => Stage[ZoneId, ZonedDateTime, String]]
+
+    val onSuccessStage = mock[Stage[Long, Instant, UUID]]
+    val onSuccessMappedStage = mock[Stage[ZoneId, ZonedDateTime, String]]
+    (onDone.onSuccess _).expects().returns(onSuccessStage)
+    (f.apply _).expects(onSuccessStage).returns(onSuccessMappedStage)
+    onDone.map(f).onSuccess() shouldBe onSuccessMappedStage
+
+    val onCompleteStage = mock[Stage[Long, Instant, UUID]]
+    val onCompleteMappedStage = mock[Stage[ZoneId, ZonedDateTime, String]]
+    (onDone.onComplete _).expects().returns(onCompleteStage)
+    (f.apply _).expects(onCompleteStage).returns(onCompleteMappedStage)
+    onDone.map(f).onComplete() shouldBe onCompleteMappedStage
+
+    val onErrorStage = mock[Stage[Long, Instant, UUID]]
+    val onErrorMappedStage = mock[Stage[ZoneId, ZonedDateTime, String]]
+    (onDone.onError _).expects().returns(onErrorStage)
+    (f.apply _).expects(onErrorStage).returns(onErrorMappedStage)
+    onDone.map(f).onError() shouldBe onErrorMappedStage
   }
 }

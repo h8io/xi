@@ -15,8 +15,7 @@ import scala.annotation.tailrec
 class RepeatTest
     extends AnyFlatSpec with Matchers with Inside with MockFactory with ScalaCheckPropertyChecks with Generators {
   "Repeat" should "be executed until the state is Complete" in
-    forAll(Gen.choose(0, 100)) { (n: Int) =>
-      val in = Gen.long.sample getOrElse 0L
+    forAll(Gen.choose(0, 100), Gen.long) { (n, in) =>
       val initial = mock[Stage[Long, String, Nothing]]("initial stage")
       val updated = genStage(n, initial, in)
       val lastYield = genYield[Long, String, Nothing]("last", State.Complete)
@@ -36,24 +35,24 @@ class RepeatTest
     }
 
   it should "be executed until the state is Error" in
-    forAll(Gen.choose(0, 100), Arbitrary.arbitrary[State.Error[Exception]]) { (n, lastState) =>
-      val in = Arbitrary.arbitrary[Instant].sample getOrElse Instant.now()
-      val initial = mock[Stage[Instant, UUID, Exception]]("initial stage")
-      val updated = genStage(n, initial, in)
-      val lastYield = genYield[Instant, UUID, Exception]("last", lastState)
-      (updated.apply _).expects(in).returns(lastYield)
-      val resultStage = mock[Stage[Instant, UUID, Exception]]("result stage")
-      (lastYield.onDone.onError _).expects().returns(resultStage)
-      val onDone = inside((lastYield, Repeat(initial)(in))) {
-        case (Yield.Some(lastOut, _, _), Yield.Some(resultOut, `lastState`, onDone)) =>
-          resultOut shouldBe lastOut
-          onDone
-        case (Yield.None(_, _), Yield.None(`lastState`, onDone)) => onDone
-      }
-      val expectedStage = Repeat(resultStage)
-      onDone.onSuccess() shouldBe expectedStage
-      onDone.onComplete() shouldBe expectedStage
-      onDone.onError() shouldBe expectedStage
+    forAll(Gen.choose(0, 100), Arbitrary.arbitrary[Instant], Arbitrary.arbitrary[State.Error[Exception]]) {
+      (n, in, lastState) =>
+        val initial = mock[Stage[Instant, UUID, Exception]]("initial stage")
+        val updated = genStage(n, initial, in)
+        val lastYield = genYield[Instant, UUID, Exception]("last", lastState)
+        (updated.apply _).expects(in).returns(lastYield)
+        val resultStage = mock[Stage[Instant, UUID, Exception]]("result stage")
+        (lastYield.onDone.onError _).expects().returns(resultStage)
+        val onDone = inside((lastYield, Repeat(initial)(in))) {
+          case (Yield.Some(lastOut, _, _), Yield.Some(resultOut, `lastState`, onDone)) =>
+            resultOut shouldBe lastOut
+            onDone
+          case (Yield.None(_, _), Yield.None(`lastState`, onDone)) => onDone
+        }
+        val expectedStage = Repeat(resultStage)
+        onDone.onSuccess() shouldBe expectedStage
+        onDone.onComplete() shouldBe expectedStage
+        onDone.onError() shouldBe expectedStage
     }
 
   @tailrec private def genStage[I, O: Arbitrary, E](i: Int, stage: Stage[I, O, E], in: I): Stage[I, O, E] =
