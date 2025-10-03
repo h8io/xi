@@ -1,5 +1,6 @@
 package h8io.xi.stages
 
+import cats.data.NonEmptyChain
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
@@ -43,4 +44,9 @@ class StateTest extends AnyFlatSpec with Matchers with MockFactory with ScalaChe
       (onDone.onError _).expects().returns(stage)
       error(onDone) shouldBe stage
     }
+
+  it should "create Error state with a single error" in {
+    val error = mock[AnyRef]
+    State.error(error) shouldBe State.Error(NonEmptyChain.of(error))
+  }
 }

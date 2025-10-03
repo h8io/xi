@@ -7,7 +7,8 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 
-import java.time.Instant
+import java.time.*
+import java.time.format.DateTimeFormatter
 
 class YieldTest
     extends AnyFlatSpec with Matchers with Inside with MockFactory with ScalaCheckPropertyChecks with Generators {
@@ -97,5 +98,55 @@ class YieldTest
           (previousYield.onDone.onError _).expects().returns(previousStage)
           onDone.onError() shouldBe stage
       }
+    }
+
+  "map" should "transform Some content" in
+    forAll { (initialOut: Array[Byte], initialState: State[Instant], mappedOut: Long, mappedState: State[String]) =>
+      val initialOnDone = mock[OnDone[String, Array[Byte], Instant]]("initial OnDone")
+      val mappedOnDone = mock[OnDone[Array[Byte], Long, String]]("mapped OnDone")
+      val mapOut = mock[Array[Byte] => Long]("mapOut")
+      (mapOut.apply _).expects(initialOut).returns(mappedOut)
+      val mapState = mock[State[Instant] => State[String]]("mapState")
+      (mapState.apply _).expects(initialState).returns(mappedState)
+      val mapOnDone = mock[OnDone[String, Array[Byte], Instant] => OnDone[Array[Byte], Long, String]]("mapOnDone")
+      (mapOnDone.apply _).expects(initialOnDone).returns(mappedOnDone)
+      Yield.Some(initialOut, initialState, initialOnDone).map(mapOut, mapState, mapOnDone) shouldBe
+        Yield.Some(mappedOut, mappedState, mappedOnDone)
+    }
+
+  it should "transform None content" in
+    forAll { (initialState: State[Long], mappedState: State[Exception]) =>
+      val initialOnDone = mock[OnDone[ZonedDateTime, DateTimeFormatter, Long]]("initial OnDone")
+      val mappedOnDone = mock[OnDone[Duration, OffsetDateTime, String]]("mapped OnDone")
+      val mapOut = mock[DateTimeFormatter => OffsetDateTime]("mapOut")
+      val mapState = mock[State[Long] => State[Exception]]("mapState")
+      (mapState.apply _).expects(initialState).returns(mappedState)
+      val mapOnDone =
+        mock[OnDone[ZonedDateTime, DateTimeFormatter, Long] => OnDone[Duration, OffsetDateTime, String]]("mapOnDone")
+      (mapOnDone.apply _).expects(initialOnDone).returns(mappedOnDone)
+      Yield.None(initialState, initialOnDone).map(mapOut, mapState, mapOnDone) shouldBe
+        Yield.None(mappedState, mappedOnDone)
+    }
+
+  "mapOnDone" should "transform Some content" in
+    forAll { (out: LocalDateTime, initialState: State[Long], mappedState: State[Exception]) =>
+      val initialOnDone = mock[OnDone[Long, LocalDateTime, Long]]("initial OnDone")
+      val mappedOnDone = mock[OnDone[String, LocalDateTime, Exception]]("mapped OnDone")
+      val mapOnDone =
+        mock[OnDone[Long, LocalDateTime, Long] => OnDone[String, LocalDateTime, Exception]]("mapOnDone")
+      (mapOnDone.apply _).expects(initialOnDone).returns(mappedOnDone)
+      Yield.Some(out, initialState, initialOnDone).mapOnDone(mappedState, mapOnDone) shouldBe
+        Yield.Some(out, mappedState, mappedOnDone)
+    }
+
+  it should "transform None content" in
+    forAll { (initialState: State[Exception], mappedState: State[String]) =>
+      val initialOnDone = mock[OnDone[ZonedDateTime, OffsetDateTime, Exception]]("initial OnDone")
+      val mappedOnDone = mock[OnDone[Duration, OffsetDateTime, String]]("mapped OnDone")
+      val mapOnDone =
+        mock[OnDone[ZonedDateTime, OffsetDateTime, Exception] => OnDone[Duration, OffsetDateTime, String]]("mapOnDone")
+      (mapOnDone.apply _).expects(initialOnDone).returns(mappedOnDone)
+      Yield.None(initialState, initialOnDone).mapOnDone[Duration, OffsetDateTime, String](
+        mappedState, mapOnDone) shouldBe Yield.None(mappedState, mappedOnDone)
     }
 }

@@ -38,4 +38,6 @@ object State {
 
     private[stages] def apply[I, O, _E](onDone: OnDone[I, O, _E]): Stage[I, O, _E] = onDone.onError()
   }
+
+  def error[E](error: E): State.Error[E] = Error(NonEmptyChain.one(error))
 }

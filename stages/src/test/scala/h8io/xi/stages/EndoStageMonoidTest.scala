@@ -29,6 +29,7 @@ class EndoStageMonoidTest extends AnyFunSuite with FunSuiteDiscipline with Check
       def combine(x: Stage.Endo[T, E], y: Stage.Endo[T, E]): Stage.Endo[T, E] = x ~> y
     }
 
+  // Depth should not be greater than 3
   private def toList[E](stage: Stage[?, ?, E]): List[Stage[?, ?, E]] =
     stage match {
       case Stage.AndThen(previous, next) => toList(previous) ++ toList(next)
@@ -48,10 +49,7 @@ class EndoStageMonoidTest extends AnyFunSuite with FunSuiteDiscipline with Check
 
   private implicit def stageEq[T: Arbitrary: Monoid, E]: Eq[Stage.Endo[T, E]] = {
     (x: Stage.Endo[T, E], y: Stage.Endo[T, E]) =>
-      val in = Arbitrary.arbitrary[T].sample match {
-        case Some(value) => value
-        case None => Monoid[T].empty
-      }
+      val in = Arbitrary.arbitrary[T].sample getOrElse Monoid[T].empty
       toTuple(x(in)) == toTuple(y(in))
   }
 
