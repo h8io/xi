@@ -26,7 +26,8 @@ ThisBuild / scalaVersion := "2.13.16"
 ThisBuild / crossScalaVersions += "2.12.20"
 
 ThisBuild / scalacOptions ++=
-  Seq("-Xsource:3", "--deprecation", "--feature", "--unchecked", "-Xlint:_", "-Xfatal-warnings")
+  Seq("-Xsource:3", "--deprecation", "--feature", "--unchecked", "-Xlint:_", "-Xfatal-warnings", "-opt:l:inline",
+    "-opt-warnings")
 
 ThisBuild / scalacOptions ++=
   (CrossVersion.partialVersion(scalaVersion.value) match {
@@ -38,9 +39,12 @@ ThisBuild / javacOptions ++= Seq("-target", "8")
 
 ThisBuild / libraryDependencies ++= Cats ++ TestBundle
 
+val `old-stages` = (project in file("old-stages")).settings(name := "xi-old-stages")
+
 val stages = (project in file("stages")).settings(name := "xi-stages")
 
 val cfg = (project in file("cfg"))
   .settings(name := "xi-cfg", libraryDependencies += "com.typesafe" % "config" % "1.4.5")
 
-val root = (project in file(".")).settings(name := "xi").aggregate(stages, cfg).enablePlugins(ScoverageSummaryPlugin)
+val root = (project in file(".")).settings(name := "xi").aggregate(stages, cfg)
+  .enablePlugins(ScoverageSummaryPlugin)
