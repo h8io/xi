@@ -6,7 +6,7 @@ object Countdown {
   private[util] final case class Impl[-I, +O, +E](i: Long, n: Long, stage: Stage[I, O, E])
       extends Stage.Decorator[I, O, E] {
     assume(n > 0, s"n must be positive, got n = $n")
-    assume(0 <= i && i <= n, s"i must be in [1, $n], got i = $i")
+    assume(0 < i && i <= n, s"i must be in [1, $n], got i = $i")
 
     def apply(in: I): Yield[I, O, E] =
       if (i == 1) stage(in).map(
