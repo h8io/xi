@@ -16,3 +16,5 @@ sealed case class DeadEnd(_dispose: () => Unit)
 
   override final def dispose(): Unit = _dispose()
 }
+
+object DeadEnd extends DeadEnd({ () => })
