@@ -35,7 +35,7 @@ class LoopTest
     }
 
   it should "be executed until the state is Error" in
-    forAll(Gen.choose(0, 100), Arbitrary.arbitrary[State.Error[String]]) { (n, lastState) =>
+    forAll(Gen.zip(Gen.choose(0, 100), Arbitrary.arbitrary[State.Error[String]])) { case (n, lastState) =>
       val in = Arbitrary.arbitrary[UUID].sample
       val initial = mock[Stage.Endo[Option[UUID], String]]("initial stage")
       val (lastIn, updated) = genStage(n, initial, in)
