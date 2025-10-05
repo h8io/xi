@@ -65,9 +65,9 @@ class RepeatTest
       yieldSuppliers: List[StateAndOnDoneToYield[I, O, E]],
       stage: Stage[I, O, E], in: I): Stage[I, O, E] =
     yieldSuppliers match {
-      case out :: tail =>
+      case head :: tail =>
         val id = yieldSuppliers.length.toString
-        val `yield` = genYield[I, O, E](id, out, State.Success)
+        val `yield` = genYield[I, O, E](id, head, State.Success)
         val updated = mock[Stage[I, O, E]](s"stage $id")
         (`yield`.onDone.onSuccess _).expects().returns(updated)
         (stage.apply _).expects(in).returns(`yield`)
