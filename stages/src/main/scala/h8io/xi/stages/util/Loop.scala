@@ -4,18 +4,18 @@ import h8io.xi.stages.*
 
 import scala.annotation.tailrec
 
-final case class Loop[T, +E](stage: Stage.Endo[T, E]) extends Stage.SafeEndo[T, E] {
+final case class Loop[T, +E](stage: Stage.Endo[T, E]) extends Stage.Decorator[T, T, E] {
   def apply(in: T): Yield[T, T, E] = {
     @tailrec def loop(stage: Stage[T, T, E], in: T): Yield[T, T, E] = {
-      val outcome = stage.safe(in).outcome()
-      outcome.state match {
-        case State.Success(updated) =>
-          outcome match {
-            case Outcome.Some(out, _, _) => loop(updated, out)
-            case Outcome.None(_, _) => outcome.toYield(State.Success(Loop(updated)))
+      val `yield` = stage(in)
+      `yield`.state match {
+        case State.Success =>
+          `yield` match {
+            case Yield.Some(out, _, _) => loop(`yield`.onDone.onSuccess(), out)
+            case Yield.None(_, _) => Yield.None(State.Success, OnDone.FromStage(Loop(`yield`.onDone.onComplete())))
           }
-        case State.Complete(updated) => outcome.toYield(State.Success(Loop(updated)))
-        case failure => outcome.toYield(failure.map(Loop(_)))
+        case State.Complete => `yield`.mapOnDone(State.Success, onDone => OnDone.FromStage(Loop(onDone.onComplete())))
+        case error: State.Error[E] => `yield`.mapOnDone(error, onDone => OnDone.FromStage(Loop(onDone.onError())))
       }
     }
     loop(stage, in)

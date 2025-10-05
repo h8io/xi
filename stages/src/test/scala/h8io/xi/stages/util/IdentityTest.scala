@@ -4,20 +4,17 @@ import h8io.xi.stages.{State, Yield}
 import org.scalatest.Inside
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
+import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 
-import scala.util.Random
-
-class IdentityTest extends AnyFlatSpec with Matchers with Inside {
+class IdentityTest extends AnyFlatSpec with Matchers with Inside with ScalaCheckPropertyChecks {
   "Identity" should "return input" in {
-    val in = Random.nextString(Random.nextInt(100))
-    val id = Identity[String]
-    inside(id(in)) { case Yield.Some(`in`, onDone) =>
-      val state = State.Success(id)
-      onDone.onSuccess() shouldBe state
-      onDone.onComplete() shouldBe state
-      onDone.onError() shouldBe state
-      onDone.onPanic() shouldBe state
-      onDone.dispose()
+    val identity = Identity[String]
+    forAll { (in: String) =>
+      inside(identity(in)) { case Yield.Some(`in`, State.Success, onDone) =>
+        onDone.onSuccess() shouldBe identity
+        onDone.onComplete() shouldBe identity
+        onDone.onError() shouldBe identity
+      }
     }
   }
 }

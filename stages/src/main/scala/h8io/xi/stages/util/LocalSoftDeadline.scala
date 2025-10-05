@@ -5,57 +5,34 @@ import h8io.xi.stages.{OnDone, Stage, State, Yield}
 import scala.concurrent.duration.FiniteDuration
 
 object LocalSoftDeadline {
-  private[util] final case class Head[-I, +O, +E](now: () => Long, duration: Long, stage: Stage[I, O, E])
-      extends Stage.Safe[I, O, E] {
+  private[util] final case class Head[T](now: () => Long, duration: Long) extends Stage.Endo[T, Nothing] {
     assume(duration > 0, s"Duration must be positive, got duration = $duration")
 
-    def apply(in: I): Yield[I, O, E] = {
-      val `yield` = stage.safe(in)
-      `yield`.lift(Tail(now(), now, duration, `yield`, _))
-    }
+    def apply(in: T): Yield[T, T, Nothing] = Yield.Some(in, State.Success, OnDone.FromStage(Tail(now(), this)))
   }
 
-  private[util] final case class Tail[-I, +O, +E](
-      ts: Long,
-      now: () => Long,
-      duration: Long,
-      last: Yield[I, O, E],
-      stage: Stage[I, O, E]
-  ) extends Stage.Safe[I, O, E] {
+  private[util] final case class Tail[T](ts: Long, head: Head[T]) extends Stage.Endo[T, Nothing] {
     self =>
 
-    assume(duration > 0, s"Duration must be positive, got duration = $duration")
-
-    override def apply(in: I): Yield[I, O, E] =
-      if (overdue()) last.map(onDone => State.Complete(Head(now, duration, stage)).onDone(onDone.dispose _))
-      else {
-        val `yield` = stage.safe(in)
-        `yield`.map { onDone =>
-          new OnDone[I, O, E] {
-            def onSuccess(): State[I, O, E] = {
-              val state = onDone.onSuccess()
-              if (overdue()) state.complete(Head(now, duration, _))
-              else state.map(Tail(ts, now, duration, `yield`, _))
-            }
-
-            def onComplete(): State[I, O, E] = onDone.onComplete().complete(Head(now, duration, _))
-            def onError(): State[I, O, E] = onDone.onError().complete(Head(now, duration, _))
-            def onPanic(): State[I, O, E] = onDone.onPanic().complete(Head(now, duration, _))
-
-            override def dispose(): Unit = onDone.dispose()
-          }
+    def apply(in: T): Yield[T, T, Nothing] =
+      if (overdue()) Yield.Some(in, State.Complete, OnDone.FromStage(head))
+      else Yield.Some(
+        in,
+        State.Success,
+        new OnDone[T, T, Nothing] {
+          override def onSuccess(): Stage[T, T, Nothing] = self
+          override def onComplete(): Stage[T, T, Nothing] = head
+          override def onError(): Stage[T, T, Nothing] = head
         }
-      }
+      )
 
-    @inline private def overdue(): Boolean = now() - ts >= duration
+    @inline private def overdue(): Boolean = head.now() - ts >= head.duration
   }
 
-  def apply[I, O, E](duration: FiniteDuration, stage: Stage[I, O, E]): Stage.Safe[I, O, E] =
-    apply(duration.toNanos, stage)
+  def apply[T, E](duration: FiniteDuration): Stage.Endo[T, Nothing] = apply(duration.toNanos)
 
-  def apply[I, O, E](duration: java.time.Duration, stage: Stage[I, O, E]): Stage.Safe[I, O, E] =
-    apply(duration.toNanos, stage)
+  def apply[T, E](duration: java.time.Duration): Stage.Endo[T, Nothing] = apply(duration.toNanos)
 
-  @inline private def apply[I, O, E](duration: Long, stage: Stage[I, O, E]): Stage.Safe[I, O, E] =
-    if (duration > 0) Head(System.nanoTime _, duration, stage) else DeadEnd
+  @inline private def apply[T, E](duration: Long): Stage.Endo[T, Nothing] =
+    if (duration > 0) Head(System.nanoTime _, duration) else DeadEnd
 }
