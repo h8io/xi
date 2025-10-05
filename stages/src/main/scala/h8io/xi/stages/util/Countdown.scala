@@ -7,7 +7,7 @@ object Countdown {
     assume(n > 0, s"n must be positive, got n = $n")
     assume(0 < i && i <= n, s"i must be in [1, $n], got i = $i")
 
-    def apply(in: T): Yield[T, T, Nothing] =
+    def apply(in: T): Yield.Some[T, T, Nothing] =
       if (i == 1) Yield.Some(in, State.Complete, OnDone.FromStage(Impl(n, n)))
       else Yield.Some(
         in,

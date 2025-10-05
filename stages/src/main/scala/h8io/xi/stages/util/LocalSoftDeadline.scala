@@ -8,13 +8,13 @@ object LocalSoftDeadline {
   private[util] final case class Head[T](now: () => Long, duration: Long) extends Stage.Endo[T, Nothing] {
     assume(duration > 0, s"Duration must be positive, got duration = $duration")
 
-    def apply(in: T): Yield[T, T, Nothing] = Yield.Some(in, State.Success, OnDone.FromStage(Tail(now(), this)))
+    def apply(in: T): Yield.Some[T, T, Nothing] = Yield.Some(in, State.Success, OnDone.FromStage(Tail(now(), this)))
   }
 
   private[util] final case class Tail[T](ts: Long, head: Head[T]) extends Stage.Endo[T, Nothing] {
     self =>
 
-    def apply(in: T): Yield[T, T, Nothing] =
+    def apply(in: T): Yield.Some[T, T, Nothing] =
       if (overdue()) Yield.Some(in, State.Complete, OnDone.FromStage(head))
       else Yield.Some(
         in,
