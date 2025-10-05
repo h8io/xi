@@ -39,8 +39,6 @@ ThisBuild / javacOptions ++= Seq("-target", "8")
 
 ThisBuild / libraryDependencies ++= Cats ++ TestBundle
 
-val `old-stages` = (project in file("old-stages")).settings(name := "xi-old-stages")
-
 val stages = (project in file("stages")).settings(name := "xi-stages")
 
 val cfg = (project in file("cfg"))
