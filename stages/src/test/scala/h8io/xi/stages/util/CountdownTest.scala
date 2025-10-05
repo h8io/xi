@@ -2,107 +2,36 @@ package h8io.xi.stages.util
 
 import h8io.xi.stages.*
 import org.scalacheck.{Arbitrary, Gen}
-import org.scalamock.scalatest.MockFactory
-import org.scalatest.Inside
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.{Assertion, Inside}
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 
-class CountdownTest
-    extends AnyFlatSpec with Matchers with Inside with MockFactory with ScalaCheckPropertyChecks with Generators {
-  "apply" should "create Impl object where i == n if n > 0" in {
-    val stage = mock[Stage[Any, Nothing, Nothing]]
-    forAll(Gen.posNum[Long])(n => Countdown(n, stage) shouldBe Countdown.Impl(n, n, stage))
-  }
+class CountdownTest extends AnyFlatSpec with Matchers with Inside with ScalaCheckPropertyChecks {
+  "apply" should "create Impl object where i == n if n > 0" in
+    forAll(Gen.posNum[Long])(n => Countdown(n) shouldBe Countdown.Impl(n, n))
 
   it should "create DeadEnd object if n <= 0" in {
-    val stage = mock[Stage[Any, Nothing, Nothing]]
-    inside(Countdown(0, stage)) { case DeadEnd(dispose) =>
-      (stage.dispose _).expects()
-      noException should be thrownBy dispose()
-    }
-    forAll(Gen.negNum[Long]) { n =>
-      inside(Countdown(n, stage)) { case DeadEnd(dispose) =>
-        (stage.dispose _).expects()
-        noException should be thrownBy dispose()
-      }
-    }
+    Countdown(0) shouldBe DeadEnd
+    forAll(Gen.choose(Long.MinValue, -1))(n => Countdown(n) shouldBe DeadEnd)
   }
 
   "Impl" should "return a yield with state Complete or Error when i == 1" in
-    forAll(
-      Gen.zip(Gen.posNum[Long], Arbitrary.arbitrary[Short]),
-      Arbitrary.arbitrary[OnDoneToYield[Short, String, Byte]]) { (parameters, yieldSupplier) =>
-      val (n, in) = parameters
-      val onDone = mock[OnDone[Short, String, Byte]]("onDone")
-      val `yield` = yieldSupplier(onDone)
-      val stage = mock[Stage[Short, String, Byte]]("underlying stage")
-      val expectedState = if (`yield`.state == State.Success) State.Complete else `yield`.state
-      (stage.apply _).expects(in).returns(`yield`)
-      val cdOnDone = inside((`yield`, Countdown.Impl(1, n, stage)(in))) {
-        case (Yield.Some(out, _, _), Yield.Some(cdOut, `expectedState`, onDone)) =>
-          cdOut shouldBe out
-          onDone
-        case (Yield.None(_, _), Yield.None(`expectedState`, onDone)) => onDone
-      }
-
-      val onSuccessStage = mock[Stage[Short, String, Byte]]
-      (onDone.onSuccess _).expects().returns(onSuccessStage)
-      cdOnDone.onSuccess() shouldBe Countdown.Impl(n, n, onSuccessStage)
-
-      val onCompleteStage = mock[Stage[Short, String, Byte]]
-      (onDone.onComplete _).expects().returns(onCompleteStage)
-      cdOnDone.onComplete() shouldBe Countdown.Impl(n, n, onCompleteStage)
-
-      val onErrorStage = mock[Stage[Short, String, Byte]]
-      (onDone.onError _).expects().returns(onErrorStage)
-      cdOnDone.onError() shouldBe Countdown.Impl(n, n, onErrorStage)
+    forAll(Gen.zip(Gen.choose(1, Long.MaxValue), Arbitrary.arbitrary[Short])) { case (n, in) =>
+      Countdown.Impl[Short](1, n)(in) shouldBe
+        Yield.Some(in, State.Complete, OnDone.FromStage(Countdown.Impl[Short](n, n)))
     }
 
-  it should "return yield with the same state if i > 1" in {
-    forAll(
-      Gen.zip(Gen.choose(2, 1000), Gen.choose(1L, 1000), Arbitrary.arbitrary[String]),
-      Arbitrary.arbitrary[OnDoneToYield[String, Long, Exception]]) { (parameters, yieldSupplier) =>
-      val (i, k, in) = parameters
-      val n = i + k
-      test(2, n, in, yieldSupplier)
-      test(i, n, in, yieldSupplier)
-      test(n, n, in, yieldSupplier)
+  it should "return yield with the same state if i > 1" in
+    forAll(Gen.zip(Gen.choose(2, Long.MaxValue), Arbitrary.arbitrary[String])) { case (n, in) =>
+      def test(i: Long): Assertion =
+        inside(Countdown.Impl(i, n)(in)) { case Yield.Some(`in`, State.Success, onDone) =>
+          onDone.onSuccess() shouldBe Countdown.Impl(i - 1, n)
+          onDone.onComplete() shouldBe Countdown.Impl(n, n)
+          onDone.onError() shouldBe Countdown.Impl(n, n)
+        }
+      test(2)
+      test(n)
+      forAll(Gen.choose(2, n))(i => test(i))
     }
-
-    def test(i: Long, n: Long, in: String, yieldSupplier: OnDoneToYield[String, Long, Exception]) = {
-      val onDone = mock[OnDone[String, Long, Exception]]
-      val `yield` = yieldSupplier(onDone)
-      val stage = mock[Stage[String, Long, Exception]]("underlying stage")
-      (stage.apply _).expects(in).returns(`yield`)
-      val cdOnDone = inside((`yield`, Countdown.Impl(i, n, stage)(in))) {
-        case (Yield.Some(out, _, _), Yield.Some(cdOut, `yield`.state, onDone)) =>
-          cdOut shouldBe out
-          onDone
-        case (Yield.None(_, _), Yield.None(`yield`.state, onDone)) => onDone
-      }
-
-      val onSuccessStage = mock[Stage[String, Long, Exception]]("stage on success")
-      (onDone.onSuccess _).expects().returns(onSuccessStage)
-      cdOnDone.onSuccess() shouldBe Countdown.Impl(i - 1, n, onSuccessStage)
-
-      val onCompleteStage = mock[Stage[String, Long, Exception]]("stage on complete")
-      (onDone.onComplete _).expects().returns(onCompleteStage)
-      cdOnDone.onComplete() shouldBe Countdown.Impl(n, n, onCompleteStage)
-
-      val onErrorStage = mock[Stage[String, Long, Exception]]("stage on error")
-      (onDone.onError _).expects().returns(onErrorStage)
-      cdOnDone.onError() shouldBe Countdown.Impl(n, n, onErrorStage)
-    }
-  }
-
-  "dispose" should "call stage's dispose" in {
-    val stage = mock[Stage[Any, Nothing, Nothing]]
-    (stage.dispose _).expects()
-    noException should be thrownBy Countdown.Impl(1, 42, stage).dispose()
-    (stage.dispose _).expects()
-    noException should be thrownBy Countdown.Impl(27, 42, stage).dispose()
-    (stage.dispose _).expects()
-    noException should be thrownBy Countdown.Impl(42, 42, stage).dispose()
-  }
 }
