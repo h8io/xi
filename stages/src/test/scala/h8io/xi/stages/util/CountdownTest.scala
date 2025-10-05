@@ -10,7 +10,6 @@ import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 
 class CountdownTest
     extends AnyFlatSpec with Matchers with Inside with MockFactory with ScalaCheckPropertyChecks with Generators {
-
   "apply" should "create Impl object where i == n if n > 0" in {
     val stage = mock[Stage[Any, Nothing, Nothing]]
     forAll(Gen.posNum[Long])(n => Countdown(n, stage) shouldBe Countdown.Impl(n, n, stage))
@@ -33,7 +32,7 @@ class CountdownTest
   "Impl" should "return a yield with state Complete or Error when i == 1" in
     forAll(
       Gen.zip(Gen.posNum[Long], Arbitrary.arbitrary[Short]),
-      Arbitrary.arbitrary[YieldSupplier[Short, String, Byte]]) { (parameters, yieldSupplier) =>
+      Arbitrary.arbitrary[OnDoneToYield[Short, String, Byte]]) { (parameters, yieldSupplier) =>
       val (n, in) = parameters
       val onDone = mock[OnDone[Short, String, Byte]]("onDone")
       val `yield` = yieldSupplier(onDone)
@@ -63,7 +62,7 @@ class CountdownTest
   it should "return yield with the same state if i > 1" in {
     forAll(
       Gen.zip(Gen.choose(2, 1000), Gen.choose(1L, 1000), Arbitrary.arbitrary[String]),
-      Arbitrary.arbitrary[YieldSupplier[String, Long, Exception]]) { (parameters, yieldSupplier) =>
+      Arbitrary.arbitrary[OnDoneToYield[String, Long, Exception]]) { (parameters, yieldSupplier) =>
       val (i, k, in) = parameters
       val n = i + k
       test(2, n, in, yieldSupplier)
@@ -71,7 +70,7 @@ class CountdownTest
       test(n, n, in, yieldSupplier)
     }
 
-    def test(i: Long, n: Long, in: String, yieldSupplier: YieldSupplier[String, Long, Exception]) = {
+    def test(i: Long, n: Long, in: String, yieldSupplier: OnDoneToYield[String, Long, Exception]) = {
       val onDone = mock[OnDone[String, Long, Exception]]
       val `yield` = yieldSupplier(onDone)
       val stage = mock[Stage[String, Long, Exception]]("underlying stage")

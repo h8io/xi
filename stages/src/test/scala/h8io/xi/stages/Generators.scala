@@ -10,16 +10,20 @@ trait Generators {
   implicit def genState[E: Arbitrary]: Arbitrary[State[E]] =
     Arbitrary(Gen.oneOf(Gen.const(State.Success: State[E]), Gen.const(State.Complete), genStateError[E].arbitrary))
 
-  type YieldSupplier[I, O, E] = OnDone[I, O, E] => Yield[I, O, E]
+  type StateAndOnDoneToYield[I, O, E] = (State[E], OnDone[I, O, E]) => Yield[I, O, E]
 
-  implicit def genYieldSupplier[I, O: Arbitrary, E: Arbitrary]: Arbitrary[YieldSupplier[I, O, E]] =
+  implicit def genStateAndOnDoneToYield[I, O: Arbitrary, E]: Arbitrary[StateAndOnDoneToYield[I, O, E]] =
+    Arbitrary(
+      Gen.oneOf(
+        Arbitrary.arbitrary[O] map { out => Yield.Some(out, _: State[E], _: OnDone[I, O, E]) },
+        Gen.const(Yield.None[I, O, E](_: State[E], _: OnDone[I, O, E]))))
+
+  type OnDoneToYield[I, O, E] = OnDone[I, O, E] => Yield[I, O, E]
+
+  implicit def genOnDoneToYield[I, O: Arbitrary, E: Arbitrary]: Arbitrary[OnDoneToYield[I, O, E]] =
     Arbitrary(
       for {
-        isSome <- Arbitrary.arbitrary[Boolean]
+        yieldSupplier <- Arbitrary.arbitrary[StateAndOnDoneToYield[I, O, E]]
         state <- Arbitrary.arbitrary[State[E]]
-        yieldGen =
-          if (isSome) Arbitrary.arbitrary[O] map { out => Yield.Some(out, state, _: OnDone[I, O, E]) }
-          else Gen.const(Yield.None(state, _: OnDone[I, O, E]))
-        yld <- yieldGen
-      } yield yld)
+      } yield yieldSupplier(state, _: OnDone[I, O, E]))
 }
