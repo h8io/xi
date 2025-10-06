@@ -15,7 +15,7 @@ object LocalSoftDeadline {
     self =>
 
     def apply(in: T): Yield.Some[T, T, Nothing] =
-      if (overdue()) Yield.Some(in, State.Complete, OnDone.FromStage(head))
+      if (head.now() - ts >= head.duration) Yield.Some(in, State.Complete, OnDone.FromStage(head))
       else Yield.Some(
         in,
         State.Success,
@@ -25,14 +25,12 @@ object LocalSoftDeadline {
           override def onError(): Stage[T, T, Nothing] = head
         }
       )
-
-    @inline private def overdue(): Boolean = head.now() - ts >= head.duration
   }
 
-  def apply[T, E](duration: FiniteDuration): Stage.Endo[T, Nothing] = apply(duration.toNanos)
+  def apply[T](duration: FiniteDuration): Stage.Endo[T, Nothing] = apply(duration.toNanos)
 
-  def apply[T, E](duration: java.time.Duration): Stage.Endo[T, Nothing] = apply(duration.toNanos)
+  def apply[T](duration: java.time.Duration): Stage.Endo[T, Nothing] = apply(duration.toNanos)
 
-  @inline private def apply[T, E](duration: Long): Stage.Endo[T, Nothing] =
+  @inline private def apply[T](duration: Long): Stage.Endo[T, Nothing] =
     if (duration > 0) Head(System.nanoTime _, duration) else DeadEnd
 }

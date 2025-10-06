@@ -8,27 +8,26 @@ import org.scalatest.{Assertion, Inside}
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 
 class CountdownTest extends AnyFlatSpec with Matchers with Inside with ScalaCheckPropertyChecks {
-  "apply" should "create Impl object where i == n if n > 0" in
-    forAll(Gen.posNum[Long])(n => Countdown(n) shouldBe Countdown.Impl(n, n))
+  "apply" should "create Countdown object where i == n if n > 0" in
+    forAll(Gen.posNum[Long])(n => Countdown(n) shouldBe Countdown(n, n))
 
   it should "create DeadEnd object if n <= 0" in {
     Countdown(0) shouldBe DeadEnd
     forAll(Gen.choose(Long.MinValue, -1))(n => Countdown(n) shouldBe DeadEnd)
   }
 
-  "Impl" should "return a yield with state Complete or Error when i == 1" in
+  it should "return a yield with state Complete or Error when i == 1" in
     forAll(Gen.zip(Gen.choose(1, Long.MaxValue), Arbitrary.arbitrary[Short])) { case (n, in) =>
-      Countdown.Impl[Short](1, n)(in) shouldBe
-        Yield.Some(in, State.Complete, OnDone.FromStage(Countdown.Impl[Short](n, n)))
+      Countdown[Short](1, n)(in) shouldBe Yield.Some(in, State.Complete, OnDone.FromStage(Countdown[Short](n, n)))
     }
 
   it should "return yield with the same state if i > 1" in
     forAll(Gen.zip(Gen.choose(2, Long.MaxValue), Arbitrary.arbitrary[String])) { case (n, in) =>
       def test(i: Long): Assertion =
-        inside(Countdown.Impl(i, n)(in)) { case Yield.Some(`in`, State.Success, onDone) =>
-          onDone.onSuccess() shouldBe Countdown.Impl(i - 1, n)
-          onDone.onComplete() shouldBe Countdown.Impl(n, n)
-          onDone.onError() shouldBe Countdown.Impl(n, n)
+        inside(Countdown(i, n)(in)) { case Yield.Some(`in`, State.Success, onDone) =>
+          onDone.onSuccess() shouldBe Countdown(i - 1, n)
+          onDone.onComplete() shouldBe Countdown(n, n)
+          onDone.onError() shouldBe Countdown(n, n)
         }
       test(2)
       test(n)
