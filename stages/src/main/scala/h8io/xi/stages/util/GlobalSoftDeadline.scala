@@ -12,7 +12,7 @@ private[util] final case class GlobalSoftDeadline[T](now: () => Long, duration: 
   private val ts: Long = now()
 
   def apply(in: T): Yield.Some[T, T, Nothing] =
-    Yield.Some(in, if (now() - ts >= duration) State.Success else State.Complete, OnDone)
+    Yield.Some(in, if (now() - ts < duration) State.Success else State.Complete, OnDone)
 
   private[util] case object OnDone extends stages.OnDone[T, T, Nothing] {
     def onSuccess(): Stage[T, T, Nothing] = self

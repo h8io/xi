@@ -40,7 +40,7 @@ class LocalSoftDeadlineTest
     }
 
   "Tail" should "return Yield.Some with Success state if not overdue" in
-    forAll(Gen.zip(Gen.long, Gen.choose(1L, Long.MaxValue), Arbitrary.arbitrary[UUID])) { case (ts, duration, in) =>
+    forAll(Gen.zip(Gen.long, Gen.choose(1L, Long.MaxValue), Gen.uuid)) { case (ts, duration, in) =>
       def test(passed: Long): Assertion = {
         val now = mock[() => Long]
         val head = LocalSoftDeadline.Head[UUID](now, duration)
@@ -59,7 +59,7 @@ class LocalSoftDeadlineTest
     }
 
   it should "return Yield.Some with Complete state if overdue" in
-    forAll(Gen.zip(Gen.long, Gen.choose(1L, Long.MaxValue - 1), Arbitrary.arbitrary[UUID])) { case (ts, duration, in) =>
+    forAll(Gen.zip(Gen.long, Gen.choose(1L, Long.MaxValue - 1), Gen.uuid)) { case (ts, duration, in) =>
       def test(passed: Long): Assertion = {
         val now = mock[() => Long]
         val head = LocalSoftDeadline.Head[UUID](now, duration)
