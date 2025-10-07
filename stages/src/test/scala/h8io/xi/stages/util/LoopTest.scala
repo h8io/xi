@@ -44,7 +44,7 @@ class LoopTest
       Gen.zip(
         Gen.listOf(Arbitrary.arbitrary[StateAndOnDoneToYieldSome[UUID, UUID, String]]),
         Arbitrary.arbitrary[StateAndOnDoneToYield[UUID, UUID, String]],
-        Arbitrary.arbitrary[UUID],
+        Gen.uuid,
         Arbitrary.arbitrary[State.Error[String]]
       )) { case (yieldSuppliers, lastYieldSupplier, in, lastState) =>
       val initial = mock[Stage.Endo[UUID, String]]("initial stage")
