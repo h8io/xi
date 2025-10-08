@@ -1,12 +1,9 @@
 package h8io.xi.stages.util
 
-import h8io.xi.stages
-import h8io.xi.stages.{Signal, Stage, Yield}
+import h8io.xi.stages.Stage
 
-object Identity extends Stage.Endo[Any, Nothing] {
-  private val OnDone = stages.OnDone.FromStage[Any, Any, Nothing](this)
-
+object Identity extends Stage.Endo[Any, Nothing] with Stage.Function[Any, Any] {
   def apply[T]: Stage.Endo[T, Nothing] = asInstanceOf[Stage.Endo[T, Nothing]]
 
-  def apply(in: Any): Yield[Any, Any, Nothing] = Yield.Some(in, Signal.Success, OnDone)
+  override def f(in: Any): Any = in
 }
