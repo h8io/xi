@@ -1,7 +1,7 @@
 package h8io.xi.stages.util
 
 import h8io.xi.stages
-import h8io.xi.stages.{OnDone, Stage, Signal}
+import h8io.xi.stages.{OnDone, Signal, Stage}
 
 sealed case class DeadEnd(_dispose: () => Unit)
     extends Stage[Any, Nothing, Nothing] with OnDone[Any, Nothing, Nothing] {

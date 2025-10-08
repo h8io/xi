@@ -1,7 +1,7 @@
 package h8io.xi.stages.util
 
 import h8io.xi.stages
-import h8io.xi.stages.{Stage, Signal, Yield}
+import h8io.xi.stages.{Signal, Stage, Yield}
 
 import java.time.Duration
 import scala.concurrent.duration.FiniteDuration

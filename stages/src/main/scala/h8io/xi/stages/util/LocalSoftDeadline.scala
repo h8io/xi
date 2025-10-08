@@ -1,6 +1,6 @@
 package h8io.xi.stages.util
 
-import h8io.xi.stages.{OnDone, Stage, Signal, Yield}
+import h8io.xi.stages.{OnDone, Signal, Stage, Yield}
 
 import scala.concurrent.duration.FiniteDuration
 

@@ -1,7 +1,7 @@
 package h8io.xi.stages.util
 
 import h8io.xi.stages
-import h8io.xi.stages.{Stage, Signal, Yield}
+import h8io.xi.stages.{Signal, Stage, Yield}
 
 final case class Cache[-I, +O, +E](stage: Stage[I, O, E]) extends Stage.Decorator[I, O, E] {
   def apply(in: I): Yield[I, O, E] =

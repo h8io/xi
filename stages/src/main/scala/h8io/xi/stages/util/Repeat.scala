@@ -10,7 +10,8 @@ final case class Repeat[-I, +O, +E](stage: Stage[I, O, E]) extends Stage.Decorat
       val `yield` = stage(in)
       `yield`.signal match {
         case Signal.Success => repeat(`yield`.onDone.onSuccess())
-        case Signal.Complete => `yield`.mapOnDone(Signal.Success, onDone => OnDone.FromStage(Repeat(onDone.onComplete())))
+        case Signal.Complete =>
+          `yield`.mapOnDone(Signal.Success, onDone => OnDone.FromStage(Repeat(onDone.onComplete())))
         case error: Signal.Error[E] => `yield`.mapOnDone(error, onDone => OnDone.FromStage(Repeat(onDone.onError())))
       }
     }

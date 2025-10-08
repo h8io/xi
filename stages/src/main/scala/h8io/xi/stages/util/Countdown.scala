@@ -1,6 +1,6 @@
 package h8io.xi.stages.util
 
-import h8io.xi.stages.{OnDone, Stage, Signal, Yield}
+import h8io.xi.stages.{OnDone, Signal, Stage, Yield}
 
 private[util] final case class Countdown[T](i: Long, n: Long) extends Stage.Endo[T, Nothing] {
   assume(n > 0, s"n must be positive, got n = $n")
