@@ -1,6 +1,6 @@
 package h8io.xi.stages.util
 
-import h8io.xi.stages.{Generators, State, Yield}
+import h8io.xi.stages.{Generators, Signal, Yield}
 import org.scalacheck.Gen
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.Inside
@@ -42,7 +42,7 @@ class GlobalSoftDeadlineTest
               val currentInterval = previousInterval + interval
               (now.apply _).expects().returns(currentTS)
               inside(stage(in)) { case Yield.Some(`in`, state, onDone) =>
-                if (currentInterval < duration) state shouldBe State.Success else state shouldBe State.Complete
+                if (currentInterval < duration) state shouldBe Signal.Success else state shouldBe Signal.Complete
                 onDone.onSuccess() shouldBe stage
                 onDone.onComplete() shouldBe stage
                 onDone.onError() shouldBe stage

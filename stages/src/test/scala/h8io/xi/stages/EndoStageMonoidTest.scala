@@ -15,7 +15,7 @@ class EndoStageMonoidTest extends AnyFunSuite with FunSuiteDiscipline with Check
       for {
         prefix <- Arbitrary.arbitrary[T]
         suffix <- Arbitrary.arbitrary[T]
-        state <- Arbitrary.arbitrary[State[E]]
+        state <- Arbitrary.arbitrary[Signal[E]]
       } yield new Stage.Endo[T, E] {
         def apply(in: T): Yield[T, T, E] = Yield.Some(prefix |+| in |+| suffix, state, OnDone.FromStage(this))
 

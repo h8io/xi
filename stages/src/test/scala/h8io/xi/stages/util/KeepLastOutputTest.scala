@@ -18,7 +18,7 @@ class KeepLastOutputTest
   }
 
   "None" should "stay None if decorated stage returns Yield.None" in
-    forAll { (in: UUID, state: State[Exception]) =>
+    forAll { (in: UUID, state: Signal[Exception]) =>
       val stage = mock[Stage[UUID, Instant, Exception]]
       val onSuccessStage = mock[Stage[UUID, Instant, Exception]]
       val onCompleteStage = mock[Stage[UUID, Instant, Exception]]
@@ -36,7 +36,7 @@ class KeepLastOutputTest
     }
 
   it should "become Some if decorated stage returns Yield.Some" in
-    forAll { (in: Long, out: String, state: State[Exception]) =>
+    forAll { (in: Long, out: String, state: Signal[Exception]) =>
       val stage = mock[Stage[Long, String, Exception]]
       val onSuccessStage = mock[Stage[Long, String, Exception]]
       val onCompleteStage = mock[Stage[Long, String, Exception]]
@@ -54,7 +54,7 @@ class KeepLastOutputTest
     }
 
   "Some" should "keep the old output if decorated stage returns Yield.None" in
-    forAll { (in: ZonedDateTime, out: ZoneId, state: State[Exception]) =>
+    forAll { (in: ZonedDateTime, out: ZoneId, state: Signal[Exception]) =>
       val stage = mock[Stage[ZonedDateTime, ZoneId, Exception]]
       val onSuccessStage = mock[Stage[ZonedDateTime, ZoneId, Exception]]
       val onCompleteStage = mock[Stage[ZonedDateTime, ZoneId, Exception]]
@@ -72,7 +72,7 @@ class KeepLastOutputTest
     }
 
   it should "memoize the new output if decorated stage returns Yield.Some" in
-    forAll { (in: Array[Int], out: BigInt, newOut: BigInt, state: State[Exception]) =>
+    forAll { (in: Array[Int], out: BigInt, newOut: BigInt, state: Signal[Exception]) =>
       val stage = mock[Stage[Array[Int], BigInt, Exception]]
       val onSuccessStage = mock[Stage[Array[Int], BigInt, Exception]]
       val onCompleteStage = mock[Stage[Array[Int], BigInt, Exception]]

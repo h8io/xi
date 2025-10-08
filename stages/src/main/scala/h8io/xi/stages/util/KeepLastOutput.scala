@@ -6,16 +6,16 @@ object KeepLastOutput {
   private[util] final case class None[-I, +O, +E](stage: Stage[I, O, E]) extends Stage.Decorator[I, O, E] {
     def apply(in: I): Yield[I, O, E] =
       stage(in) match {
-        case Yield.Some(out, state, onDone) => Yield.Some(out, state, onDone.map(Some(out, _)))
-        case Yield.None(state, onDone) => Yield.None(state, onDone.map(None(_)))
+        case Yield.Some(out, signal, onDone) => Yield.Some(out, signal, onDone.map(Some(out, _)))
+        case Yield.None(signal, onDone) => Yield.None(signal, onDone.map(None(_)))
       }
   }
 
   private[util] final case class Some[-I, +O, +E](out: O, stage: Stage[I, O, E]) extends Stage.Decorator[I, O, E] {
     def apply(in: I): Yield.Some[I, O, E] =
       stage(in) match {
-        case Yield.Some(out, state, onDone) => Yield.Some(out, state, onDone.map(Some(out, _)))
-        case Yield.None(state, onDone) => Yield.Some(out, state, onDone.map(Some(out, _)))
+        case Yield.Some(out, signal, onDone) => Yield.Some(out, signal, onDone.map(Some(out, _)))
+        case Yield.None(signal, onDone) => Yield.Some(out, signal, onDone.map(Some(out, _)))
       }
   }
 

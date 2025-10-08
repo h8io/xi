@@ -31,7 +31,7 @@ class StageTest
   }
 
   "AndThen" should "call sequentially stages and return the correct Yield for Some ~> Some" in
-    forAll { (previousState: State[String], nextState: State[String], in: Int, previousOut: String, nextOut: Long) =>
+    forAll { (previousState: Signal[String], nextState: Signal[String], in: Int, previousOut: String, nextOut: Long) =>
       val previousStage = mock[Stage[Int, String, String]]
       val previousOnDone = mock[OnDone[Int, String, String]]
       val nextStage = mock[Stage[String, Long, String]]
@@ -53,7 +53,7 @@ class StageTest
     }
 
   it should "call sequentially stages and return the correct Yield for Some ~> None" in
-    forAll { (previousState: State[String], nextState: State[String], in: Int, out: String) =>
+    forAll { (previousState: Signal[String], nextState: Signal[String], in: Int, out: String) =>
       val previousStage = mock[Stage[Int, String, String]]
       val previousOnDone = mock[OnDone[Int, String, String]]
       val nextStage = mock[Stage[String, Long, String]]
@@ -75,7 +75,7 @@ class StageTest
     }
 
   it should "call the first stage only and return the correct Yield for None ~> any Yield" in
-    forAll { (previousState: State[String], in: Int) =>
+    forAll { (previousState: Signal[String], in: Int) =>
       val previousStage = mock[Stage[Int, String, String]]
       val previousOnDone = mock[OnDone[Int, String, String]]
       val nextStage = mock[Stage[String, Long, String]]
@@ -88,13 +88,13 @@ class StageTest
     }
 
   private def armOnDone[I, O, E](
-      onDone: OnDone[I, O, E],
-      state: State[E],
-      stage: Stage[I, O, E]): (OnDone[I, O, E], Stage[I, O, E]) = {
+                                  onDone: OnDone[I, O, E],
+                                  state: Signal[E],
+                                  stage: Stage[I, O, E]): (OnDone[I, O, E], Stage[I, O, E]) = {
     state match {
-      case State.Success => (onDone.onSuccess _).expects().returns(stage)
-      case State.Complete => (onDone.onComplete _).expects().returns(stage)
-      case State.Error(_) => (onDone.onError _).expects().returns(stage)
+      case Signal.Success => (onDone.onSuccess _).expects().returns(stage)
+      case Signal.Complete => (onDone.onComplete _).expects().returns(stage)
+      case Signal.Error(_) => (onDone.onError _).expects().returns(stage)
     }
     (onDone, stage)
   }

@@ -4,24 +4,24 @@ import cats.laws.discipline.arbitrary.*
 import org.scalacheck.{Arbitrary, Gen}
 
 trait Generators {
-  implicit def genStateError[E: Arbitrary]: Arbitrary[State.Error[E]] =
-    Arbitrary(catsLawsArbitraryForNonEmptyChain[E].arbitrary.map(State.Error(_)))
+  implicit def genStateError[E: Arbitrary]: Arbitrary[Signal.Error[E]] =
+    Arbitrary(catsLawsArbitraryForNonEmptyChain[E].arbitrary.map(Signal.Error(_)))
 
-  implicit def genState[E: Arbitrary]: Arbitrary[State[E]] =
-    Arbitrary(Gen.oneOf(Gen.const(State.Success: State[E]), Gen.const(State.Complete), genStateError[E].arbitrary))
+  implicit def genState[E: Arbitrary]: Arbitrary[Signal[E]] =
+    Arbitrary(Gen.oneOf(Gen.const(Signal.Success: Signal[E]), Gen.const(Signal.Complete), genStateError[E].arbitrary))
 
-  type StateAndOnDoneToYieldSome[I, O, E] = (State[E], OnDone[I, O, E]) => Yield.Some[I, O, E]
+  type StateAndOnDoneToYieldSome[I, O, E] = (Signal[E], OnDone[I, O, E]) => Yield.Some[I, O, E]
 
   implicit def genStateAndOnDoneToYieldSome[I, O: Arbitrary, E]: Arbitrary[StateAndOnDoneToYieldSome[I, O, E]] =
-    Arbitrary(Arbitrary.arbitrary[O] map { out => Yield.Some(out, _: State[E], _: OnDone[I, O, E]) })
+    Arbitrary(Arbitrary.arbitrary[O] map { out => Yield.Some(out, _: Signal[E], _: OnDone[I, O, E]) })
 
-  type StateAndOnDoneToYield[I, O, E] = (State[E], OnDone[I, O, E]) => Yield[I, O, E]
+  type StateAndOnDoneToYield[I, O, E] = (Signal[E], OnDone[I, O, E]) => Yield[I, O, E]
 
   implicit def genStateAndOnDoneToYield[I, O: Arbitrary, E]: Arbitrary[StateAndOnDoneToYield[I, O, E]] =
     Arbitrary(
       Gen.oneOf(
         Arbitrary.arbitrary[StateAndOnDoneToYieldSome[I, O, E]],
-        Gen.const(Yield.None[I, O, E](_: State[E], _: OnDone[I, O, E]))))
+        Gen.const(Yield.None[I, O, E](_: Signal[E], _: OnDone[I, O, E]))))
 
   type OnDoneToYield[I, O, E] = OnDone[I, O, E] => Yield[I, O, E]
 
@@ -29,6 +29,6 @@ trait Generators {
     Arbitrary(
       for {
         yieldSupplier <- Arbitrary.arbitrary[StateAndOnDoneToYield[I, O, E]]
-        state <- Arbitrary.arbitrary[State[E]]
+        state <- Arbitrary.arbitrary[Signal[E]]
       } yield yieldSupplier(state, _: OnDone[I, O, E]))
 }

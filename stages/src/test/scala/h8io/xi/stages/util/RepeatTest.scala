@@ -19,15 +19,15 @@ class RepeatTest
       case (yieldSuppliers, in) =>
         val initial = mock[Stage[Long, String, Nothing]]("initial stage")
         val evolved = createStage(yieldSuppliers.tail, initial, in)
-        val lastYield = genYield[Long, String, Nothing]("last", yieldSuppliers.head, State.Complete)
+        val lastYield = genYield[Long, String, Nothing]("last", yieldSuppliers.head, Signal.Complete)
         (evolved.apply _).expects(in).returns(lastYield)
         val resultStage = mock[Stage[Long, String, Nothing]]("result stage")
         (lastYield.onDone.onComplete _).expects().returns(resultStage)
         val onDone = inside((lastYield, Repeat(initial)(in))) {
-          case (Yield.Some(lastOut, _, _), Yield.Some(resultOut, State.Success, onDone)) =>
+          case (Yield.Some(lastOut, _, _), Yield.Some(resultOut, Signal.Success, onDone)) =>
             resultOut shouldBe lastOut
             onDone
-          case (Yield.None(_, _), Yield.None(State.Success, onDone)) => onDone
+          case (Yield.None(_, _), Yield.None(Signal.Success, onDone)) => onDone
         }
         val expectedStage = Repeat(resultStage)
         onDone.onSuccess() shouldBe expectedStage
@@ -40,7 +40,7 @@ class RepeatTest
       Gen.zip(
         Gen.nonEmptyListOf(Arbitrary.arbitrary[StateAndOnDoneToYield[Instant, UUID, Exception]]),
         Arbitrary.arbitrary[Instant],
-        Arbitrary.arbitrary[State.Error[Exception]]
+        Arbitrary.arbitrary[Signal.Error[Exception]]
       )) {
       case (yieldSuppliers, in, lastState) =>
         val initial = mock[Stage[Instant, UUID, Exception]]("initial stage")
@@ -67,7 +67,7 @@ class RepeatTest
     yieldSuppliers match {
       case head :: tail =>
         val id = yieldSuppliers.length.toString
-        val `yield` = genYield[I, O, E](id, head, State.Success)
+        val `yield` = genYield[I, O, E](id, head, Signal.Success)
         val updated = mock[Stage[I, O, E]](s"stage $id")
         (`yield`.onDone.onSuccess _).expects().returns(updated)
         (stage.apply _).expects(in).returns(`yield`)
@@ -77,7 +77,7 @@ class RepeatTest
 
   private def genYield[I, O, E](
       id: String,
-      yieldSupplier: StateAndOnDoneToYield[I, O, E], state: State[E]): Yield[I, O, E] =
+      yieldSupplier: StateAndOnDoneToYield[I, O, E], state: Signal[E]): Yield[I, O, E] =
     yieldSupplier(state, mock[OnDone[I, O, E]](s"onDone $id"))
 
   "dispose" should "call stage's dispose" in {

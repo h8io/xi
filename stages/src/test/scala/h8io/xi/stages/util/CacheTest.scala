@@ -26,7 +26,7 @@ class CacheTest
           cacheState shouldBe state
           val onSuccessStage = mock[Stage[UUID, String, Exception]]("on success stage (Yield.Some)")
           (onDone.onSuccess _).expects().returns(onSuccessStage)
-          if (state == State.Success) cacheOnDone.onSuccess() shouldBe Cache.Cached(out, onSuccessStage)
+          if (state == Signal.Success) cacheOnDone.onSuccess() shouldBe Cache.Cached(out, onSuccessStage)
           else cacheOnDone.onSuccess() shouldBe Cache(onSuccessStage)
         case (Yield.None(state, _), Yield.None(cacheState, cacheOnDone)) =>
           cacheState shouldBe state
@@ -48,7 +48,7 @@ class CacheTest
     forAll(Gen.zip(Gen.long, Gen.uuid)) { case (in, out) =>
       val stage = mock[Stage[Long, UUID, Exception]]("underlying stage")
       val cached = Cache.Cached(out, stage)
-      inside(cached(in)) { case Yield.Some(`out`, State.Success, onDone) =>
+      inside(cached(in)) { case Yield.Some(`out`, Signal.Success, onDone) =>
         onDone.onSuccess() shouldBe cached
         onDone.onComplete() shouldBe Cache(stage)
         onDone.onError() shouldBe Cache(stage)
