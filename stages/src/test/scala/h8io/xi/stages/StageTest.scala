@@ -8,7 +8,7 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 
 import java.sql.Timestamp
-import java.time.Instant
+import java.time.{Instant, ZoneId}
 
 class StageTest
     extends AnyFlatSpec with Matchers with Inside with MockFactory with ScalaCheckPropertyChecks with Generators {
@@ -118,4 +118,11 @@ class StageTest
       def apply(in: Any): Yield[Any, Nothing, Nothing] = throw new NoSuchMethodError
     }.dispose()
   }
+
+  "Functional stage" should "return a function value as an output" in
+    forAll { (in: ZoneId, out: Long) =>
+      val f = mock[Stage.Function[ZoneId, Long]]
+      (f.f _).expects(in).returns(out)
+      f(in) shouldBe Yield.Some(`out`, Signal.Success, f)
+    }
 }

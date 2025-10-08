@@ -39,8 +39,8 @@ object Stage {
 
     final def apply(in: I): Yield[I, O, Nothing] = Yield.Some(f(in), Signal.Success, this)
 
-    final def onSuccess(): Stage[I, O, Nothing] = this
-    final def onComplete(): Stage[I, O, Nothing] = this
-    final def onError(): Stage[I, O, Nothing] = this
+    def onSuccess(): Stage[I, O, Nothing] = this
+    def onComplete(): Stage[I, O, Nothing] = this
+    def onError(): Stage[I, O, Nothing] = this
   }
 }
