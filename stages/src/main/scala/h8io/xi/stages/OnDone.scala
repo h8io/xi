@@ -31,8 +31,8 @@ trait OnDone[-I, +O, +E] {
 
 object OnDone {
   final case class FromStage[-I, +O, +E](stage: Stage[I, O, E]) extends OnDone[I, O, E] {
-    override def onSuccess(): Stage[I, O, E] = stage
-    override def onComplete(): Stage[I, O, E] = stage
-    override def onError(): Stage[I, O, E] = stage
+    def onSuccess(): Stage[I, O, E] = stage
+    def onComplete(): Stage[I, O, E] = stage
+    def onError(): Stage[I, O, E] = stage
   }
 }
