@@ -37,7 +37,7 @@ object Stage {
   trait Function[-I, +O] extends Stage[I, O, Nothing] with OnDone[I, O, Nothing] {
     def f(in: I): O
 
-    final def apply(in: I): Yield[I, O, Nothing] = Yield.Some(f(in), Signal.Success, this)
+    final def apply(in: I): Yield.Some[I, O, Nothing] = Yield.Some(f(in), Signal.Success, this)
 
     def onSuccess(): Stage[I, O, Nothing] = this
     def onComplete(): Stage[I, O, Nothing] = this
