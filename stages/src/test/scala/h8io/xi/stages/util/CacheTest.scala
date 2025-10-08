@@ -3,20 +3,23 @@ package h8io.xi.stages.util
 import h8io.xi.stages.*
 import org.scalacheck.Gen
 import org.scalamock.scalatest.MockFactory
-import org.scalatest.Inside
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
+import org.scalatest.{Assertion, Inside}
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 
 import java.util.UUID
 
 class CacheTest
     extends AnyFlatSpec with Matchers with Inside with MockFactory with ScalaCheckPropertyChecks with Generators {
-  "Cache" should "cache output only if the yield is Some and the signal is Success" in
-    forAll(Gen.zip(genOnDoneToYield[UUID, String, Exception].arbitrary, Gen.uuid)) { case (yieldSupplier, in) =>
+  "Cache" should "cache output only if the yield is Some and the signal is Success" in {
+    def test(
+        yieldSupplier: SignalAndOnDoneToYield[UUID, String, Exception],
+        signal: Signal[Exception],
+        in: UUID): Assertion = {
       val stage = mock[Stage[UUID, String, Exception]]("underlying stage")
       val onDone = mock[OnDone[UUID, String, Exception]]("underlying onDone")
-      val `yield` = yieldSupplier(onDone)
+      val `yield` = yieldSupplier(signal, onDone)
       val cache = Cache(stage)
       (stage.apply _).expects(in).returns(`yield`)
       val cacheYield = cache(in)
@@ -43,6 +46,15 @@ class CacheTest
       (onDone.onError _).expects().returns(onErrorStage)
       cacheYield.onDone.onError() shouldBe Cache(onErrorStage)
     }
+    forAll(
+      Gen.zip(
+        genSignalAndOnDoneToYield[UUID, String, Exception].arbitrary, genSignalError[Exception].arbitrary, Gen.uuid)) {
+      case (yieldSupplier, error, in) =>
+        test(yieldSupplier, Signal.Success, in)
+        test(yieldSupplier, Signal.Complete, in)
+        test(yieldSupplier, error, in)
+    }
+  }
 
   "Cached" should "keep output while the signal is Success" in
     forAll(Gen.zip(Gen.long, Gen.uuid)) { case (in, out) =>
