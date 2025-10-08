@@ -1,6 +1,6 @@
 package h8io.xi.stages.util
 
-import h8io.xi.stages.State.Complete
+import h8io.xi.stages.Signal.Complete
 import h8io.xi.stages.Yield
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.flatspec.AnyFlatSpec

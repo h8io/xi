@@ -1,6 +1,6 @@
 package h8io.xi.stages.util
 
-import h8io.xi.stages.{OnDone, Stage, State, Yield}
+import h8io.xi.stages.{OnDone, Signal, Stage, Yield}
 import org.scalacheck.{Arbitrary, Gen}
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.flatspec.AnyFlatSpec
@@ -36,17 +36,17 @@ class LocalSoftDeadlineTest
       val head = LocalSoftDeadline.Head[String](now, duration)
       val tail = LocalSoftDeadline.Tail(ts, head)
       (now.apply _).expects().returns(ts)
-      head(in) shouldBe Yield.Some(in, State.Success, OnDone.FromStage(tail))
+      head(in) shouldBe Yield.Some(in, Signal.Success, OnDone.FromStage(tail))
     }
 
-  "Tail" should "return Yield.Some with Success state if not overdue" in
+  "Tail" should "return Yield.Some with Success signal if not overdue" in
     forAll(Gen.zip(Gen.long, Gen.choose(1L, Long.MaxValue), Gen.uuid)) { case (ts, duration, in) =>
       def test(passed: Long): Assertion = {
         val now = mock[() => Long]
         val head = LocalSoftDeadline.Head[UUID](now, duration)
         val tail = LocalSoftDeadline.Tail(ts, head)
         (now.apply _).expects().returns(ts + passed)
-        inside(tail(in)) { case Yield.Some(`in`, State.Success, onDone) =>
+        inside(tail(in)) { case Yield.Some(`in`, Signal.Success, onDone) =>
           onDone.onSuccess() shouldBe tail
           onDone.onComplete() shouldBe head
           onDone.onError() shouldBe head
@@ -58,14 +58,14 @@ class LocalSoftDeadlineTest
       }
     }
 
-  it should "return Yield.Some with Complete state if overdue" in
+  it should "return Yield.Some with Complete signal if overdue" in
     forAll(Gen.zip(Gen.long, Gen.choose(1L, Long.MaxValue - 1), Gen.uuid)) { case (ts, duration, in) =>
       def test(passed: Long): Assertion = {
         val now = mock[() => Long]
         val head = LocalSoftDeadline.Head[UUID](now, duration)
         val tail = LocalSoftDeadline.Tail(ts, head)
         (now.apply _).expects().returns(ts + passed)
-        tail(in) shouldBe Yield.Some(in, State.Complete, OnDone.FromStage(head))
+        tail(in) shouldBe Yield.Some(in, Signal.Complete, OnDone.FromStage(head))
       }
       forAll(Gen.choose(duration + 1, Long.MaxValue)) { passed =>
         test(duration)

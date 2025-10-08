@@ -1,6 +1,6 @@
 package h8io.xi.stages.util
 
-import h8io.xi.stages.{State, Yield}
+import h8io.xi.stages.{Signal, Yield}
 import org.scalatest.Inside
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
@@ -10,7 +10,7 @@ class IdentityTest extends AnyFlatSpec with Matchers with Inside with ScalaCheck
   "Identity" should "return input" in {
     val identity = Identity[String]
     forAll { (in: String) =>
-      inside(identity(in)) { case Yield.Some(`in`, State.Success, onDone) =>
+      inside(identity(in)) { case Yield.Some(`in`, Signal.Success, onDone) =>
         onDone.onSuccess() shouldBe identity
         onDone.onComplete() shouldBe identity
         onDone.onError() shouldBe identity

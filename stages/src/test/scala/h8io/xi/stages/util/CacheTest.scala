@@ -12,7 +12,7 @@ import java.util.UUID
 
 class CacheTest
     extends AnyFlatSpec with Matchers with Inside with MockFactory with ScalaCheckPropertyChecks with Generators {
-  "Cache" should "cache output only if the yield is Some and the state is Success" in
+  "Cache" should "cache output only if the yield is Some and the signal is Success" in
     forAll(Gen.zip(genOnDoneToYield[UUID, String, Exception].arbitrary, Gen.uuid)) { case (yieldSupplier, in) =>
       val stage = mock[Stage[UUID, String, Exception]]("underlying stage")
       val onDone = mock[OnDone[UUID, String, Exception]]("underlying onDone")
@@ -21,15 +21,15 @@ class CacheTest
       (stage.apply _).expects(in).returns(`yield`)
       val cacheYield = cache(in)
       inside((`yield`, cacheYield)) {
-        case (Yield.Some(out, state, _), Yield.Some(cacheOut, cacheState, cacheOnDone)) =>
+        case (Yield.Some(out, signal, _), Yield.Some(cacheOut, cacheSignal, cacheOnDone)) =>
           cacheOut shouldBe out
-          cacheState shouldBe state
+          cacheSignal shouldBe signal
           val onSuccessStage = mock[Stage[UUID, String, Exception]]("on success stage (Yield.Some)")
           (onDone.onSuccess _).expects().returns(onSuccessStage)
-          if (state == State.Success) cacheOnDone.onSuccess() shouldBe Cache.Cached(out, onSuccessStage)
+          if (signal == Signal.Success) cacheOnDone.onSuccess() shouldBe Cache.Cached(out, onSuccessStage)
           else cacheOnDone.onSuccess() shouldBe Cache(onSuccessStage)
-        case (Yield.None(state, _), Yield.None(cacheState, cacheOnDone)) =>
-          cacheState shouldBe state
+        case (Yield.None(signal, _), Yield.None(cacheSignal, cacheOnDone)) =>
+          cacheSignal shouldBe signal
           val onSuccessStage = mock[Stage[UUID, String, Exception]]("on success stage (Yield.None)")
           (onDone.onSuccess _).expects().returns(onSuccessStage)
           cacheOnDone.onSuccess() shouldBe Cache(onSuccessStage)
@@ -44,11 +44,11 @@ class CacheTest
       cacheYield.onDone.onError() shouldBe Cache(onErrorStage)
     }
 
-  "Cached" should "keep output while the state is Success" in
+  "Cached" should "keep output while the signal is Success" in
     forAll(Gen.zip(Gen.long, Gen.uuid)) { case (in, out) =>
       val stage = mock[Stage[Long, UUID, Exception]]("underlying stage")
       val cached = Cache.Cached(out, stage)
-      inside(cached(in)) { case Yield.Some(`out`, State.Success, onDone) =>
+      inside(cached(in)) { case Yield.Some(`out`, Signal.Success, onDone) =>
         onDone.onSuccess() shouldBe cached
         onDone.onComplete() shouldBe Cache(stage)
         onDone.onError() shouldBe Cache(stage)

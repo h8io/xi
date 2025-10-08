@@ -15,9 +15,9 @@ class EndoStageMonoidTest extends AnyFunSuite with FunSuiteDiscipline with Check
       for {
         prefix <- Arbitrary.arbitrary[T]
         suffix <- Arbitrary.arbitrary[T]
-        state <- Arbitrary.arbitrary[State[E]]
+        signal <- Arbitrary.arbitrary[Signal[E]]
       } yield new Stage.Endo[T, E] {
-        def apply(in: T): Yield[T, T, E] = Yield.Some(prefix |+| in |+| suffix, state, OnDone.FromStage(this))
+        def apply(in: T): Yield[T, T, E] = Yield.Some(prefix |+| in |+| suffix, signal, OnDone.FromStage(this))
 
         override def toString(): String = s"Stage.Endo: $prefix + _ + $suffix"
       }
@@ -43,8 +43,8 @@ class EndoStageMonoidTest extends AnyFunSuite with FunSuiteDiscipline with Check
 
   private def toTuple[T, E](`yield`: Yield[T, T, E]): Product =
     `yield` match {
-      case Yield.Some(out, state, onDone) => (out, state, toTuple(onDone))
-      case Yield.None(state, onDone) => (state, toTuple(onDone))
+      case Yield.Some(out, signal, onDone) => (out, signal, toTuple(onDone))
+      case Yield.None(signal, onDone) => (signal, toTuple(onDone))
     }
 
   private implicit def stageEq[T: Arbitrary: Monoid, E]: Eq[Stage.Endo[T, E]] = {

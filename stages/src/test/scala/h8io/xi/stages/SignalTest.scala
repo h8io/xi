@@ -8,45 +8,45 @@ import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 
 import java.time.Instant
 
-class StateTest extends AnyFlatSpec with Matchers with MockFactory with ScalaCheckPropertyChecks with Generators {
-  "Success" should "be idempotent" in { State.Success ~> State.Success shouldBe State.Success }
+class SignalTest extends AnyFlatSpec with Matchers with MockFactory with ScalaCheckPropertyChecks with Generators {
+  "Success" should "be idempotent" in { Signal.Success ~> Signal.Success shouldBe Signal.Success }
 
   it should "call the method onSuccess() in OnDone object" in {
     val onDone = mock[OnDone[Long, Instant, Exception]]
     val stage = mock[Stage[Long, Instant, Exception]]
     (onDone.onSuccess _).expects().returns(stage)
-    State.Success(onDone) shouldBe stage
+    Signal.Success(onDone) shouldBe stage
   }
 
-  "Complete" should "be idempotent" in { State.Complete ~> State.Complete shouldBe State.Complete }
+  "Complete" should "be idempotent" in { Signal.Complete ~> Signal.Complete shouldBe Signal.Complete }
 
   it should "be overridden by Error" in
-    forAll((error: State.Error[String]) => State.Complete ~> error shouldBe error)
+    forAll((error: Signal.Error[String]) => Signal.Complete ~> error shouldBe error)
 
   it should "call the method onComplete() in OnDone object" in {
     val onDone = mock[OnDone[Long, Instant, Exception]]
     val stage = mock[Stage[Long, Instant, Exception]]
     (onDone.onComplete _).expects().returns(stage)
-    State.Complete(onDone) shouldBe stage
+    Signal.Complete(onDone) shouldBe stage
   }
 
   "Error" should "keep the order of causes in composition" in
-    forAll { (previous: State.Error[String], next: State.Error[String]) =>
-      previous ~> next shouldBe State.Error(previous.causes ++ next.causes)
+    forAll { (previous: Signal.Error[String], next: Signal.Error[String]) =>
+      previous ~> next shouldBe Signal.Error(previous.causes ++ next.causes)
     }
 
-  it should "override Complete" in forAll((error: State.Error[String]) => error ~> State.Complete shouldBe error)
+  it should "override Complete" in forAll((error: Signal.Error[String]) => error ~> Signal.Complete shouldBe error)
 
   it should "call the onError() method in OnDone object" in
-    forAll { (error: State.Error[String]) =>
+    forAll { (error: Signal.Error[String]) =>
       val onDone = mock[OnDone[Long, Instant, Exception]]
       val stage = mock[Stage[Long, Instant, Exception]]
       (onDone.onError _).expects().returns(stage)
       error(onDone) shouldBe stage
     }
 
-  it should "create Error state with a single error" in {
+  it should "create Error signal with a single error" in {
     val error = mock[AnyRef]
-    State.error(error) shouldBe State.Error(NonEmptyChain.of(error))
+    Signal.error(error) shouldBe Signal.Error(NonEmptyChain.of(error))
   }
 }
