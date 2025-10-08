@@ -1,6 +1,6 @@
 package h8io.xi.stages.util
 
-import h8io.xi.stages.{OnDone, Stage, Signal, Yield}
+import h8io.xi.stages.{OnDone, Signal, Stage, Yield}
 import org.scalacheck.{Arbitrary, Gen}
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.flatspec.AnyFlatSpec
@@ -39,7 +39,7 @@ class LocalSoftDeadlineTest
       head(in) shouldBe Yield.Some(in, Signal.Success, OnDone.FromStage(tail))
     }
 
-  "Tail" should "return Yield.Some with Success state if not overdue" in
+  "Tail" should "return Yield.Some with Success signal if not overdue" in
     forAll(Gen.zip(Gen.long, Gen.choose(1L, Long.MaxValue), Gen.uuid)) { case (ts, duration, in) =>
       def test(passed: Long): Assertion = {
         val now = mock[() => Long]
@@ -58,7 +58,7 @@ class LocalSoftDeadlineTest
       }
     }
 
-  it should "return Yield.Some with Complete state if overdue" in
+  it should "return Yield.Some with Complete signal if overdue" in
     forAll(Gen.zip(Gen.long, Gen.choose(1L, Long.MaxValue - 1), Gen.uuid)) { case (ts, duration, in) =>
       def test(passed: Long): Assertion = {
         val now = mock[() => Long]

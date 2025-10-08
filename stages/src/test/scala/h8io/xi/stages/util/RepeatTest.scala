@@ -14,8 +14,8 @@ import scala.annotation.tailrec
 
 class RepeatTest
     extends AnyFlatSpec with Matchers with Inside with MockFactory with ScalaCheckPropertyChecks with Generators {
-  "Repeat" should "be executed until the state is Complete" in
-    forAll(Gen.zip(Gen.nonEmptyListOf(Arbitrary.arbitrary[StateAndOnDoneToYield[Long, String, Nothing]]), Gen.long)) {
+  "Repeat" should "be executed until the signal is Complete" in
+    forAll(Gen.zip(Gen.nonEmptyListOf(Arbitrary.arbitrary[SignalAndOnDoneToYield[Long, String, Nothing]]), Gen.long)) {
       case (yieldSuppliers, in) =>
         val initial = mock[Stage[Long, String, Nothing]]("initial stage")
         val evolved = createStage(yieldSuppliers.tail, initial, in)
@@ -35,25 +35,25 @@ class RepeatTest
         onDone.onError() shouldBe expectedStage
     }
 
-  it should "be executed until the state is Error" in
+  it should "be executed until the signal is Error" in
     forAll(
       Gen.zip(
-        Gen.nonEmptyListOf(Arbitrary.arbitrary[StateAndOnDoneToYield[Instant, UUID, Exception]]),
+        Gen.nonEmptyListOf(Arbitrary.arbitrary[SignalAndOnDoneToYield[Instant, UUID, Exception]]),
         Arbitrary.arbitrary[Instant],
         Arbitrary.arbitrary[Signal.Error[Exception]]
       )) {
-      case (yieldSuppliers, in, lastState) =>
+      case (yieldSuppliers, in, lastSignal) =>
         val initial = mock[Stage[Instant, UUID, Exception]]("initial stage")
         val evolved = createStage(yieldSuppliers.tail, initial, in)
-        val lastYield = genYield[Instant, UUID, Exception]("last", yieldSuppliers.head, lastState)
+        val lastYield = genYield[Instant, UUID, Exception]("last", yieldSuppliers.head, lastSignal)
         (evolved.apply _).expects(in).returns(lastYield)
         val resultStage = mock[Stage[Instant, UUID, Exception]]("result stage")
         (lastYield.onDone.onError _).expects().returns(resultStage)
         val onDone = inside((lastYield, Repeat(initial)(in))) {
-          case (Yield.Some(lastOut, _, _), Yield.Some(resultOut, `lastState`, onDone)) =>
+          case (Yield.Some(lastOut, _, _), Yield.Some(resultOut, `lastSignal`, onDone)) =>
             resultOut shouldBe lastOut
             onDone
-          case (Yield.None(_, _), Yield.None(`lastState`, onDone)) => onDone
+          case (Yield.None(_, _), Yield.None(`lastSignal`, onDone)) => onDone
         }
         val expectedStage = Repeat(resultStage)
         onDone.onSuccess() shouldBe expectedStage
@@ -62,7 +62,7 @@ class RepeatTest
     }
 
   @tailrec private def createStage[I, O, E](
-      yieldSuppliers: List[StateAndOnDoneToYield[I, O, E]],
+      yieldSuppliers: List[SignalAndOnDoneToYield[I, O, E]],
       stage: Stage[I, O, E], in: I): Stage[I, O, E] =
     yieldSuppliers match {
       case head :: tail =>
@@ -77,8 +77,8 @@ class RepeatTest
 
   private def genYield[I, O, E](
       id: String,
-      yieldSupplier: StateAndOnDoneToYield[I, O, E], state: Signal[E]): Yield[I, O, E] =
-    yieldSupplier(state, mock[OnDone[I, O, E]](s"onDone $id"))
+      yieldSupplier: SignalAndOnDoneToYield[I, O, E], signal: Signal[E]): Yield[I, O, E] =
+    yieldSupplier(signal, mock[OnDone[I, O, E]](s"onDone $id"))
 
   "dispose" should "call stage's dispose" in {
     val stage = mock[Stage[Any, Nothing, Nothing]]

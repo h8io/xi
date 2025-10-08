@@ -45,7 +45,7 @@ class SignalTest extends AnyFlatSpec with Matchers with MockFactory with ScalaCh
       error(onDone) shouldBe stage
     }
 
-  it should "create Error state with a single error" in {
+  it should "create Error signal with a single error" in {
     val error = mock[AnyRef]
     Signal.error(error) shouldBe Signal.Error(NonEmptyChain.of(error))
   }

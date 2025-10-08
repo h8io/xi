@@ -16,18 +16,18 @@ class YieldTest
     Arbitrary {
       for {
         out <- Arbitrary.arbitrary[O]
-        state <- genState[E].arbitrary
-      } yield Yield.Some(out, state, mock[OnDone[I, O, E]])
+        signal <- genSignal[E].arbitrary
+      } yield Yield.Some(out, signal, mock[OnDone[I, O, E]])
     }
 
   private implicit def genYieldNone[I, O, E: Arbitrary]: Arbitrary[Yield.None[I, O, E]] =
-    Arbitrary(genState[E].arbitrary.map(state => Yield.None(state, mock[OnDone[I, O, E]])))
+    Arbitrary(genSignal[E].arbitrary.map(signal => Yield.None(signal, mock[OnDone[I, O, E]])))
 
   "~>" should "combine Some and Some correctly" in
     forAll { (previousYield: Yield.Some[Long, Instant, String], nextYield: Yield.Some[Instant, String, String]) =>
       inside(previousYield ~> nextYield) {
-        case Yield.Some(nextYield.out, state, onDone) =>
-          state shouldBe previousYield.signal ~> nextYield.signal
+        case Yield.Some(nextYield.out, signal, onDone) =>
+          signal shouldBe previousYield.signal ~> nextYield.signal
           val previousStage = mock[Stage[Long, Instant, String]]
           val nextStage = mock[Stage[Instant, String, String]]
           val stage = previousStage ~> nextStage
@@ -55,8 +55,8 @@ class YieldTest
   it should "combine Some and None correctly" in
     forAll { (previousYield: Yield.Some[Long, Instant, String], nextYield: Yield.None[Instant, String, String]) =>
       inside(previousYield ~> nextYield) {
-        case Yield.None(state, onDone) =>
-          state shouldBe previousYield.signal ~> nextYield.signal
+        case Yield.None(signal, onDone) =>
+          signal shouldBe previousYield.signal ~> nextYield.signal
           val previousStage = mock[Stage[Long, Instant, String]]
           val nextStage = mock[Stage[Instant, String, String]]
           val stage = previousStage ~> nextStage
@@ -101,72 +101,72 @@ class YieldTest
     }
 
   "map" should "transform Some content" in
-    forAll { (initialOut: Array[Byte], initialState: Signal[Instant], mappedOut: Long, mappedState: Signal[String]) =>
+    forAll { (initialOut: Array[Byte], initialSignal: Signal[Instant], mappedOut: Long, mappedSignal: Signal[String]) =>
       val initialOnDone = mock[OnDone[String, Array[Byte], Instant]]("initial OnDone")
       val mappedOnDone = mock[OnDone[Array[Byte], Long, String]]("mapped OnDone")
       val mapOut = mock[Array[Byte] => Long]("mapOut")
       (mapOut.apply _).expects(initialOut).returns(mappedOut)
-      val mapState = mock[Signal[Instant] => Signal[String]]("mapState")
-      (mapState.apply _).expects(initialState).returns(mappedState)
+      val mapSignal = mock[Signal[Instant] => Signal[String]]("mapSignal")
+      (mapSignal.apply _).expects(initialSignal).returns(mappedSignal)
       val mapOnDone = mock[OnDone[String, Array[Byte], Instant] => OnDone[Array[Byte], Long, String]]("mapOnDone")
       (mapOnDone.apply _).expects(initialOnDone).returns(mappedOnDone)
-      Yield.Some(initialOut, initialState, initialOnDone).map(mapOut, mapState, mapOnDone) shouldBe
-        Yield.Some(mappedOut, mappedState, mappedOnDone)
+      Yield.Some(initialOut, initialSignal, initialOnDone).map(mapOut, mapSignal, mapOnDone) shouldBe
+        Yield.Some(mappedOut, mappedSignal, mappedOnDone)
     }
 
   it should "transform None content" in
-    forAll { (initialState: Signal[Long], mappedState: Signal[Exception]) =>
+    forAll { (initialSignal: Signal[Long], mappedSignal: Signal[Exception]) =>
       val initialOnDone = mock[OnDone[ZonedDateTime, DateTimeFormatter, Long]]("initial OnDone")
       val mappedOnDone = mock[OnDone[Duration, OffsetDateTime, String]]("mapped OnDone")
       val mapOut = mock[DateTimeFormatter => OffsetDateTime]("mapOut")
-      val mapState = mock[Signal[Long] => Signal[Exception]]("mapState")
-      (mapState.apply _).expects(initialState).returns(mappedState)
+      val mapSignal = mock[Signal[Long] => Signal[Exception]]("mapSignal")
+      (mapSignal.apply _).expects(initialSignal).returns(mappedSignal)
       val mapOnDone =
         mock[OnDone[ZonedDateTime, DateTimeFormatter, Long] => OnDone[Duration, OffsetDateTime, String]]("mapOnDone")
       (mapOnDone.apply _).expects(initialOnDone).returns(mappedOnDone)
-      Yield.None(initialState, initialOnDone).map(mapOut, mapState, mapOnDone) shouldBe
-        Yield.None(mappedState, mappedOnDone)
+      Yield.None(initialSignal, initialOnDone).map(mapOut, mapSignal, mapOnDone) shouldBe
+        Yield.None(mappedSignal, mappedOnDone)
     }
 
-  "mapOnDone" should "transform Some content (state and onDone)" in
-    forAll { (out: LocalDateTime, initialState: Signal[Long], mappedState: Signal[Exception]) =>
+  "mapOnDone" should "transform Some content (signal and onDone)" in
+    forAll { (out: LocalDateTime, initialSignal: Signal[Long], mappedSignal: Signal[Exception]) =>
       val initialOnDone = mock[OnDone[Long, LocalDateTime, Long]]("initial OnDone")
       val mappedOnDone = mock[OnDone[String, LocalDateTime, Exception]]("mapped OnDone")
       val mapOnDone =
         mock[OnDone[Long, LocalDateTime, Long] => OnDone[String, LocalDateTime, Exception]]("mapOnDone")
       (mapOnDone.apply _).expects(initialOnDone).returns(mappedOnDone)
-      Yield.Some(out, initialState, initialOnDone).mapOnDone(mappedState, mapOnDone) shouldBe
-        Yield.Some(out, mappedState, mappedOnDone)
+      Yield.Some(out, initialSignal, initialOnDone).mapOnDone(mappedSignal, mapOnDone) shouldBe
+        Yield.Some(out, mappedSignal, mappedOnDone)
     }
 
   it should "transform Some content (onDone)" in
-    forAll { (out: LocalDateTime, state: Signal[Long]) =>
+    forAll { (out: LocalDateTime, signal: Signal[Long]) =>
       val initialOnDone = mock[OnDone[Long, LocalDateTime, Long]]("initial OnDone")
       val mappedOnDone = mock[OnDone[String, LocalDateTime, Long]]("mapped OnDone")
       val mapOnDone =
         mock[OnDone[Long, LocalDateTime, Long] => OnDone[String, LocalDateTime, Long]]("mapOnDone")
       (mapOnDone.apply _).expects(initialOnDone).returns(mappedOnDone)
-      Yield.Some(out, state, initialOnDone).mapOnDone(mapOnDone) shouldBe Yield.Some(out, state, mappedOnDone)
+      Yield.Some(out, signal, initialOnDone).mapOnDone(mapOnDone) shouldBe Yield.Some(out, signal, mappedOnDone)
     }
 
-  it should "transform None content (state and onDone)" in
-    forAll { (initialState: Signal[Exception], mappedState: Signal[String]) =>
+  it should "transform None content (signal and onDone)" in
+    forAll { (initialSignal: Signal[Exception], mappedSignal: Signal[String]) =>
       val initialOnDone = mock[OnDone[ZonedDateTime, OffsetDateTime, Exception]]("initial OnDone")
       val mappedOnDone = mock[OnDone[Duration, OffsetDateTime, String]]("mapped OnDone")
       val mapOnDone =
         mock[OnDone[ZonedDateTime, OffsetDateTime, Exception] => OnDone[Duration, OffsetDateTime, String]]("mapOnDone")
       (mapOnDone.apply _).expects(initialOnDone).returns(mappedOnDone)
-      Yield.None(initialState, initialOnDone).mapOnDone(mappedState, mapOnDone) shouldBe
-        Yield.None(mappedState, mappedOnDone)
+      Yield.None(initialSignal, initialOnDone).mapOnDone(mappedSignal, mapOnDone) shouldBe
+        Yield.None(mappedSignal, mappedOnDone)
     }
 
   it should "transform None content (onDone)" in
-    forAll { (state: Signal[Int]) =>
+    forAll { (signal: Signal[Int]) =>
       val initialOnDone = mock[OnDone[ZonedDateTime, OffsetDateTime, Int]]("initial OnDone")
       val mappedOnDone = mock[OnDone[Duration, OffsetDateTime, Int]]("mapped OnDone")
       val mapOnDone =
         mock[OnDone[ZonedDateTime, OffsetDateTime, Int] => OnDone[Duration, OffsetDateTime, Int]]("mapOnDone")
       (mapOnDone.apply _).expects(initialOnDone).returns(mappedOnDone)
-      Yield.None(state, initialOnDone).mapOnDone(mapOnDone) shouldBe Yield.None(state, mappedOnDone)
+      Yield.None(signal, initialOnDone).mapOnDone(mapOnDone) shouldBe Yield.None(signal, mappedOnDone)
     }
 }
