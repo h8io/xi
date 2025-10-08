@@ -18,9 +18,9 @@ class RepeatTest
     forAll(Gen.zip(Gen.nonEmptyListOf(Arbitrary.arbitrary[StateAndOnDoneToYield[Long, String, Nothing]]), Gen.long)) {
       case (yieldSuppliers, in) =>
         val initial = mock[Stage[Long, String, Nothing]]("initial stage")
-        val updated = createStage(yieldSuppliers.tail, initial, in)
+        val evolved = createStage(yieldSuppliers.tail, initial, in)
         val lastYield = genYield[Long, String, Nothing]("last", yieldSuppliers.head, State.Complete)
-        (updated.apply _).expects(in).returns(lastYield)
+        (evolved.apply _).expects(in).returns(lastYield)
         val resultStage = mock[Stage[Long, String, Nothing]]("result stage")
         (lastYield.onDone.onComplete _).expects().returns(resultStage)
         val onDone = inside((lastYield, Repeat(initial)(in))) {
@@ -44,9 +44,9 @@ class RepeatTest
       )) {
       case (yieldSuppliers, in, lastState) =>
         val initial = mock[Stage[Instant, UUID, Exception]]("initial stage")
-        val updated = createStage(yieldSuppliers.tail, initial, in)
+        val evolved = createStage(yieldSuppliers.tail, initial, in)
         val lastYield = genYield[Instant, UUID, Exception]("last", yieldSuppliers.head, lastState)
-        (updated.apply _).expects(in).returns(lastYield)
+        (evolved.apply _).expects(in).returns(lastYield)
         val resultStage = mock[Stage[Instant, UUID, Exception]]("result stage")
         (lastYield.onDone.onError _).expects().returns(resultStage)
         val onDone = inside((lastYield, Repeat(initial)(in))) {

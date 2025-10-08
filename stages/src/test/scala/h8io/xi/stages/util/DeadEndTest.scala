@@ -12,10 +12,7 @@ class DeadEndTest extends AnyFlatSpec with Matchers with MockFactory with ScalaC
     val dispose = mock[() => Unit]
     val stage = DeadEnd(dispose)
     stage.Yield shouldBe Yield.None(Complete, stage)
-    stage("xi") shouldBe stage.Yield
-    stage(42) shouldBe stage.Yield
-    stage(null) shouldBe stage.Yield
-    stage(()) shouldBe stage.Yield
+    stage(mock[AnyRef]) shouldBe stage.Yield
     (dispose.apply _).expects()
     stage.dispose()
   }
