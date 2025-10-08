@@ -21,10 +21,10 @@ class LoopTest
         Arbitrary.arbitrary[String]
       )) { case (yieldSuppliers, lastYieldSupplier, in) =>
       val initial = mock[Stage.Endo[String, Nothing]]("initial stage")
-      val (lastIn, updated) = genStage(yieldSuppliers, initial, in)
+      val (lastIn, evolved) = genStage(yieldSuppliers, initial, in)
       val lastOnDone = mock[OnDone[String, String, Nothing]]("last onDone")
       val lastYield = lastYieldSupplier(State.Complete, lastOnDone)
-      (updated.apply _).expects(lastIn).returns(lastYield)
+      (evolved.apply _).expects(lastIn).returns(lastYield)
       val resultStage = mock[Stage.Endo[String, Nothing]]("result stage")
       (lastOnDone.onComplete _).expects().returns(resultStage)
       val onDone = inside((lastYield, Loop(initial)(in))) {
@@ -48,10 +48,10 @@ class LoopTest
         Arbitrary.arbitrary[State.Error[String]]
       )) { case (yieldSuppliers, lastYieldSupplier, in, lastState) =>
       val initial = mock[Stage.Endo[UUID, String]]("initial stage")
-      val (lastIn, updated) = genStage(yieldSuppliers, initial, in)
+      val (lastIn, evolved) = genStage(yieldSuppliers, initial, in)
       val lastOnDone = mock[OnDone[UUID, UUID, String]]
       val lastYield = lastYieldSupplier(lastState, lastOnDone)
-      (updated.apply _).expects(lastIn).returns(lastYield)
+      (evolved.apply _).expects(lastIn).returns(lastYield)
       val resultStage = mock[Stage.Endo[UUID, String]]("result stage")
       (lastOnDone.onError _).expects().returns(resultStage)
       val onDone = inside((lastYield, Loop(initial)(in))) {
@@ -73,10 +73,10 @@ class LoopTest
         Arbitrary.arbitrary[BigInt]
       )) { case (yieldSuppliers, in) =>
       val initial = mock[Stage.Endo[BigInt, Exception]]("initial stage")
-      val (lastIn, updated) = genStage(yieldSuppliers, initial, in)
+      val (lastIn, evolved) = genStage(yieldSuppliers, initial, in)
       val lastOnDone = mock[OnDone[BigInt, BigInt, Exception]]("last OnDone")
       val lastYield = Yield.None(State.Success, lastOnDone)
-      (updated.apply _).expects(lastIn).returns(lastYield)
+      (evolved.apply _).expects(lastIn).returns(lastYield)
       val resultStage = mock[Stage.Endo[BigInt, Exception]]("result stage")
       (lastOnDone.onComplete _).expects().returns(resultStage)
       val onDone = inside((lastYield, Loop(initial)(in))) {
@@ -96,10 +96,10 @@ class LoopTest
         val id = yieldSuppliers.length.toString
         val onDone = mock[OnDone[T, T, E]](s"onDone $id")
         val `yield` = head(State.Success, onDone)
-        val updated = mock[Stage.Endo[T, E]](s"stage $id")
-        (onDone.onSuccess _).expects().returns(updated)
+        val evolved = mock[Stage.Endo[T, E]](s"stage $id")
+        (onDone.onSuccess _).expects().returns(evolved)
         (stage.apply _).expects(in).returns(`yield`)
-        genStage(tail, updated, `yield`.out)
+        genStage(tail, evolved, `yield`.out)
       case Nil => (in, stage)
     }
 
