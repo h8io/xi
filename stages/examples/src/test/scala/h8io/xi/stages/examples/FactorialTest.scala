@@ -12,10 +12,7 @@ class FactorialTest extends AnyFlatSpec with Matchers with Inside with ScalaChec
 
   "Factorial1" should "calculate factorial for positive arguments" in
     forAll(Gen.choose(1, 1000)) { n =>
-      inside(Factorial1.stage(n)(())) { case Yield.Some(out, _, _) =>
-        println(s"$n! == $out")
-        out shouldBe factorial(n)
-      }
+      inside(Factorial1.stage(n)(())) { case Yield.Some(out, _, _) => out shouldBe factorial(n) }
     }
 
   it should "not calculate factorial for zero" in {
