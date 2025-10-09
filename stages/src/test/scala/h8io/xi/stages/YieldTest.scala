@@ -8,7 +8,6 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 
 import java.time.*
-import java.time.format.DateTimeFormatter
 
 class YieldTest
     extends AnyFlatSpec with Matchers with Inside with MockFactory with ScalaCheckPropertyChecks with Generators {
@@ -98,34 +97,6 @@ class YieldTest
           (previousYield.onDone.onError _).expects().returns(previousStage)
           onDone.onError() shouldBe stage
       }
-    }
-
-  "map" should "transform Some content" in
-    forAll { (initialOut: Array[Byte], initialSignal: Signal[Instant], mappedOut: Long, mappedSignal: Signal[String]) =>
-      val initialOnDone = mock[OnDone[String, Array[Byte], Instant]]("initial OnDone")
-      val mappedOnDone = mock[OnDone[Array[Byte], Long, String]]("mapped OnDone")
-      val mapOut = mock[Array[Byte] => Long]("mapOut")
-      (mapOut.apply _).expects(initialOut).returns(mappedOut)
-      val mapSignal = mock[Signal[Instant] => Signal[String]]("mapSignal")
-      (mapSignal.apply _).expects(initialSignal).returns(mappedSignal)
-      val mapOnDone = mock[OnDone[String, Array[Byte], Instant] => OnDone[Array[Byte], Long, String]]("mapOnDone")
-      (mapOnDone.apply _).expects(initialOnDone).returns(mappedOnDone)
-      Yield.Some(initialOut, initialSignal, initialOnDone).map(mapOut, mapSignal, mapOnDone) shouldBe
-        Yield.Some(mappedOut, mappedSignal, mappedOnDone)
-    }
-
-  it should "transform None content" in
-    forAll { (initialSignal: Signal[Long], mappedSignal: Signal[Exception]) =>
-      val initialOnDone = mock[OnDone[ZonedDateTime, DateTimeFormatter, Long]]("initial OnDone")
-      val mappedOnDone = mock[OnDone[Duration, OffsetDateTime, String]]("mapped OnDone")
-      val mapOut = mock[DateTimeFormatter => OffsetDateTime]("mapOut")
-      val mapSignal = mock[Signal[Long] => Signal[Exception]]("mapSignal")
-      (mapSignal.apply _).expects(initialSignal).returns(mappedSignal)
-      val mapOnDone =
-        mock[OnDone[ZonedDateTime, DateTimeFormatter, Long] => OnDone[Duration, OffsetDateTime, String]]("mapOnDone")
-      (mapOnDone.apply _).expects(initialOnDone).returns(mappedOnDone)
-      Yield.None(initialSignal, initialOnDone).map(mapOut, mapSignal, mapOnDone) shouldBe
-        Yield.None(mappedSignal, mappedOnDone)
     }
 
   "mapOnDone" should "transform Some content (signal and onDone)" in

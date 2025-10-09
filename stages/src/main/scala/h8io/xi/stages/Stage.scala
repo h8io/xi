@@ -1,8 +1,6 @@
 package h8io.xi.stages
 
 trait Stage[-I, +O, +E] extends (I => Yield[I, O, E]) {
-  self =>
-
   def apply(in: I): Yield[I, O, E]
 
   @inline final def ~>[_O, _E >: E](that: Stage[O, _O, _E]): Stage[I, _O, _E] = Stage.AndThen(this, that)
