@@ -28,6 +28,10 @@ class FactorialTest extends AnyFlatSpec with Matchers with Inside with ScalaChec
       Factorial1.stage(n)(()) should matchPattern { case Yield.None(_, _) => }
     }
 
+  "Factorial1.Agg" should "return Agg object for onError method" in {
+    Factorial1.Agg(42).onError() shouldBe Factorial1.Agg
+  }
+
   "Factorial2" should "calculate factorial for positive arguments" in
     forAll(Gen.choose(1, 1000)) { n =>
       inside(Factorial2.stage(n)) { case Yield.Some(out, _, _) => out shouldBe factorial(n) }
