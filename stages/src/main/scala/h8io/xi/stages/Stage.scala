@@ -32,13 +32,17 @@ object Stage {
     override def dispose(): Unit = stage.dispose()
   }
 
-  trait Function[-I, +O] extends Stage[I, O, Nothing] with OnDone[I, O, Nothing] {
+  trait WithOnDone[-I, +O, +E] extends Stage[I, O, E] with OnDone[I, O, E] {
+    def onComplete(): Stage[I, O, E] = this
+    def onSuccess(): Stage[I, O, E] = this
+    def onError(): Stage[I, O, E] = this
+  }
+
+  type EndoWithOnDone[T, +E] = WithOnDone[T, T, E]
+
+  trait Function[-I, +O] extends Stage.WithOnDone[I, O, Nothing] {
     def f(in: I): O
 
     final def apply(in: I): Yield.Some[I, O, Nothing] = Yield.Some(f(in), Signal.Success, this)
-
-    def onSuccess(): Stage[I, O, Nothing] = this
-    def onComplete(): Stage[I, O, Nothing] = this
-    def onError(): Stage[I, O, Nothing] = this
   }
 }
