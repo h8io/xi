@@ -1,6 +1,5 @@
 package h8io.xi.stages
 
-import h8io.xi.stages.Stage.{AndThen, Decorator}
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.Inside
 import org.scalatest.flatspec.AnyFlatSpec
@@ -15,13 +14,13 @@ class StageTest
   "~>" should "produce AndThen object" in {
     val previous = mock[Stage[String, Long, Nothing]]
     val next = mock[Stage[Long, Timestamp, String]]
-    previous ~> next shouldBe AndThen(previous, next)
+    previous ~> next shouldBe Stage.AndThen(previous, next)
   }
 
   "<~" should "produce AndThen object" in {
     val previous = mock[Stage[Instant, Int, String]]
     val next = mock[Stage[Int, String, Nothing]]
-    next <~ previous shouldBe AndThen(previous, next)
+    next <~ previous shouldBe Stage.AndThen(previous, next)
   }
 
   "dispose" should "do nothing" in {
@@ -41,7 +40,7 @@ class StageTest
           (previousStage.apply _).expects(in).returns(Yield.Some(previousOut, previousSignal, previousOnDone))
           (nextStage.apply _).expects(previousOut).returns(Yield.Some(nextOut, nextSignal, nextOnDone))
         }
-        inside(AndThen(previousStage, nextStage)(in)) { case Yield.Some(`nextOut`, signal, onDone) =>
+        inside(Stage.AndThen(previousStage, nextStage)(in)) { case Yield.Some(`nextOut`, signal, onDone) =>
           signal shouldBe previousSignal ~> nextSignal
           val updatedPreviousStage = mock[Stage[Int, String, String]]
           val updatedNextStage = mock[Stage[String, Long, Nothing]]
@@ -49,7 +48,7 @@ class StageTest
             armOnDone(nextOnDone, signal, updatedNextStage)
             armOnDone(previousOnDone, signal, updatedPreviousStage)
           }
-          signal(onDone) shouldBe AndThen(updatedPreviousStage, updatedNextStage)
+          signal(onDone) shouldBe Stage.AndThen(updatedPreviousStage, updatedNextStage)
         }
     }
 
@@ -63,7 +62,7 @@ class StageTest
         (previousStage.apply _).expects(in).returns(Yield.Some(out, previousSignal, previousOnDone))
         (nextStage.apply _).expects(out).returns(Yield.None(nextSignal, nextOnDone))
       }
-      inside(AndThen(previousStage, nextStage)(in)) { case Yield.None(signal, onDone) =>
+      inside(Stage.AndThen(previousStage, nextStage)(in)) { case Yield.None(signal, onDone) =>
         signal shouldBe previousSignal ~> nextSignal
         val updatedPreviousStage = mock[Stage[Int, String, String]]
         val updatedNextStage = mock[Stage[String, Long, Nothing]]
@@ -71,7 +70,7 @@ class StageTest
           armOnDone(nextOnDone, signal, updatedNextStage)
           armOnDone(previousOnDone, signal, updatedPreviousStage)
         }
-        signal(onDone) shouldBe AndThen(updatedPreviousStage, updatedNextStage)
+        signal(onDone) shouldBe Stage.AndThen(updatedPreviousStage, updatedNextStage)
       }
     }
 
@@ -81,10 +80,10 @@ class StageTest
       val previousOnDone = mock[OnDone[Int, String, String]]
       val nextStage = mock[Stage[String, Long, String]]
       (previousStage.apply _).expects(in).returns(Yield.None(previousSignal, previousOnDone))
-      inside(AndThen(previousStage, nextStage)(in)) { case Yield.None(`previousSignal`, onDone) =>
+      inside(Stage.AndThen(previousStage, nextStage)(in)) { case Yield.None(`previousSignal`, onDone) =>
         val updatedPreviousStage = mock[Stage[Int, String, String]]
         armOnDone(previousOnDone, previousSignal, updatedPreviousStage)
-        previousSignal(onDone) shouldBe AndThen(updatedPreviousStage, nextStage)
+        previousSignal(onDone) shouldBe Stage.AndThen(updatedPreviousStage, nextStage)
       }
     }
 
@@ -107,16 +106,7 @@ class StageTest
       (nextStage.dispose _).expects()
       (previousStage.dispose _).expects()
     }
-    AndThen(previousStage, nextStage).dispose()
-  }
-
-  "Decorator's dispose" should "call underlying stage's dispose method" in {
-    val underlying = mock[Stage[Any, Nothing, Nothing]]
-    (underlying.dispose _).expects()
-    noException should be thrownBy new Decorator[Any, Nothing, Nothing] {
-      val stage: Stage[Any, Nothing, Nothing] = underlying
-      def apply(in: Any): Yield[Any, Nothing, Nothing] = throw new NoSuchMethodError
-    }.dispose()
+    Stage.AndThen(previousStage, nextStage).dispose()
   }
 
   "Functional stage" should "return a function value as an output" in

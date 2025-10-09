@@ -26,12 +26,6 @@ object Stage {
     }
   }
 
-  trait Decorator[-I, +O, +E] extends Stage[I, O, E] {
-    val stage: Stage[I, O, E]
-
-    override def dispose(): Unit = stage.dispose()
-  }
-
   trait WithOnDone[-I, +O, +E] extends Stage[I, O, E] with OnDone[I, O, E] {
     def onComplete(): Stage[I, O, E] = this
     def onSuccess(): Stage[I, O, E] = this
