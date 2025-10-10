@@ -1,12 +1,12 @@
 package h8io.xi.stages.util
 
-import h8io.xi.stages.{Signal, Stage, Yield}
+import h8io.xi.stages.*
 
 import java.time.Duration
 import scala.concurrent.duration.FiniteDuration
 
 private[util] final case class GlobalSoftDeadline[T](now: () => Long, duration: Long)
-    extends Stage.EndoWithOnDone[T, Nothing] {
+    extends Fruitful.Endo[T, Nothing] with OnDone.Static[T, T, Nothing] {
   private val ts: Long = now()
 
   def apply(in: T): Yield.Some[T, T, Nothing] =
@@ -14,8 +14,8 @@ private[util] final case class GlobalSoftDeadline[T](now: () => Long, duration: 
 }
 
 object GlobalSoftDeadline {
-  def apply[T](duration: FiniteDuration): Stage.Endo[T, Nothing] =
+  def apply[T](duration: FiniteDuration): Fruitful.Endo[T, Nothing] =
     GlobalSoftDeadline(System.nanoTime _, duration.toNanos)
 
-  def apply[T](duration: Duration): Stage.Endo[T, Nothing] = GlobalSoftDeadline(System.nanoTime _, duration.toNanos)
+  def apply[T](duration: Duration): Fruitful.Endo[T, Nothing] = GlobalSoftDeadline(System.nanoTime _, duration.toNanos)
 }

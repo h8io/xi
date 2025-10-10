@@ -21,8 +21,8 @@ final case class Cache[-I, +O, +E](stage: Stage[I, O, E]) extends Decorator[I, O
 
 object Cache {
   private[util] final case class Cached[-I, +O, +E](out: O, stage: Stage[I, O, E])
-      extends Decorator[I, O, E] with Stage.WithOnDone[I, O, E] {
-    def apply(in: I): Yield[I, O, E] = Yield.Some(out, Signal.Success, this)
+      extends Decorator[I, O, E] with Fruitful[I, O, E] with OnDone.Static[I, O, E] {
+    def apply(in: I): Yield.Some[I, O, E] = Yield.Some(out, Signal.Success, this)
 
     override def onComplete(): Stage[I, O, E] = Cache(stage)
     override def onError(): Stage[I, O, E] = Cache(stage)
