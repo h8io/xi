@@ -1,6 +1,7 @@
 package h8io.xi.stages.examples
 
-import h8io.xi.stages.std.{Const, Countdown, Loop}
+import h8io.xi.stages.decorators.Loop
+import h8io.xi.stages.std.{Const, Countdown}
 import h8io.xi.stages.{OnDone, Signal, Stage, Yield}
 
 object Factorial1 {

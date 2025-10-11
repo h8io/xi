@@ -1,4 +1,4 @@
-package h8io.xi.stages.std
+package h8io.xi.stages.decorators
 
 import h8io.xi.stages.*
 import org.scalamock.scalatest.MockFactory

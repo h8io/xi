@@ -65,7 +65,7 @@ val `stages-examples` = (project in file("stages/examples")).settings(
   Compile / packageDoc / mappings := Nil,
   Compile / packageSrc / mappings := Nil,
   Compile / doc / skip := true
-).dependsOn(stages)
+).dependsOn(stages, `stages-testkit` % Test)
 
 val cfg = (project in file("cfg"))
   .settings(name := "xi-cfg", libraryDependencies += "com.typesafe" % "config" % "1.4.5")
