@@ -1,4 +1,4 @@
-package h8io.xi.stages.util
+package h8io.xi.stages.std
 
 import h8io.xi.stages.{OnDone, Signal, Stage, Yield}
 
@@ -7,7 +7,7 @@ import scala.concurrent.duration.FiniteDuration
 trait LocalSoftDeadline[T] extends Fruitful.Endo[T, Nothing] with OnDone.Static[T, T, Nothing]
 
 object LocalSoftDeadline {
-  private[util] final case class Head[T](now: () => Long, duration: Long) extends LocalSoftDeadline[T] {
+  private[std] final case class Head[T](now: () => Long, duration: Long) extends LocalSoftDeadline[T] {
     assume(duration > 0, s"Duration must be positive, got duration = $duration")
 
     def apply(in: T): Yield.Some[T, T, Nothing] = {
@@ -16,7 +16,7 @@ object LocalSoftDeadline {
     }
   }
 
-  private[util] final case class Tail[T](ts: Long, head: Head[T]) extends LocalSoftDeadline[T] {
+  private[std] final case class Tail[T](ts: Long, head: Head[T]) extends LocalSoftDeadline[T] {
     def apply(in: T): Yield.Some[T, T, Nothing] =
       if (head.now() - ts >= head.duration) Yield.Some(in, Signal.Complete, head)
       else Yield.Some(in, Signal.Success, this)

@@ -1,11 +1,11 @@
-package h8io.xi.stages.util
+package h8io.xi.stages.std
 
 import h8io.xi.stages.*
 
 import java.time.Duration
 import scala.concurrent.duration.FiniteDuration
 
-private[util] final case class GlobalSoftDeadline[T](now: () => Long, duration: Long)
+private[std] final case class GlobalSoftDeadline[T](now: () => Long, duration: Long)
     extends Fruitful.Endo[T, Nothing] with OnDone.Static[T, T, Nothing] {
   private val ts: Long = now()
 

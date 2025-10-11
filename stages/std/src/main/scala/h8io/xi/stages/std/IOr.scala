@@ -1,4 +1,4 @@
-package h8io.xi.stages.util
+package h8io.xi.stages.std
 
 import cats.data.Ior
 import h8io.xi.stages

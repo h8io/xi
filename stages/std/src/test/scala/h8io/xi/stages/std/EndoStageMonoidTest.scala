@@ -1,4 +1,4 @@
-package h8io.xi.stages.util
+package h8io.xi.stages.std
 
 import cats.implicits.catsSyntaxSemigroup
 import cats.kernel.laws.discipline.MonoidTests

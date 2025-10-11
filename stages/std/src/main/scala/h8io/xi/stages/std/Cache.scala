@@ -1,4 +1,4 @@
-package h8io.xi.stages.util
+package h8io.xi.stages.std
 
 import h8io.xi.stages.*
 
@@ -20,7 +20,7 @@ final case class Cache[-I, +O, +E](stage: Stage[I, O, E]) extends Decorator[I, O
 }
 
 object Cache {
-  private[util] final case class Cached[-I, +O, +E](out: O, stage: Stage[I, O, E])
+  private[std] final case class Cached[-I, +O, +E](out: O, stage: Stage[I, O, E])
       extends Decorator[I, O, E] with Fruitful[I, O, E] with OnDone.Static[I, O, E] {
     def apply(in: I): Yield.Some[I, O, E] = Yield.Some(out, Signal.Success, this)
 

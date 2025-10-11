@@ -1,4 +1,4 @@
-package h8io.xi.stages.util
+package h8io.xi.stages.std
 import h8io.xi.stages.{Stage, Yield}
 
 trait Fruitful[-I, +O, +E] extends Stage[I, O, E] {

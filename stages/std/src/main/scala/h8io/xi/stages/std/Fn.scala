@@ -1,4 +1,4 @@
-package h8io.xi.stages.util
+package h8io.xi.stages.std
 import h8io.xi.stages.{OnDone, Signal, Yield}
 
 trait Fn[-I, +O] extends Fruitful[I, O, Nothing] with OnDone.Static[I, O, Nothing] {
