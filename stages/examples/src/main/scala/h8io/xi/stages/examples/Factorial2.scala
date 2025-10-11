@@ -1,7 +1,8 @@
 package h8io.xi.stages.examples
 
-import h8io.xi.stages.std.{Fn, Loop}
+import h8io.xi.stages.std.Fn
 import h8io.xi.stages.*
+import h8io.xi.stages.decorators.Loop
 
 object Factorial2 {
   object ToTuple extends Fn[Int, (Int, BigInt)] {
