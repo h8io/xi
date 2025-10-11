@@ -4,7 +4,8 @@ import cats.data.Ior
 import h8io.xi.stages
 import h8io.xi.stages.{Stage, Yield}
 
-final case class IOr[-I, +LO, +RO, +E](left: Stage[I, LO, E], right: Stage[I, RO, E]) extends Stage[I, Ior[LO, RO], E] {
+final case class IOr[-I, +LO, +RO, +E](left: Stage[I, LO, E], right: Stage[I, RO, E])
+    extends BinaryOp[I, LO, RO, Ior[LO, RO], E] {
   def apply(in: I): Yield[I, Ior[LO, RO], E] =
     (left(in), right(in)) match {
       case (Yield.Some(leftOut, leftSignal, leftOnDone), Yield.Some(rightOut, rightSignal, rightOnDone)) =>
@@ -16,11 +17,6 @@ final case class IOr[-I, +LO, +RO, +E](left: Stage[I, LO, E], right: Stage[I, RO
       case (Yield.None(leftSignal, leftOnDone), Yield.None(rightSignal, rightOnDone)) =>
         Yield.None(leftSignal ~> rightSignal, IOr.OnDone(leftOnDone, rightOnDone))
     }
-
-  override def dispose(): Unit = {
-    right.dispose()
-    left.dispose()
-  }
 }
 
 object IOr {
