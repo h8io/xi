@@ -1,7 +1,7 @@
 package h8io.xi.stages.std
 
 import h8io.xi.stages.*
-import org.scalacheck.Gen
+import org.scalacheck.{Arbitrary, Gen}
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
@@ -53,11 +53,12 @@ class CacheTest
     }
     forAll(
       Gen.zip(
-        genSignalAndOnDoneToYield[UUID, String, Exception].arbitrary, genSignalError[Exception].arbitrary, Gen.uuid)) {
-      case (yieldSupplier, error, in) =>
-        test(yieldSupplier, Signal.Success, in)
-        test(yieldSupplier, Signal.Complete, in)
-        test(yieldSupplier, error, in)
+        Arbitrary.arbitrary[SignalAndOnDoneToYield[UUID, String, Exception]],
+        Arbitrary.arbitrary[Signal.Error[Exception]],
+        Gen.uuid)) { case (yieldSupplier, error, in) =>
+      test(yieldSupplier, Signal.Success, in)
+      test(yieldSupplier, Signal.Complete, in)
+      test(yieldSupplier, error, in)
     }
   }
 

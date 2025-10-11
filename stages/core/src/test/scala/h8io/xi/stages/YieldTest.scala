@@ -20,12 +20,12 @@ class YieldTest
     Arbitrary {
       for {
         out <- Arbitrary.arbitrary[O]
-        signal <- genSignal[E].arbitrary
+        signal <- arbSignal[E].arbitrary
       } yield Yield.Some(out, signal, mock[OnDone[I, O, E]])
     }
 
   private implicit def genYieldNone[I, O, E: Arbitrary]: Arbitrary[Yield.None[I, O, E]] =
-    Arbitrary(genSignal[E].arbitrary.map(signal => Yield.None(signal, mock[OnDone[I, O, E]])))
+    Arbitrary(arbSignal[E].arbitrary.map(signal => Yield.None(signal, mock[OnDone[I, O, E]])))
 
   "~>" should "combine Some and Some correctly" in
     forAll { (previousYield: Yield.Some[Long, Instant, String], nextYield: Yield.Some[Instant, String, String]) =>
