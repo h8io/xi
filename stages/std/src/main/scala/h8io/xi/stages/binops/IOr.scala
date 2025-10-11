@@ -22,8 +22,8 @@ final case class IOr[-I, +LO, +RO, +E](left: Stage[I, LO, E], right: Stage[I, RO
 object IOr {
   private final case class OnDone[-I, +LO, +RO, +E](left: stages.OnDone[I, LO, E], right: stages.OnDone[I, RO, E])
       extends stages.OnDone[I, Ior[LO, RO], E] {
-    override def onSuccess(): Stage[I, Ior[LO, RO], E] = IOr(left.onSuccess(), right.onSuccess())
-    override def onComplete(): Stage[I, Ior[LO, RO], E] = IOr(left.onComplete(), right.onComplete())
-    override def onError(): Stage[I, Ior[LO, RO], E] = IOr(left.onError(), right.onError())
+    def onSuccess(): Stage[I, Ior[LO, RO], E] = IOr(left.onSuccess(), right.onSuccess())
+    def onComplete(): Stage[I, Ior[LO, RO], E] = IOr(left.onComplete(), right.onComplete())
+    def onError(): Stage[I, Ior[LO, RO], E] = IOr(left.onError(), right.onError())
   }
 }
