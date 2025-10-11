@@ -1,4 +1,4 @@
-package h8io.xi.stages.std
+package h8io.xi.stages.binops
 
 import cats.data.Ior
 import h8io.xi.stages.*
@@ -20,7 +20,7 @@ class IOrTest
     with MockFactory
     with ScalaCheckPropertyChecks
     with StagesArbitraries {
-  "IOr" should "return Yield.None if both stages returns Yield.None" in
+  "IOr" should "return Yield.None if both stages return Yield.None" in
     forAll(
       Gen.zip(Gen.long,
         Arbitrary.arbitrary[OnDoneToYieldNone[Long, Duration, Exception]],
@@ -34,8 +34,7 @@ class IOrTest
           (leftStage.apply _).expects(in).returns(leftYield)
           (rightStage.apply _).expects(in).returns(rightYield)
         }
-        val stage = IOr(leftStage, rightStage)
-        inside(stage(in)) { case Yield.None(signal, onDone) =>
+        inside(IOr(leftStage, rightStage)(in)) { case Yield.None(signal, onDone) =>
           test(leftYield, rightYield, signal, onDone)
         }
     }
@@ -55,8 +54,7 @@ class IOrTest
           (leftStage.apply _).expects(in).returns(leftYield)
           (rightStage.apply _).expects(in).returns(rightYield)
         }
-        val stage = IOr(leftStage, rightStage)
-        inside(stage(in)) { case Yield.Some(out, signal, onDone) =>
+        inside(IOr(leftStage, rightStage)(in)) { case Yield.Some(out, signal, onDone) =>
           out shouldBe Ior.Left(leftYield.out)
           test(leftYield, rightYield, signal, onDone)
         }
@@ -78,8 +76,7 @@ class IOrTest
           (leftStage.apply _).expects(in).returns(leftYield)
           (rightStage.apply _).expects(in).returns(rightYield)
         }
-        val stage = IOr(leftStage, rightStage)
-        inside(stage(in)) { case Yield.Some(out, signal, onDone) =>
+        inside(IOr(leftStage, rightStage)(in)) { case Yield.Some(out, signal, onDone) =>
           out shouldBe Ior.Right(rightYield.out)
           test(leftYield, rightYield, signal, onDone)
         }
@@ -101,8 +98,7 @@ class IOrTest
           (leftStage.apply _).expects(in).returns(leftYield)
           (rightStage.apply _).expects(in).returns(rightYield)
         }
-        val stage = IOr(leftStage, rightStage)
-        inside(stage(in)) { case Yield.Some(out, signal, onDone) =>
+        inside(IOr(leftStage, rightStage)(in)) { case Yield.Some(out, signal, onDone) =>
           out shouldBe Ior.Both(leftYield.out, rightYield.out)
           test(leftYield, rightYield, signal, onDone)
         }
