@@ -1,4 +1,5 @@
 import Dependencies.*
+import h8io.sbt.dependencies.*
 import sbt.url
 
 ThisBuild / organization := "io.h8"
@@ -39,7 +40,22 @@ ThisBuild / javacOptions ++= Seq("-target", "8")
 
 ThisBuild / libraryDependencies ++= Cats ++ TestBundle
 
+val `stages-core` = (project in file("stages/core")).settings(
+  name := "xi-stages-core",
+  libraryDependencies ++= (CatsTest ++ ScalaCheck) % TestKit
+).enablePlugins(TestKitPlugin)
+
+val `stages-testkit` =
+  (project in file("stages/testkit")).settings(
+    name := "xi-stages-testkit",
+    libraryDependencies ++= (CatsTest ++ ScalaCheck) % Provided
+  ).dependsOn(`stages-core`, `stages-core` % "compile->testkit")
+
+val `stages-std` =
+  (project in file("stages/std")).settings(name := "xi-stages-std").dependsOn(`stages-core`, `stages-testkit` % Test)
+
 val stages = (project in file("stages")).settings(name := "xi-stages")
+  .dependsOn(`stages-core`, `stages-std`, `stages-testkit` % Test)
 
 val `stages-examples` = (project in file("stages/examples")).settings(
   name := "xi-stages-examples",
@@ -54,5 +70,6 @@ val `stages-examples` = (project in file("stages/examples")).settings(
 val cfg = (project in file("cfg"))
   .settings(name := "xi-cfg", libraryDependencies += "com.typesafe" % "config" % "1.4.5")
 
-val root = (project in file(".")).settings(name := "xi").aggregate(stages, cfg, `stages-examples`)
-  .enablePlugins(ScoverageSummaryPlugin)
+val root =
+  (project in file(".")).settings(name := "xi").aggregate(stages, `stages-core`, `stages-std`, cfg, `stages-examples`)
+    .enablePlugins(ScoverageSummaryPlugin)
