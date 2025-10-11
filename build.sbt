@@ -51,7 +51,11 @@ val `stages-testkit` =
     libraryDependencies ++= (CatsTest ++ ScalaCheck) % Provided
   ).dependsOn(`stages-core`, `stages-core` % "compile->testkit")
 
-val stages = (project in file("stages")).settings(name := "xi-stages").dependsOn(`stages-core`, `stages-testkit` % Test)
+val `stages-std` =
+  (project in file("stages/std")).settings(name := "xi-stages-std").dependsOn(`stages-core`, `stages-testkit` % Test)
+
+val stages = (project in file("stages")).settings(name := "xi-stages")
+  .dependsOn(`stages-core`, `stages-std`, `stages-testkit` % Test)
 
 val `stages-examples` = (project in file("stages/examples")).settings(
   name := "xi-stages-examples",
@@ -67,5 +71,5 @@ val cfg = (project in file("cfg"))
   .settings(name := "xi-cfg", libraryDependencies += "com.typesafe" % "config" % "1.4.5")
 
 val root =
-  (project in file(".")).settings(name := "xi").aggregate(stages, `stages-core`, cfg, `stages-examples`)
+  (project in file(".")).settings(name := "xi").aggregate(stages, `stages-core`, `stages-std`, cfg, `stages-examples`)
     .enablePlugins(ScoverageSummaryPlugin)
