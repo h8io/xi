@@ -12,29 +12,34 @@ import java.time.*
 import java.util.UUID
 import scala.concurrent.duration.Duration
 
-class IAndTest
+class AndTest
     extends AnyFlatSpec
     with Matchers
     with Inside
     with MockFactory
     with ScalaCheckPropertyChecks
     with StagesArbitraries {
-  "IAnd" should "return Yield.None if both stages return Yield.None" in
-    forAll(
-      Gen.zip(Gen.long,
-        Arbitrary.arbitrary[OnDoneToYieldNone[Long, Duration, Exception]],
-        Arbitrary.arbitrary[OnDoneToYieldNone[Long, Instant, Exception]])) {
-      case (in, leftYieldSupplier, rightYieldSupplier) =>
+  "And" should "return Yield.None if left stage returns Yield.None" in
+    forAll(Gen.zip(Gen.long, Arbitrary.arbitrary[OnDoneToYieldNone[Long, Duration, Exception]])) {
+      case (in, leftYieldSupplier) =>
         val leftStage = mock[Stage[Long, Duration, Exception]]("left stage")
         val rightStage = mock[Stage[Long, Instant, Exception]]("right stage")
         val leftYield = leftYieldSupplier(mock[OnDone[Long, Duration, Exception]]("left onDone"))
-        val rightYield = rightYieldSupplier(mock[OnDone[Long, Instant, Exception]]("right OnDone"))
-        inSequence {
-          (leftStage.apply _).expects(in).returns(leftYield)
-          (rightStage.apply _).expects(in).returns(rightYield)
-        }
-        inside(IAnd(leftStage, rightStage)(in)) { case Yield.None(signal, onDone) =>
-          test(leftYield, rightYield, signal, onDone)
+        (leftStage.apply _).expects(in).returns(leftYield)
+        inside(And(leftStage, rightStage)(in)) { case Yield.None(signal, onDone) =>
+          signal shouldBe leftYield.signal
+
+          val leftOnSuccessStage = mock[Stage[Long, Duration, Exception]]("left onSuccess stage")
+          (leftYield.onDone.onSuccess _).expects().returns(leftOnSuccessStage)
+          onDone.onSuccess() shouldBe And(leftOnSuccessStage, rightStage)
+
+          val leftOnCompleteStage = mock[Stage[Long, Duration, Exception]]("left onComplete stage")
+          (leftYield.onDone.onComplete _).expects().returns(leftOnCompleteStage)
+          onDone.onComplete() shouldBe And(leftOnCompleteStage, rightStage)
+
+          val leftOnErrorStage = mock[Stage[Long, Duration, Exception]]("left onError stage")
+          (leftYield.onDone.onError _).expects().returns(leftOnErrorStage)
+          onDone.onError() shouldBe And(leftOnErrorStage, rightStage)
         }
     }
 
@@ -53,28 +58,7 @@ class IAndTest
           (leftStage.apply _).expects(in).returns(leftYield)
           (rightStage.apply _).expects(in).returns(rightYield)
         }
-        inside(IAnd(leftStage, rightStage)(in)) { case Yield.None(signal, onDone) =>
-          test(leftYield, rightYield, signal, onDone)
-        }
-    }
-
-  it should "return Yield.None if the left stage return Yield.None and the right one returns Yield.Some" in
-    forAll(
-      Gen.zip(
-        Arbitrary.arbitrary[String],
-        Arbitrary.arbitrary[OnDoneToYieldNone[String, LocalDateTime, UUID]],
-        Arbitrary.arbitrary[OnDoneToYieldSome[String, ZonedDateTime, UUID]]
-      )) {
-      case (in, leftYieldSupplier, rightYieldSupplier) =>
-        val leftStage = mock[Stage[String, LocalDateTime, UUID]]("left stage")
-        val rightStage = mock[Stage[String, ZonedDateTime, UUID]]("right stage")
-        val leftYield = leftYieldSupplier(mock[OnDone[String, LocalDateTime, UUID]]("left onDone"))
-        val rightYield = rightYieldSupplier(mock[OnDone[String, ZonedDateTime, UUID]]("right OnDone"))
-        inSequence {
-          (leftStage.apply _).expects(in).returns(leftYield)
-          (rightStage.apply _).expects(in).returns(rightYield)
-        }
-        inside(IAnd(leftStage, rightStage)(in)) { case Yield.None(signal, onDone) =>
+        inside(And(leftStage, rightStage)(in)) { case Yield.None(signal, onDone) =>
           test(leftYield, rightYield, signal, onDone)
         }
     }
@@ -95,7 +79,7 @@ class IAndTest
           (leftStage.apply _).expects(in).returns(leftYield)
           (rightStage.apply _).expects(in).returns(rightYield)
         }
-        inside(IAnd(leftStage, rightStage)(in)) { case Yield.Some(out, signal, onDone) =>
+        inside(And(leftStage, rightStage)(in)) { case Yield.Some(out, signal, onDone) =>
           out shouldBe leftYield.out -> rightYield.out
           test(leftYield, rightYield, signal, onDone)
         }
@@ -114,7 +98,7 @@ class IAndTest
       (leftYield.onDone.onSuccess _).expects().returns(leftOnSuccessStage)
       (rightYield.onDone.onSuccess _).expects().returns(rightOnSuccessStage)
     }
-    onDone.onSuccess() shouldBe IAnd(leftOnSuccessStage, rightOnSuccessStage)
+    onDone.onSuccess() shouldBe And(leftOnSuccessStage, rightOnSuccessStage)
 
     val leftOnCompleteStage = mock[Stage[I, LO, E]]("left onComplete stage")
     val rightOnCompleteStage = mock[Stage[I, RO, E]]("right onComplete stage")
@@ -122,7 +106,7 @@ class IAndTest
       (leftYield.onDone.onComplete _).expects().returns(leftOnCompleteStage)
       (rightYield.onDone.onComplete _).expects().returns(rightOnCompleteStage)
     }
-    onDone.onComplete() shouldBe IAnd(leftOnCompleteStage, rightOnCompleteStage)
+    onDone.onComplete() shouldBe And(leftOnCompleteStage, rightOnCompleteStage)
 
     val leftOnErrorStage = mock[Stage[I, LO, E]]("left onError stage")
     val rightOnErrorStage = mock[Stage[I, RO, E]]("right onError stage")
@@ -130,6 +114,6 @@ class IAndTest
       (leftYield.onDone.onError _).expects().returns(leftOnErrorStage)
       (rightYield.onDone.onError _).expects().returns(rightOnErrorStage)
     }
-    onDone.onError() shouldBe IAnd(leftOnErrorStage, rightOnErrorStage)
+    onDone.onError() shouldBe And(leftOnErrorStage, rightOnErrorStage)
   }
 }
