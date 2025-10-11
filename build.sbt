@@ -41,8 +41,18 @@ ThisBuild / libraryDependencies ++= Cats ++ TestBundle
 
 val stages = (project in file("stages")).settings(name := "xi-stages")
 
+val `stages-examples` = (project in file("stages/examples")).settings(
+  name := "xi-stages-examples",
+  publish / skip := true,
+  publishLocal / skip := true,
+  Compile / packageBin / mappings := Nil,
+  Compile / packageDoc / mappings := Nil,
+  Compile / packageSrc / mappings := Nil,
+  Compile / doc / skip := true
+).dependsOn(stages)
+
 val cfg = (project in file("cfg"))
   .settings(name := "xi-cfg", libraryDependencies += "com.typesafe" % "config" % "1.4.5")
 
-val root = (project in file(".")).settings(name := "xi").aggregate(stages, cfg)
+val root = (project in file(".")).settings(name := "xi").aggregate(stages, cfg, `stages-examples`)
   .enablePlugins(ScoverageSummaryPlugin)

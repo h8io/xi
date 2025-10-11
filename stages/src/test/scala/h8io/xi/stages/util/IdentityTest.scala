@@ -10,7 +10,7 @@ class IdentityTest extends AnyFlatSpec with Matchers with Inside with ScalaCheck
   "Identity" should "return input" in {
     val identity = Identity[String]
     forAll { (in: String) =>
-      inside(identity(in)) { case Yield.Some(`in`, Signal.Success, onDone) =>
+      inside(Identity(in)) { case Yield.Some(`in`, Signal.Success, onDone) =>
         onDone.onSuccess() shouldBe identity
         onDone.onComplete() shouldBe identity
         onDone.onError() shouldBe identity

@@ -1,8 +1,8 @@
 package h8io.xi.stages.util
 
-import h8io.xi.stages.{OnDone, Signal, Stage, Yield}
+import h8io.xi.stages.*
 
-final case class Cache[-I, +O, +E](stage: Stage[I, O, E]) extends Stage.Decorator[I, O, E] {
+final case class Cache[-I, +O, +E](stage: Stage[I, O, E]) extends Decorator[I, O, E] {
   def apply(in: I): Yield[I, O, E] =
     stage(in) match {
       case Yield.Some(out, Signal.Success, onDone) =>
@@ -21,11 +21,10 @@ final case class Cache[-I, +O, +E](stage: Stage[I, O, E]) extends Stage.Decorato
 
 object Cache {
   private[util] final case class Cached[-I, +O, +E](out: O, stage: Stage[I, O, E])
-      extends Stage.Decorator[I, O, E] with OnDone[I, O, E] {
-    def apply(in: I): Yield[I, O, E] = Yield.Some(out, Signal.Success, this)
+      extends Decorator[I, O, E] with Fruitful[I, O, E] with OnDone.Static[I, O, E] {
+    def apply(in: I): Yield.Some[I, O, E] = Yield.Some(out, Signal.Success, this)
 
-    def onSuccess(): Stage[I, O, E] = this
-    def onComplete(): Stage[I, O, E] = Cache(stage)
-    def onError(): Stage[I, O, E] = Cache(stage)
+    override def onComplete(): Stage[I, O, E] = Cache(stage)
+    override def onError(): Stage[I, O, E] = Cache(stage)
   }
 }

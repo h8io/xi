@@ -29,7 +29,7 @@ object Signal {
     private[stages] def apply[I, O, _E](onDone: OnDone[I, O, _E]): Stage[I, O, _E] = onDone.onComplete()
   }
 
-  final case class Error[E](causes: NonEmptyChain[E]) extends Signal[E] {
+  final case class Error[+E](causes: NonEmptyChain[E]) extends Signal[E] {
     private[stages] def ~>[_E >: E](next: Signal[_E]): Signal[_E] =
       next match {
         case Success | Complete => this

@@ -35,4 +35,12 @@ object OnDone {
     def onComplete(): Stage[I, O, E] = stage
     def onError(): Stage[I, O, E] = stage
   }
+
+  trait Static[-I, +O, +E] extends OnDone[I, O, E] {
+    self: Stage[I, O, E] =>
+
+    def onComplete(): Stage[I, O, E] = self
+    def onSuccess(): Stage[I, O, E] = self
+    def onError(): Stage[I, O, E] = self
+  }
 }
