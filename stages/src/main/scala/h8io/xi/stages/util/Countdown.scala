@@ -1,6 +1,6 @@
 package h8io.xi.stages.util
 
-import h8io.xi.stages.{Fruitful, OnDone, Signal, Stage, Yield}
+import h8io.xi.stages.{OnDone, Signal, Stage, Yield}
 
 final case class Countdown[T](i: Long, n: Long) extends Fruitful.Endo[T, Nothing] with OnDone[T, T, Nothing] {
   assume(n > 0, s"n must be positive, got n = $n")

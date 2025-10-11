@@ -1,6 +1,6 @@
 package h8io.xi.stages.util
 
-import h8io.xi.stages.{Decorator, Fruitful, Stage, Yield}
+import h8io.xi.stages.{Stage, Yield}
 
 object KeepLastOutput {
   private[util] final case class None[-I, +O, +E](stage: Stage[I, O, E]) extends Decorator[I, O, E] {

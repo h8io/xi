@@ -1,6 +1,5 @@
 package h8io.xi.stages.util
-
-import h8io.xi.stages.{Fn, Stage}
+import h8io.xi.stages.Stage
 
 object Identity extends Stage.Endo[Any, Nothing] with Fn[Any, Any] {
   def apply[T]: Fn[T, Nothing] = asInstanceOf[Fn[T, Nothing]]

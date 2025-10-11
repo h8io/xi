@@ -1,15 +1,15 @@
-package h8io.xi.stages
+package h8io.xi.stages.util
 
 import cats.implicits.catsSyntaxSemigroup
 import cats.kernel.laws.discipline.MonoidTests
 import cats.{Eq, Monoid, Semigroup}
-import h8io.xi.stages.util.Identity
+import h8io.xi.stages.*
 import org.scalacheck.Arbitrary
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatestplus.scalacheck.Checkers
 import org.typelevel.discipline.scalatest.FunSuiteDiscipline
 
-class EndoStageMonoidTest extends AnyFunSuite with FunSuiteDiscipline with Checkers with Generators {
+class EndoStageMonoidTest extends AnyFunSuite with FunSuiteDiscipline with Checkers with SignalArbitraries {
   private implicit def genStage[T: Arbitrary: Semigroup, E: Arbitrary]: Arbitrary[Stage.Endo[T, E]] =
     Arbitrary {
       for {

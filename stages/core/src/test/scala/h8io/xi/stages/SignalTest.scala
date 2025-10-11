@@ -8,7 +8,8 @@ import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 
 import java.time.Instant
 
-class SignalTest extends AnyFlatSpec with Matchers with MockFactory with ScalaCheckPropertyChecks with Generators {
+class SignalTest
+    extends AnyFlatSpec with Matchers with MockFactory with ScalaCheckPropertyChecks with SignalArbitraries {
   "Success" should "be idempotent" in { Signal.Success ~> Signal.Success shouldBe Signal.Success }
 
   it should "call the method onSuccess() in OnDone object" in {

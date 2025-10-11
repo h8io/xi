@@ -7,7 +7,12 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 
 class AndThenTest
-    extends AnyFlatSpec with Matchers with Inside with MockFactory with ScalaCheckPropertyChecks with Generators {
+    extends AnyFlatSpec
+    with Matchers
+    with Inside
+    with MockFactory
+    with ScalaCheckPropertyChecks
+    with SignalArbitraries {
   "AndThen" should "call sequentially stages and return the correct Yield for Some ~> Some" in
     forAll {
       (previousSignal: Signal[String], nextSignal: Signal[String], in: Int, previousOut: String, nextOut: Long) =>
@@ -87,5 +92,4 @@ class AndThenTest
     }
     AndThen(previousStage, nextStage).dispose()
   }
-
 }

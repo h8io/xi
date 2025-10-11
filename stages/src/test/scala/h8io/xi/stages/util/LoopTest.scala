@@ -12,7 +12,12 @@ import java.util.UUID
 import scala.annotation.tailrec
 
 class LoopTest
-    extends AnyFlatSpec with Matchers with Inside with MockFactory with ScalaCheckPropertyChecks with Generators {
+    extends AnyFlatSpec
+    with Matchers
+    with Inside
+    with MockFactory
+    with ScalaCheckPropertyChecks
+    with StagesArbitraries {
   "Loop" should "be executed until the signal is Complete" in
     forAll(
       Gen.zip(

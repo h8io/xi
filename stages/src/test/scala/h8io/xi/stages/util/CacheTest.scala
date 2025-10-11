@@ -11,7 +11,12 @@ import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import java.util.UUID
 
 class CacheTest
-    extends AnyFlatSpec with Matchers with Inside with MockFactory with ScalaCheckPropertyChecks with Generators {
+    extends AnyFlatSpec
+    with Matchers
+    with Inside
+    with MockFactory
+    with ScalaCheckPropertyChecks
+    with StagesArbitraries {
   "Cache" should "cache output only if the yield is Some and the signal is Success" in {
     def test(
         yieldSupplier: SignalAndOnDoneToYield[UUID, String, Exception],

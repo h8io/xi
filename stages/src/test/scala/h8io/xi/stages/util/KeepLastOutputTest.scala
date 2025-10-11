@@ -11,7 +11,12 @@ import java.time.{Instant, ZoneId, ZonedDateTime}
 import java.util.UUID
 
 class KeepLastOutputTest
-    extends AnyFlatSpec with Matchers with Inside with MockFactory with ScalaCheckPropertyChecks with Generators {
+    extends AnyFlatSpec
+    with Matchers
+    with Inside
+    with MockFactory
+    with ScalaCheckPropertyChecks
+    with StagesArbitraries {
   "Initial stage" should "should be None" in {
     val stage = mock[Stage[Any, Nothing, Nothing]]
     KeepLastOutput(stage) shouldBe KeepLastOutput.None(stage)

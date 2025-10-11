@@ -1,6 +1,6 @@
 package h8io.xi.stages.util
 
-import h8io.xi.stages.{Generators, Signal, Yield}
+import h8io.xi.stages.{Signal, StagesArbitraries, Yield}
 import org.scalacheck.Gen
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.Inside
@@ -14,7 +14,12 @@ import scala.annotation.tailrec
 import scala.concurrent.duration.Duration
 
 class GlobalSoftDeadlineTest
-    extends AnyFlatSpec with Matchers with Inside with MockFactory with ScalaCheckPropertyChecks with Generators {
+    extends AnyFlatSpec
+    with Matchers
+    with Inside
+    with MockFactory
+    with ScalaCheckPropertyChecks
+    with StagesArbitraries {
   "apply" should "create a GlobalSoftDeadline object from a duration" in
     forAll(Gen.choose(0, Long.MaxValue)) { nanos =>
       inside(GlobalSoftDeadline(Duration.fromNanos(nanos))) { case GlobalSoftDeadline(now, `nanos`) =>

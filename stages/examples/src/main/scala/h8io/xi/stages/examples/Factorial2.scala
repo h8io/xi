@@ -1,6 +1,6 @@
 package h8io.xi.stages.examples
 
-import h8io.xi.stages.util.Loop
+import h8io.xi.stages.util.{Fn, Loop}
 import h8io.xi.stages.*
 
 object Factorial2 {

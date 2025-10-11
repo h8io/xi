@@ -10,7 +10,12 @@ import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import java.time.*
 
 class YieldTest
-    extends AnyFlatSpec with Matchers with Inside with MockFactory with ScalaCheckPropertyChecks with Generators {
+    extends AnyFlatSpec
+    with Matchers
+    with Inside
+    with MockFactory
+    with ScalaCheckPropertyChecks
+    with SignalArbitraries {
   private implicit def genYieldSome[I, O: Arbitrary, E: Arbitrary]: Arbitrary[Yield.Some[I, O, E]] =
     Arbitrary {
       for {
