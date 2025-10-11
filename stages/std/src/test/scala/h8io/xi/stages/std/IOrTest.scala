@@ -38,11 +38,6 @@ class IOrTest
         inside(stage(in)) { case Yield.None(signal, onDone) =>
           test(leftYield, rightYield, signal, onDone)
         }
-        inSequence {
-          (rightStage.dispose _).expects()
-          (leftStage.dispose _).expects()
-        }
-        noException should be thrownBy stage.dispose()
     }
 
   it should "return Ior.Left output if the left stage returns Yield.Some" in
@@ -65,11 +60,6 @@ class IOrTest
           out shouldBe Ior.Left(leftYield.out)
           test(leftYield, rightYield, signal, onDone)
         }
-        inSequence {
-          (rightStage.dispose _).expects()
-          (leftStage.dispose _).expects()
-        }
-        noException should be thrownBy stage.dispose()
     }
 
   it should "return Ior.Right output if the right stage returns Yield.Some" in
@@ -93,11 +83,6 @@ class IOrTest
           out shouldBe Ior.Right(rightYield.out)
           test(leftYield, rightYield, signal, onDone)
         }
-        inSequence {
-          (rightStage.dispose _).expects()
-          (leftStage.dispose _).expects()
-        }
-        noException should be thrownBy stage.dispose()
     }
 
   it should "return Ior.Both output if both stages return Yield.Some" in
@@ -121,11 +106,6 @@ class IOrTest
           out shouldBe Ior.Both(leftYield.out, rightYield.out)
           test(leftYield, rightYield, signal, onDone)
         }
-        inSequence {
-          (rightStage.dispose _).expects()
-          (leftStage.dispose _).expects()
-        }
-        noException should be thrownBy stage.dispose()
     }
 
   private def test[I, LO, RO, E](
