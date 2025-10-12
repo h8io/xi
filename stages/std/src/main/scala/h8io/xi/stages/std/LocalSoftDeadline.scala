@@ -4,6 +4,7 @@ import h8io.xi.stages.{OnDone, Signal, Stage, Yield}
 
 import scala.concurrent.duration.FiniteDuration
 
+// TODO It should be a decorator
 trait LocalSoftDeadline[T] extends Fruitful.Endo[T, Nothing] with OnDone.Static[T, T, Nothing]
 
 object LocalSoftDeadline {
