@@ -6,6 +6,8 @@ sealed trait Signal[+E] {
   private[stages] def ~>[_E >: E](next: Signal[_E]): Signal[_E]
 
   private[stages] def apply[I, O, _E](onDone: OnDone[I, O, _E]): Stage[I, O, _E]
+
+  private[stages] def break: Signal[E]
 }
 
 object Signal {
@@ -17,9 +19,15 @@ object Signal {
       }
 
     private[stages] def apply[I, O, _E](onDone: OnDone[I, O, _E]): Stage[I, O, _E] = onDone.onSuccess()
+
+    private[stages] def break: Signal[Nothing] = Complete
   }
 
-  case object Complete extends Signal[Nothing] {
+  sealed trait Break[+E] extends Signal[E] {
+    private[stages] def break: Signal[E] = this
+  }
+
+  case object Complete extends Break[Nothing] {
     private[stages] def ~>[E](next: Signal[E]): Signal[E] =
       next match {
         case Success | Complete => this
@@ -29,7 +37,7 @@ object Signal {
     private[stages] def apply[I, O, _E](onDone: OnDone[I, O, _E]): Stage[I, O, _E] = onDone.onComplete()
   }
 
-  final case class Error[+E](causes: NonEmptyChain[E]) extends Signal[E] {
+  final case class Error[+E](causes: NonEmptyChain[E]) extends Break[E] {
     private[stages] def ~>[_E >: E](next: Signal[_E]): Signal[_E] =
       next match {
         case Success | Complete => this

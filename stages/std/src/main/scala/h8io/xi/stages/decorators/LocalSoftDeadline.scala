@@ -14,7 +14,7 @@ sealed trait LocalSoftDeadline[-I, +O, +E] extends Decorator[I, O, E] {
 
   @inline protected final def apply(ts: Long, in: I): Yield[I, O, E] = {
     val `yield` = stage(in)
-    if (overdue(ts)) `yield`.mapOnDoneAndComplete(_.map(Head(now, duration, _)))
+    if (overdue(ts)) `yield`.mapOnDoneAndBreak(_.map(Head(now, duration, _)))
     else `yield`.mapOnDone(_OnDone(ts, now, duration, _))
   }
 }
@@ -34,7 +34,7 @@ object LocalSoftDeadline {
       stage: Stage[I, O, E])
       extends LocalSoftDeadline[I, O, E] {
     def apply(in: I): Yield[I, O, E] =
-      if (overdue(ts)) stage(in).mapOnDoneAndComplete(_.map(Head(now, duration, _))) else apply(ts, in)
+      if (overdue(ts)) stage(in).mapOnDoneAndBreak(_.map(Head(now, duration, _))) else apply(ts, in)
   }
 
   private[decorators] final case class _OnDone[-I, +O, +E](

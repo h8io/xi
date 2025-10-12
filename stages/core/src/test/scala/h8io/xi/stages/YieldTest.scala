@@ -145,4 +145,25 @@ class YieldTest
       (mapOnDone.apply _).expects(initialOnDone).returns(mappedOnDone)
       Yield.None(signal, initialOnDone).mapOnDone(mapOnDone) shouldBe Yield.None(signal, mappedOnDone)
     }
+
+  "mapOnDoneAndBreak" should "transform Some content" in
+    forAll { (out: LocalDateTime, signal: Signal[Long]) =>
+      val initialOnDone = mock[OnDone[Long, LocalDateTime, Long]]("initial OnDone")
+      val mappedOnDone = mock[OnDone[String, LocalDateTime, Long]]("mapped OnDone")
+      val mapOnDone =
+        mock[OnDone[Long, LocalDateTime, Long] => OnDone[String, LocalDateTime, Long]]("mapOnDone")
+      (mapOnDone.apply _).expects(initialOnDone).returns(mappedOnDone)
+      Yield.Some(out, signal, initialOnDone).mapOnDoneAndBreak(mapOnDone) shouldBe
+        Yield.Some(out, signal.break, mappedOnDone)
+    }
+
+  it should "transform None content" in
+    forAll { (signal: Signal[Int]) =>
+      val initialOnDone = mock[OnDone[ZonedDateTime, OffsetDateTime, Int]]("initial OnDone")
+      val mappedOnDone = mock[OnDone[Duration, OffsetDateTime, Int]]("mapped OnDone")
+      val mapOnDone =
+        mock[OnDone[ZonedDateTime, OffsetDateTime, Int] => OnDone[Duration, OffsetDateTime, Int]]("mapOnDone")
+      (mapOnDone.apply _).expects(initialOnDone).returns(mappedOnDone)
+      Yield.None(signal, initialOnDone).mapOnDoneAndBreak(mapOnDone) shouldBe Yield.None(signal.break, mappedOnDone)
+    }
 }

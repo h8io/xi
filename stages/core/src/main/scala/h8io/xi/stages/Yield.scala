@@ -10,9 +10,8 @@ sealed trait Yield[-I, +O, +E] {
 
   private[stages] def mapOnDone[_I, _O >: O, _E >: E](f: OnDone[I, O, E] => OnDone[_I, _O, _E]): Yield[_I, _O, _E]
 
-  private[stages] final def mapOnDoneAndComplete[_I, _O >: O, _E >: E](
-      f: OnDone[I, O, E] => OnDone[_I, _O, _E]): Yield[_I, _O, _E] =
-    mapOnDone(if (signal == Signal.Success) Signal.Complete else signal, f)
+  private[stages] final def mapOnDoneAndBreak[_I, _O >: O, _E >: E](
+      f: OnDone[I, O, E] => OnDone[_I, _O, _E]): Yield[_I, _O, _E] = mapOnDone(signal.break, f)
 }
 
 object Yield {
