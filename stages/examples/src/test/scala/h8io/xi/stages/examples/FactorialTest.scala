@@ -73,4 +73,10 @@ class FactorialTest extends AnyFlatSpec with Matchers with Inside with ScalaChec
       Factorial3.stage(n) should matchPattern { case Yield.None(`expectedError`, _) => }
     }
   }
+
+  it should "return the initial stage on complete" in
+    forAll((i: Int, f: BigInt) => Factorial3.Factorial(i, f).onComplete() shouldBe Factorial3.InitialStage)
+
+  it should "return the initial stage on error" in
+    forAll((i: Int, f: BigInt) => Factorial3.Factorial(i, f).onError() shouldBe Factorial3.InitialStage)
 }
