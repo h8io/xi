@@ -26,7 +26,7 @@ object LocalSoftDeadline {
       extends LocalSoftDeadline[I, O, E] {
     def apply(in: I): Yield[I, O, E] =
       if (now() - ts >= duration) Yield.None(Signal.Complete, OnDone.FromStage(Head(now, duration, stage)))
-      else stage(in).mapOnDone(Signal.Success, _OnDone(ts, now, duration, _))
+      else stage(in).mapOnDone(_OnDone(ts, now, duration, _))
   }
 
   private[decorators] final case class _OnDone[-I, +O, +E](
