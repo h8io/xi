@@ -1,21 +1,30 @@
 package h8io.xi.stages.decorators
 
+import h8io.xi.stages.decorators.LocalSoftDeadline.{_OnDone, Head}
 import h8io.xi.stages.std.DeadEnd
-import h8io.xi.stages.{OnDone, Signal, Stage, Yield}
+import h8io.xi.stages.{OnDone, Stage, Yield}
 
 import scala.concurrent.duration.FiniteDuration
 
-trait LocalSoftDeadline[-I, +O, +E] extends Decorator[I, O, E]
+sealed trait LocalSoftDeadline[-I, +O, +E] extends Decorator[I, O, E] {
+  val now: () => Long
+  val duration: Long
+
+  @inline protected final def overdue(ts: Long): Boolean = now() - ts >= duration
+
+  @inline protected final def apply(ts: Long, in: I): Yield[I, O, E] = {
+    val `yield` = stage(in)
+    if (overdue(ts)) `yield`.mapOnDoneAndComplete(_.map(Head(now, duration, _)))
+    else `yield`.mapOnDone(_OnDone(ts, now, duration, _))
+  }
+}
 
 object LocalSoftDeadline {
   private[decorators] final case class Head[-I, +O, +E](now: () => Long, duration: Long, stage: Stage[I, O, E])
       extends LocalSoftDeadline[I, O, E] {
     assume(duration > 0, s"Duration must be positive, got duration = $duration")
 
-    def apply(in: I): Yield[I, O, E] = {
-      val ts = now()
-      stage(in).mapOnDone(_OnDone(ts, now, duration, _))
-    }
+    def apply(in: I): Yield[I, O, E] = apply(now(), in)
   }
 
   private[decorators] final case class Tail[-I, +O, +E](
@@ -25,8 +34,7 @@ object LocalSoftDeadline {
       stage: Stage[I, O, E])
       extends LocalSoftDeadline[I, O, E] {
     def apply(in: I): Yield[I, O, E] =
-      if (now() - ts >= duration) Yield.None(Signal.Complete, OnDone.FromStage(Head(now, duration, stage)))
-      else stage(in).mapOnDone(_OnDone(ts, now, duration, _))
+      if (overdue(ts)) stage(in).mapOnDoneAndComplete(_.map(Head(now, duration, _))) else apply(ts, in)
   }
 
   private[decorators] final case class _OnDone[-I, +O, +E](

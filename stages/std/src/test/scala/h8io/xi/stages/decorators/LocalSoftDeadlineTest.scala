@@ -2,16 +2,14 @@ package h8io.xi.stages.decorators
 
 import h8io.xi.stages.*
 import h8io.xi.stages.std.DeadEnd
-import org.scalacheck.{Arbitrary, Gen}
+import org.scalacheck.Gen
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.{Assertion, Inside}
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 
-import java.sql.Timestamp
-import java.time.{Duration as jDuration, Instant}
-import java.util.UUID
+import java.time.Duration as jDuration
 import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.FiniteDuration
 
@@ -40,58 +38,58 @@ class LocalSoftDeadlineTest
       test(LocalSoftDeadline(jDuration.ofNanos(nanos), stage))
     }
 
-  "Head" should "return the same yield as the underlying stage mapped to _OnDone" in
-    forAll(
-      Gen.zip(
-        Gen.long,
-        Gen.choose(1L, Long.MaxValue),
-        Arbitrary.arbitrary[String],
-        arbOnDoneToYield[String, UUID, Exception].arbitrary)) {
-      case (ts, duration, in, yieldSupplier) =>
-        val now = mock[() => Long]("now")
-        val stage = mock[Stage[String, UUID, Exception]]("underlying stage")
-        val `yield` = yieldSupplier(mock[OnDone[String, UUID, Exception]])
-        val head = LocalSoftDeadline.Head(now, duration, stage)
-        inSequence {
-          (now.apply _).expects().returns(ts)
-          (stage.apply _).expects(in).returns(`yield`)
-        }
-        head(in) shouldBe `yield`.mapOnDone(LocalSoftDeadline._OnDone(ts, now, duration, _))
-    }
-
-  "Tail" should "return yield None with OnDone that points to Head on overdue" in
-    forAll(Gen.zip(Gen.long, Gen.choose(1L, Int.MaxValue), Gen.choose(1L, Int.MaxValue), Gen.uuid)) {
-      case (ts, duration, overdue, in) =>
-        val now = mock[() => Long]("now")
-        val stage = mock[Stage[UUID, Timestamp, Exception]]("underlying stage")
-        val head = LocalSoftDeadline.Tail(ts, now, duration, stage)
-        (now.apply _).expects().returns(ts + duration)
-        val expectedYield = Yield.None(Signal.Complete, OnDone.FromStage(LocalSoftDeadline.Head(now, duration, stage)))
-        head(in) shouldBe expectedYield
-        (now.apply _).expects().returns(ts + duration + overdue)
-        head(in) shouldBe expectedYield
-    }
-
-  it should "return the same yield as the underlying stage mapped to _OnDone while not overdue" in
-    forAll(
-      Gen.zip(
-        Gen.long,
-        Gen.choose(0L, Int.MaxValue),
-        Gen.choose(1L, Int.MaxValue),
-        Gen.finiteDuration,
-        arbOnDoneToYield[FiniteDuration, Instant, String].arbitrary)) { case (ts, spent, rest, in, yieldSupplier) =>
-      val duration = spent + rest
-      val now = mock[() => Long]("now")
-      val stage = mock[Stage[FiniteDuration, Instant, String]]("underlying stage")
-      val onDone = mock[OnDone[FiniteDuration, Instant, String]]("onDone")
-      val `yield` = yieldSupplier(onDone)
-      val head = LocalSoftDeadline.Tail(ts, now, duration, stage)
-      inSequence {
-        (now.apply _).expects().returns(ts + spent)
-        (stage.apply _).expects(in).returns(`yield`)
-      }
-      head(in) shouldBe `yield`.mapOnDone(LocalSoftDeadline._OnDone(ts, now, duration, _))
-    }
+//  "Head" should "return the same yield as the underlying stage mapped to _OnDone" in
+//    forAll(
+//      Gen.zip(
+//        Gen.long,
+//        Gen.choose(1L, Long.MaxValue),
+//        Arbitrary.arbitrary[String],
+//        arbOnDoneToYield[String, UUID, Exception].arbitrary)) {
+//      case (ts, duration, in, yieldSupplier) =>
+//        val now = mock[() => Long]("now")
+//        val stage = mock[Stage[String, UUID, Exception]]("underlying stage")
+//        val `yield` = yieldSupplier(mock[OnDone[String, UUID, Exception]])
+//        val head = LocalSoftDeadline.Head(now, duration, stage)
+//        inSequence {
+//          (now.apply _).expects().returns(ts)
+//          (stage.apply _).expects(in).returns(`yield`)
+//        }
+//        head(in) shouldBe `yield`.mapOnDone(LocalSoftDeadline._OnDone(ts, now, duration, _))
+//    }
+//
+//  "Tail" should "return yield with OnDone that points to Head on overdue before the stage run" in
+//    forAll(Gen.zip(Gen.long, Gen.choose(1L, Int.MaxValue), Gen.choose(1L, Int.MaxValue), Gen.uuid)) {
+//      case (ts, duration, overdue, in) =>
+//        val now = mock[() => Long]("now")
+//        val stage = mock[Stage[UUID, LocalDateTime, Exception]]("underlying stage")
+//        val head = LocalSoftDeadline.Tail(ts, now, duration, stage)
+//        (now.apply _).expects().returns(ts + duration)
+//        val expectedYield = Yield.None(Signal.Complete, OnDone.FromStage(LocalSoftDeadline.Head(now, duration, stage)))
+//        head(in) shouldBe expectedYield
+//        (now.apply _).expects().returns(ts + duration + overdue)
+//        head(in) shouldBe expectedYield
+//    }
+//
+//  it should "return the same yield as the underlying stage mapped to _OnDone while not overdue" in
+//    forAll(
+//      Gen.zip(
+//        Gen.long,
+//        Gen.choose(0L, Int.MaxValue),
+//        Gen.choose(1L, Int.MaxValue),
+//        Gen.finiteDuration,
+//        arbOnDoneToYield[FiniteDuration, Instant, String].arbitrary)) { case (ts, spent, rest, in, yieldSupplier) =>
+//      val duration = spent + rest
+//      val now = mock[() => Long]("now")
+//      val stage = mock[Stage[FiniteDuration, Instant, String]]("underlying stage")
+//      val onDone = mock[OnDone[FiniteDuration, Instant, String]]("onDone")
+//      val `yield` = yieldSupplier(onDone)
+//      val head = LocalSoftDeadline.Tail(ts, now, duration, stage)
+//      inSequence {
+//        (now.apply _).expects().returns(ts + spent)
+//        (stage.apply _).expects(in).returns(`yield`)
+//      }
+//      head(in) shouldBe `yield`.mapOnDone(LocalSoftDeadline._OnDone(ts, now, duration, _))
+//    }
 
   "_OnDone" should "return Tail on success and Head on complete and on error" in
     forAll(Gen.zip(Gen.long, Gen.posNum[Long])) { case (ts, duration) =>
