@@ -27,8 +27,8 @@ ThisBuild / scalaVersion := "2.13.16"
 ThisBuild / crossScalaVersions += "2.12.20"
 
 ThisBuild / scalacOptions ++=
-  Seq("-Xsource:3", "--deprecation", "--feature", "--unchecked", "-Xlint:_", "-Xfatal-warnings", "-opt:l:inline",
-    "-opt-warnings")
+  Seq("-Xsource:3", "-language:higherKinds", "--deprecation", "--feature", "--unchecked", "-Xlint:_",
+    "-Xfatal-warnings", "-opt:l:inline", "-opt-warnings")
 
 ThisBuild / scalacOptions ++=
   (CrossVersion.partialVersion(scalaVersion.value) match {
