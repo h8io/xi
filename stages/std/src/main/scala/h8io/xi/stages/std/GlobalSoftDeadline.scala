@@ -5,7 +5,7 @@ import h8io.xi.stages.*
 import java.time.Duration
 import scala.concurrent.duration.FiniteDuration
 
-private[std] final case class GlobalSoftDeadline[T](now: () => Long, duration: Long)
+final case class GlobalSoftDeadline[T](now: () => Long, duration: Long)
     extends Fruitful.Endo[T, Nothing] with OnDone.Static[T, T, Nothing] {
   private val ts: Long = now()
 
