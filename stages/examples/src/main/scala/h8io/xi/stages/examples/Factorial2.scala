@@ -13,5 +13,6 @@ object Factorial2 {
       else Yield.Some(in, Signal.Complete, this)
   }
 
-  val stage: Stage[Int, BigInt, Nothing] = And(Identity[Int], Const(One)) ~> Loop(Agg) ~> std.Right[Tuple2, BigInt]
+  val stage: Stage[Int, BigInt, Nothing] =
+    And(Identity[Int], Const(One)) ~> Loop(Agg) ~> projections.Tuple2.Right[BigInt]
 }
