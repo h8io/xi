@@ -9,7 +9,7 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatestplus.scalacheck.Checkers
 import org.typelevel.discipline.scalatest.FunSuiteDiscipline
 
-class EndoStageMonoidTest extends AnyFunSuite with FunSuiteDiscipline with Checkers with SignalArbitraries {
+class EndoStageMonoidTest extends AnyFunSuite with FunSuiteDiscipline with Checkers with CoreStagesArbitraries {
   private implicit def genStage[T: Arbitrary: Semigroup, E: Arbitrary]: Arbitrary[Stage.Endo[T, E]] =
     Arbitrary {
       for {

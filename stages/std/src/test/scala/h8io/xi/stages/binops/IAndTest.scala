@@ -18,7 +18,7 @@ class IAndTest
     with Inside
     with MockFactory
     with ScalaCheckPropertyChecks
-    with StagesArbitraries {
+    with CoreStagesArbitraries {
   "IAnd" should "return Yield.None if both stages return Yield.None" in
     forAll(
       Gen.zip(Gen.long,

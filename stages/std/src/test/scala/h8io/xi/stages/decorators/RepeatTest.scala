@@ -18,7 +18,7 @@ class RepeatTest
     with Inside
     with MockFactory
     with ScalaCheckPropertyChecks
-    with StagesArbitraries {
+    with CoreStagesArbitraries {
   "Repeat" should "be executed until the signal is Complete" in
     forAll(Gen.zip(Gen.nonEmptyListOf(Arbitrary.arbitrary[SignalAndOnDoneToYield[Long, String, Nothing]]), Gen.long)) {
       case (yieldSuppliers, in) =>

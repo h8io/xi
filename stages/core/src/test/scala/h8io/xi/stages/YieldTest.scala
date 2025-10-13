@@ -15,7 +15,7 @@ class YieldTest
     with Inside
     with MockFactory
     with ScalaCheckPropertyChecks
-    with SignalArbitraries {
+    with CoreStagesArbitraries {
   private implicit def genYieldSome[I, O: Arbitrary, E: Arbitrary]: Arbitrary[Yield.Some[I, O, E]] =
     Arbitrary {
       for {

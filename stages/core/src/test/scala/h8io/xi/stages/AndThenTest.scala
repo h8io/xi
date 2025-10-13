@@ -12,7 +12,7 @@ class AndThenTest
     with Inside
     with MockFactory
     with ScalaCheckPropertyChecks
-    with SignalArbitraries {
+    with CoreStagesArbitraries {
   "AndThen" should "call sequentially stages and return the correct Yield for Some ~> Some" in
     forAll {
       (previousSignal: Signal[String], nextSignal: Signal[String], in: Int, previousOut: String, nextOut: Long) =>

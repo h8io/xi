@@ -16,7 +16,7 @@ class CacheTest
     with Inside
     with MockFactory
     with ScalaCheckPropertyChecks
-    with StagesArbitraries {
+    with CoreStagesArbitraries {
   "Cache" should "cache output only if the yield is Some and the signal is Success" in {
     def test(
         yieldSupplier: SignalAndOnDoneToYield[UUID, String, Exception],
