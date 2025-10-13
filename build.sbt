@@ -24,6 +24,7 @@ ThisBuild / scmInfo := Some(
     "scm:git@github.com:h8io/sbt-scoverage-summary.git"))
 
 ThisBuild / dynverSonatypeSnapshots := true
+ThisBuild / dynverSeparator := "-"
 
 ThisBuild / scalaVersion := "2.13.16"
 ThisBuild / crossScalaVersions += "2.12.20"
