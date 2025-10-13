@@ -41,8 +41,8 @@ class EndoStageMonoidTest extends AnyFunSuite with FunSuiteDiscipline with Check
       onDone: OnDone[T, T, E]): (List[Stage[?, ?, ?]], List[Stage[?, ?, ?]], List[Stage[?, ?, ?]]) =
     (toList(onDone.onSuccess()), toList(onDone.onError()), toList(onDone.onComplete()))
 
-  private def toTuple[T, E](`yield`: Yield[T, T, E]): Product =
-    `yield` match {
+  private def toTuple[T, E](yld: Yield[T, T, E]): Product =
+    yld match {
       case Yield.Some(out, signal, onDone) => (out, signal, toTuple(onDone))
       case Yield.None(signal, onDone) => (signal, toTuple(onDone))
     }

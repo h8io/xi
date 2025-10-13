@@ -11,9 +11,9 @@ final case class LocalSoftDeadline[-I, +O, +E](tsSupplier: () => Long, now: () =
     extends Decorator[I, O, E] {
   def apply(in: I): Yield[I, O, E] = {
     val ts = tsSupplier()
-    val `yield` = stage(in)
-    if (now() - ts >= duration) `yield`.mapOnDoneAndBreak(_.map(LocalSoftDeadline(now, now, duration, _)))
-    else `yield`.mapOnDone(_OnDone(() => ts, now, duration, _))
+    val yld = stage(in)
+    if (now() - ts >= duration) yld.mapOnDoneAndBreak(_.map(LocalSoftDeadline(now, now, duration, _)))
+    else yld.mapOnDone(_OnDone(() => ts, now, duration, _))
   }
 }
 
