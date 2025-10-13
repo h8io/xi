@@ -1,0 +1,15 @@
+name: Release
+
+on:
+  push:
+    branches: [ master ]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    secrets: inherit
+    uses: h8io/gha/.github/workflows/snapshot.yaml@v3
+    with:
+      java-version: 17
