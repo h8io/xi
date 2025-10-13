@@ -45,17 +45,11 @@ val `stages-core` = (project in file("stages/core")).settings(
   libraryDependencies ++= (CatsTest ++ ScalaCheck) % TestKit
 ).enablePlugins(TestKitPlugin)
 
-val `stages-testkit` =
-  (project in file("stages/testkit")).settings(
-    name := "xi-stages-testkit",
-    libraryDependencies ++= (CatsTest ++ ScalaCheck) % Provided
-  ).dependsOn(`stages-core`, `stages-core` % "compile->testkit")
-
 val `stages-std` =
-  (project in file("stages/std")).settings(name := "xi-stages-std").dependsOn(`stages-core`, `stages-testkit` % Test)
+  (project in file("stages/std")).settings(name := "xi-stages-std")
+    .dependsOn(`stages-core`, `stages-core` % "test->testkit")
 
-val stages = (project in file("stages")).settings(name := "xi-stages")
-  .dependsOn(`stages-core`, `stages-std`, `stages-testkit` % Test)
+val stages = (project in file("stages")).settings(name := "xi-stages").dependsOn(`stages-core`, `stages-std`)
 
 val `stages-examples` = (project in file("stages/examples")).settings(
   name := "xi-stages-examples",
@@ -65,7 +59,7 @@ val `stages-examples` = (project in file("stages/examples")).settings(
   Compile / packageDoc / mappings := Nil,
   Compile / packageSrc / mappings := Nil,
   Compile / doc / skip := true
-).dependsOn(stages, `stages-testkit` % Test)
+).dependsOn(stages, `stages-core` % "test->testkit")
 
 val cfg = (project in file("cfg"))
   .settings(name := "xi-cfg", libraryDependencies += "com.typesafe" % "config" % "1.4.5")

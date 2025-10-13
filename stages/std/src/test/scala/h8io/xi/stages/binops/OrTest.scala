@@ -18,7 +18,7 @@ class OrTest
     with Inside
     with MockFactory
     with ScalaCheckPropertyChecks
-    with StagesArbitraries {
+    with CoreStagesArbitraries {
   "Or" should "return Yield.None if both stages return Yield.None" in
     forAll(
       Gen.zip(Gen.long,

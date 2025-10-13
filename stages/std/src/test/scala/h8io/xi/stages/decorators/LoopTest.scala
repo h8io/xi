@@ -17,7 +17,7 @@ class LoopTest
     with Inside
     with MockFactory
     with ScalaCheckPropertyChecks
-    with StagesArbitraries {
+    with CoreStagesArbitraries {
   "Loop" should "be executed until the signal is Complete" in
     forAll(
       Gen.zip(

@@ -18,7 +18,7 @@ class AndTest
     with Inside
     with MockFactory
     with ScalaCheckPropertyChecks
-    with StagesArbitraries {
+    with CoreStagesArbitraries {
   "And" should "return Yield.None if left stage returns Yield.None" in
     forAll(Gen.zip(Gen.long, Arbitrary.arbitrary[OnDoneToYieldNone[Long, Duration, Exception]])) {
       case (in, leftYieldSupplier) =>
