@@ -72,10 +72,10 @@ class RepeatTest
     yieldSuppliers match {
       case head :: tail =>
         val id = yieldSuppliers.length.toString
-        val `yield` = genYield[I, O, E](id, head, Signal.Success)
+        val yld = genYield[I, O, E](id, head, Signal.Success)
         val updated = mock[Stage[I, O, E]](s"stage $id")
-        (`yield`.onDone.onSuccess _).expects().returns(updated)
-        (stage.apply _).expects(in).returns(`yield`)
+        (yld.onDone.onSuccess _).expects().returns(updated)
+        (stage.apply _).expects(in).returns(yld)
         createStage(tail, updated, in)
       case Nil => stage
     }

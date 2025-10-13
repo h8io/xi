@@ -24,11 +24,11 @@ class CacheTest
         in: UUID): Assertion = {
       val stage = mock[Stage[UUID, String, Exception]]("underlying stage")
       val onDone = mock[OnDone[UUID, String, Exception]]("underlying onDone")
-      val `yield` = yieldSupplier(signal, onDone)
+      val yld = yieldSupplier(signal, onDone)
       val cache = Cache(stage)
-      (stage.apply _).expects(in).returns(`yield`)
+      (stage.apply _).expects(in).returns(yld)
       val cacheYield = cache(in)
-      inside((`yield`, cacheYield)) {
+      inside((yld, cacheYield)) {
         case (Yield.Some(out, signal, _), Yield.Some(cacheOut, cacheSignal, cacheOnDone)) =>
           cacheOut shouldBe out
           cacheSignal shouldBe signal

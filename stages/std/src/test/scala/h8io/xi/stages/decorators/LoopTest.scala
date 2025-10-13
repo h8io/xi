@@ -100,11 +100,11 @@ class LoopTest
       case head :: tail =>
         val id = yieldSuppliers.length.toString
         val onDone = mock[OnDone[T, T, E]](s"onDone $id")
-        val `yield` = head(Signal.Success, onDone)
+        val yld = head(Signal.Success, onDone)
         val evolved = mock[Stage.Endo[T, E]](s"stage $id")
         (onDone.onSuccess _).expects().returns(evolved)
-        (stage.apply _).expects(in).returns(`yield`)
-        genStage(tail, evolved, `yield`.out)
+        (stage.apply _).expects(in).returns(yld)
+        genStage(tail, evolved, yld.out)
       case Nil => (in, stage)
     }
 
