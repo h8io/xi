@@ -42,7 +42,8 @@ ThisBuild / libraryDependencies ++= Cats ++ TestBundle
 
 val `stages-core` = (project in file("stages/core")).settings(
   name := "xi-stages-core",
-  libraryDependencies ++= (CatsTest ++ ScalaCheck) % TestKit
+  libraryDependencies ++= (CatsTest ++ ScalaCheck) % TestKit,
+  testkitPublishClassifier := true
 ).enablePlugins(TestKitPlugin)
 
 val `stages-std` =
