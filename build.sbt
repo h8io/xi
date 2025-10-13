@@ -23,6 +23,8 @@ ThisBuild / scmInfo := Some(
     url("https://github.com/h8io/sbt-scoverage-summary"),
     "scm:git@github.com:h8io/sbt-scoverage-summary.git"))
 
+ThisBuild / dynverSonatypeSnapshots := true
+
 ThisBuild / scalaVersion := "2.13.16"
 ThisBuild / crossScalaVersions += "2.12.20"
 
@@ -42,7 +44,8 @@ ThisBuild / libraryDependencies ++= Cats ++ TestBundle
 
 val `stages-core` = (project in file("stages/core")).settings(
   name := "xi-stages-core",
-  libraryDependencies ++= (CatsTest ++ ScalaCheck) % TestKit
+  libraryDependencies ++= (CatsTest ++ ScalaCheck) % TestKit,
+  testkitPublishClassifier := true
 ).enablePlugins(TestKitPlugin)
 
 val `stages-std` =
