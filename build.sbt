@@ -23,6 +23,8 @@ ThisBuild / scmInfo := Some(
     url("https://github.com/h8io/sbt-scoverage-summary"),
     "scm:git@github.com:h8io/sbt-scoverage-summary.git"))
 
+ThisBuild / dynverSonatypeSnapshots := true
+
 ThisBuild / scalaVersion := "2.13.16"
 ThisBuild / crossScalaVersions += "2.12.20"
 
