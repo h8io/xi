@@ -19,6 +19,8 @@ class SignalTest
     Signal.Success(onDone) shouldBe stage
   }
 
+  it should "become Complete on break call" in { Signal.Success.break shouldBe Signal.Complete }
+
   "Complete" should "be idempotent" in { Signal.Complete ~> Signal.Complete shouldBe Signal.Complete }
 
   it should "be overridden by Error" in
@@ -30,6 +32,8 @@ class SignalTest
     (onDone.onComplete _).expects().returns(stage)
     Signal.Complete(onDone) shouldBe stage
   }
+
+  it should "not change on break call" in { Signal.Complete.break shouldBe Signal.Complete }
 
   "Error" should "keep the order of causes in composition" in
     forAll { (previous: Signal.Error[String], next: Signal.Error[String]) =>
@@ -50,4 +54,6 @@ class SignalTest
     val error = mock[AnyRef]
     Signal.error(error) shouldBe Signal.Error(NonEmptyChain.of(error))
   }
+
+  it should "not change on break call" in forAll((error: Signal.Error[String]) => error.break shouldBe error)
 }

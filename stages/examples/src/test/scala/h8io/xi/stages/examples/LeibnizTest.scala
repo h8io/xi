@@ -15,7 +15,7 @@ class LeibnizTest extends AnyFlatSpec with Matchers with Inside with ScalaCheckP
     inside(stage(())) { case Yield.Some(pi, Signal.Success, _) => pi shouldEqual (math.Pi +- 0.01) }
   }
 
-  "Main stage" should "return the initial stage on error" in
+  "Main stage" should "return the initial stage on error and on complete" in
     forAll(Gen.zip(Gen.long, Gen.double, Gen.double)) { case (n, t, s) =>
       Leibniz.Pi(n, t, s).onError() shouldBe Leibniz.InitialStage
     }
