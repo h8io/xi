@@ -1,14 +1,13 @@
 name: Snapshot
 
 on:
-  push:
-    branches: [ master ]
+  workflow_dispatch:
 
 permissions:
   contents: write
 
 jobs:
-  release:
+  snapshot:
     secrets: inherit
     uses: h8io/gha/.github/workflows/snapshot.yaml@v3
     with:
