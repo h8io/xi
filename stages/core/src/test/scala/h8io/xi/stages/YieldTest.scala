@@ -1,6 +1,5 @@
 package h8io.xi.stages
 
-import org.scalacheck.Arbitrary
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.Inside
 import org.scalatest.flatspec.AnyFlatSpec
@@ -16,90 +15,93 @@ class YieldTest
     with MockFactory
     with ScalaCheckPropertyChecks
     with CoreStagesArbitraries {
-  private implicit def genYieldSome[I, O: Arbitrary, E: Arbitrary]: Arbitrary[Yield.Some[I, O, E]] =
-    Arbitrary {
-      for {
-        out <- Arbitrary.arbitrary[O]
-        signal <- arbSignal[E].arbitrary
-      } yield Yield.Some(out, signal, mock[OnDone[I, O, E]])
-    }
-
-  private implicit def genYieldNone[I, O, E: Arbitrary]: Arbitrary[Yield.None[I, O, E]] =
-    Arbitrary(arbSignal[E].arbitrary.map(signal => Yield.None(signal, mock[OnDone[I, O, E]])))
-
   "~>" should "combine Some and Some correctly" in
-    forAll { (previousYield: Yield.Some[Long, Instant, String], nextYield: Yield.Some[Instant, String, String]) =>
-      inside(previousYield ~> nextYield) {
-        case Yield.Some(nextYield.out, signal, onDone) =>
-          signal shouldBe previousYield.signal ~> nextYield.signal
-          val previousStage = mock[Stage[Long, Instant, String]]
-          val nextStage = mock[Stage[Instant, String, String]]
-          val stage = previousStage ~> nextStage
+    forAll {
+      (previousYieldSupplier: OnDoneToYieldSome[Long, Instant, String],
+          nextYieldSupplier: OnDoneToYieldSome[Instant, String, String]) =>
+        val previousOnDone = mock[OnDone[Long, Instant, String]]
+        val previousYield = previousYieldSupplier(previousOnDone)
+        val nextOnDone = mock[OnDone[Instant, String, String]]
+        val nextYield = nextYieldSupplier(nextOnDone)
+        inside(previousYield ~> nextYield) {
+          case Yield.Some(nextYield.out, signal, onDone) =>
+            signal shouldBe previousYield.signal ~> nextYield.signal
+            val previousStage = mock[Stage[Long, Instant, String]]
+            val nextStage = mock[Stage[Instant, String, String]]
+            val stage = previousStage ~> nextStage
 
-          inSequence {
-            (nextYield.onDone.onSuccess _).expects().returns(nextStage)
-            (previousYield.onDone.onSuccess _).expects().returns(previousStage)
-          }
-          onDone.onSuccess() shouldBe stage
+            inSequence {
+              (nextOnDone.onSuccess _).expects().returns(nextStage)
+              (previousOnDone.onSuccess _).expects().returns(previousStage)
+            }
+            onDone.onSuccess() shouldBe stage
 
-          inSequence {
-            (nextYield.onDone.onComplete _).expects().returns(nextStage)
-            (previousYield.onDone.onComplete _).expects().returns(previousStage)
-          }
-          onDone.onComplete() shouldBe stage
+            inSequence {
+              (nextOnDone.onComplete _).expects().returns(nextStage)
+              (previousOnDone.onComplete _).expects().returns(previousStage)
+            }
+            onDone.onComplete() shouldBe stage
 
-          inSequence {
-            (nextYield.onDone.onError _).expects().returns(nextStage)
-            (previousYield.onDone.onError _).expects().returns(previousStage)
-          }
-          onDone.onError() shouldBe stage
-      }
+            inSequence {
+              (nextOnDone.onError _).expects().returns(nextStage)
+              (previousOnDone.onError _).expects().returns(previousStage)
+            }
+            onDone.onError() shouldBe stage
+        }
     }
 
   it should "combine Some and None correctly" in
-    forAll { (previousYield: Yield.Some[Long, Instant, String], nextYield: Yield.None[Instant, String, String]) =>
-      inside(previousYield ~> nextYield) {
-        case Yield.None(signal, onDone) =>
-          signal shouldBe previousYield.signal ~> nextYield.signal
-          val previousStage = mock[Stage[Long, Instant, String]]
-          val nextStage = mock[Stage[Instant, String, String]]
-          val stage = previousStage ~> nextStage
+    forAll {
+      (previousYieldSupplier: OnDoneToYieldSome[Long, Instant, String],
+          nextYieldSupplier: OnDoneToYieldNone[Instant, String, String]) =>
+        val previousOnDone = mock[OnDone[Long, Instant, String]]
+        val previousYield = previousYieldSupplier(previousOnDone)
+        val nextOnDone = mock[OnDone[Instant, String, String]]
+        val nextYield = nextYieldSupplier(nextOnDone)
+        inside(previousYield ~> nextYield) {
+          case Yield.None(signal, onDone) =>
+            signal shouldBe previousYield.signal ~> nextYield.signal
+            val previousStage = mock[Stage[Long, Instant, String]]
+            val nextStage = mock[Stage[Instant, String, String]]
+            val stage = previousStage ~> nextStage
 
-          inSequence {
-            (nextYield.onDone.onSuccess _).expects().returns(nextStage)
-            (previousYield.onDone.onSuccess _).expects().returns(previousStage)
-          }
-          onDone.onSuccess() shouldBe stage
+            inSequence {
+              (nextOnDone.onSuccess _).expects().returns(nextStage)
+              (previousOnDone.onSuccess _).expects().returns(previousStage)
+            }
+            onDone.onSuccess() shouldBe stage
 
-          inSequence {
-            (nextYield.onDone.onComplete _).expects().returns(nextStage)
-            (previousYield.onDone.onComplete _).expects().returns(previousStage)
-          }
-          onDone.onComplete() shouldBe stage
+            inSequence {
+              (nextOnDone.onComplete _).expects().returns(nextStage)
+              (previousOnDone.onComplete _).expects().returns(previousStage)
+            }
+            onDone.onComplete() shouldBe stage
 
-          inSequence {
-            (nextYield.onDone.onError _).expects().returns(nextStage)
-            (previousYield.onDone.onError _).expects().returns(previousStage)
-          }
-          onDone.onError() shouldBe stage
-      }
+            inSequence {
+              (nextOnDone.onError _).expects().returns(nextStage)
+              (previousOnDone.onError _).expects().returns(previousStage)
+            }
+            onDone.onError() shouldBe stage
+        }
     }
 
   it should "combine None and stage correctly" in
-    forAll { (previousYield: Yield.None[Long, Instant, String]) =>
+    forAll { (previousYieldSupplier: OnDoneToYieldNone[Long, Instant, String]) =>
+      val previousOnDone = mock[OnDone[Long, Instant, String]]
+      val previousYield = previousYieldSupplier(previousOnDone)
       val nextStage = mock[Stage[Instant, String, String]]
       inside(previousYield ~> nextStage) {
         case Yield.None(previousYield.`signal`, onDone) =>
           val previousStage = mock[Stage[Long, Instant, String]]
           val stage = previousStage ~> nextStage
 
-          (previousYield.onDone.onSuccess _).expects().returns(previousStage)
+          (previousOnDone.onSuccess _).expects().returns(previousStage)
           onDone.onSuccess() shouldBe stage
 
-          (previousYield.onDone.onComplete _).expects().returns(previousStage)
+          (previousOnDone.onComplete _).expects().returns(previousStage)
           onDone.onComplete() shouldBe stage
 
-          (previousYield.onDone.onError _).expects().returns(previousStage)
+          (previousOnDone.onError _).expects().returns(previousStage)
           onDone.onError() shouldBe stage
       }
     }
