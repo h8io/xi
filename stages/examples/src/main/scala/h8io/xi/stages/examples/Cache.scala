@@ -1,7 +1,6 @@
 package h8io.xi.stages.examples
 
 import h8io.xi.stages.*
-import h8io.xi.stages.decorators.Decorator
 import h8io.xi.stages.std.Fruitful
 
 final case class Cache[-I, +O, +E](stage: Stage[I, O, E]) extends Decorator[I, O, E] {

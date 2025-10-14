@@ -1,6 +1,5 @@
-package h8io.xi.stages.decorators
+package h8io.xi.stages
 
-import h8io.xi.stages.{Stage, Yield}
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers

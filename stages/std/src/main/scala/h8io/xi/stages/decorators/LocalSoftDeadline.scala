@@ -2,7 +2,7 @@ package h8io.xi.stages.decorators
 
 import h8io.xi.stages.decorators.LocalSoftDeadline._OnDone
 import h8io.xi.stages.std.DeadEnd
-import h8io.xi.stages.{OnDone, Stage, Yield}
+import h8io.xi.stages.{Decorator, OnDone, Stage, Yield}
 
 import scala.concurrent.duration.FiniteDuration
 
