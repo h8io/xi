@@ -1,7 +1,7 @@
 package h8io.xi.stages
 
-trait Decorator[-I, +O, +E] extends Stage[I, O, E] {
-  val stage: Stage[I, O, E]
+trait Decorator[II, IO, IE, -OI, +OO, +OE] extends (Stage[II, IO, IE] => Decorated[II, IO, IE, OI, OO, OE]) {}
 
-  override def dispose(): Unit = stage.dispose()
+object Decorator {
+  type Endo[I, O, E] = Decorator[I, O, E, I, O, E]
 }

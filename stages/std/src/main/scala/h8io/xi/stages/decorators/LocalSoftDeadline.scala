@@ -2,13 +2,16 @@ package h8io.xi.stages.decorators
 
 import h8io.xi.stages.decorators.LocalSoftDeadline._OnDone
 import h8io.xi.stages.std.DeadEnd
-import h8io.xi.stages.{Decorator, OnDone, Stage, Yield}
+import h8io.xi.stages.{Decorated, OnDone, Stage, Yield}
 
 import scala.concurrent.duration.FiniteDuration
 
-final case class LocalSoftDeadline[-I, +O, +E](tsSupplier: () => Long, now: () => Long, duration: Long,
+final case class LocalSoftDeadline[-I, +O, +E](
+    tsSupplier: () => Long,
+    now: () => Long,
+    duration: Long,
     stage: Stage[I, O, E])
-    extends Decorator[I, O, E] {
+    extends Decorated.Endo[I, O, E] {
   def apply(in: I): Yield[I, O, E] = {
     val ts = tsSupplier()
     val yld = stage(in)
