@@ -7,6 +7,9 @@ trait Stage[-I, +O, +E] extends (I => Yield[I, O, E]) {
 
   @inline final def <~[_I, _E >: E](that: Stage[_I, I, _E]): Stage[_I, O, _E] = that ~> this
 
+  @inline final def ~>[II, IO, IE, OO, OE >: E](
+      decorator: Decorator[II, IO, IE, O, OO, OE]): Decorator[II, IO, IE, I, OO, OE] = stage => this ~> decorator(stage)
+
   def dispose(): Unit = {}
 }
 
