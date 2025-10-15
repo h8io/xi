@@ -1,6 +1,6 @@
 package h8io.xi.stages.examples
 
-import h8io.xi.stages.decorators.Repeat
+import h8io.xi.stages.morphisms.Repeat
 import h8io.xi.stages.{OnDone, Signal, Stage, Yield}
 
 object Factorial3 {
@@ -25,5 +25,5 @@ object Factorial3 {
 
   private val Reset: OnDone[Int, BigInt, FactorialError] = OnDone.FromStage(InitialStage)
 
-  val stage: Repeat[Int, BigInt, FactorialError] = Repeat(InitialStage)
+  val stage: Stage[Int, BigInt, FactorialError] = Repeat.morphism[Int, BigInt, FactorialError] <| InitialStage
 }

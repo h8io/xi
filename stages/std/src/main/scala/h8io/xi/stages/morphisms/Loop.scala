@@ -1,10 +1,10 @@
-package h8io.xi.stages.decorators
+package h8io.xi.stages.morphisms
 
 import h8io.xi.stages.*
 
 import scala.annotation.tailrec
 
-final case class Loop[T, +E](stage: Stage.Endo[T, E]) extends Decorator[T, T, E] {
+final case class Loop[T, +E](stage: Stage.Endo[T, E]) extends Wrapper.Endo[T, T, E] {
   def apply(in: T): Yield[T, T, E] = {
     @tailrec def loop(stage: Stage[T, T, E], in: T): Yield[T, T, E] = {
       val yld = stage(in)
@@ -20,4 +20,8 @@ final case class Loop[T, +E](stage: Stage.Endo[T, E]) extends Decorator[T, T, E]
     }
     loop(stage, in)
   }
+}
+
+object Loop {
+  def morphism[T, E]: Morphism.Endo[T, T, E] = apply
 }

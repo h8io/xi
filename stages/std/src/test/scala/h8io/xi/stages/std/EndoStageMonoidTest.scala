@@ -32,7 +32,7 @@ class EndoStageMonoidTest extends AnyFunSuite with FunSuiteDiscipline with Check
   // Depth should not be greater than 3
   private def toList[E](stage: Stage[?, ?, E]): List[Stage[?, ?, E]] =
     stage match {
-      case AndThen(previous, next) => toList(previous) ++ toList(next)
+      case Stage.AndThen(previous, next) => toList(previous) ++ toList(next)
       case Identity => Nil
       case _ => stage :: Nil
     }

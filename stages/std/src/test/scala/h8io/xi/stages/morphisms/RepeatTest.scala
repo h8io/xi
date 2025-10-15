@@ -1,4 +1,4 @@
-package h8io.xi.stages.decorators
+package h8io.xi.stages.morphisms
 
 import h8io.xi.stages.*
 import org.scalacheck.{Arbitrary, Gen}
@@ -89,5 +89,10 @@ class RepeatTest
     val stage = mock[Stage[Any, Nothing, Nothing]]
     (stage.dispose _).expects()
     noException should be thrownBy Repeat(stage).dispose()
+  }
+
+  "morphism" should "create a Repeat object" in {
+    val stage = mock[Stage[Long, Int, Nothing]]
+    Repeat.morphism(stage) shouldBe Repeat(stage)
   }
 }

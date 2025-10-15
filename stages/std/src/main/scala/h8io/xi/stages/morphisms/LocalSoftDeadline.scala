@@ -1,14 +1,17 @@
-package h8io.xi.stages.decorators
+package h8io.xi.stages.morphisms
 
-import h8io.xi.stages.decorators.LocalSoftDeadline._OnDone
+import h8io.xi.stages.morphisms.LocalSoftDeadline._OnDone
 import h8io.xi.stages.std.DeadEnd
-import h8io.xi.stages.{OnDone, Stage, Yield}
+import h8io.xi.stages.*
 
 import scala.concurrent.duration.FiniteDuration
 
-final case class LocalSoftDeadline[-I, +O, +E](tsSupplier: () => Long, now: () => Long, duration: Long,
+final case class LocalSoftDeadline[-I, +O, +E](
+    tsSupplier: () => Long,
+    now: () => Long,
+    duration: Long,
     stage: Stage[I, O, E])
-    extends Decorator[I, O, E] {
+    extends Wrapper.Endo[I, O, E] {
   def apply(in: I): Yield[I, O, E] = {
     val ts = tsSupplier()
     val yld = stage(in)
@@ -18,7 +21,7 @@ final case class LocalSoftDeadline[-I, +O, +E](tsSupplier: () => Long, now: () =
 }
 
 object LocalSoftDeadline {
-  private[decorators] final case class _OnDone[-I, +O, +E](
+  private[morphisms] final case class _OnDone[-I, +O, +E](
       ts: () => Long,
       now: () => Long,
       duration: Long,
@@ -38,4 +41,8 @@ object LocalSoftDeadline {
     if (duration > 0) LocalSoftDeadline(now, now, duration, stage) else DeadEnd
 
   private val now: () => Long = System.nanoTime _
+
+  def morphism[I, O, E](duration: FiniteDuration): Morphism.Endo[I, O, E] = apply(duration, _)
+
+  def morphism[I, O, E](duration: java.time.Duration): Morphism.Endo[I, O, E] = apply(duration, _)
 }

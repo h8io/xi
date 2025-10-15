@@ -1,10 +1,10 @@
-package h8io.xi.stages.decorators
+package h8io.xi.stages.morphisms
 
 import h8io.xi.stages.std.Fruitful
-import h8io.xi.stages.{Stage, Yield}
+import h8io.xi.stages.{Morphism, Stage, Wrapper, Yield}
 
 object KeepLastOutput {
-  private[decorators] final case class None[-I, +O, +E](stage: Stage[I, O, E]) extends Decorator[I, O, E] {
+  private[morphisms] final case class None[-I, +O, +E](stage: Stage[I, O, E]) extends Wrapper.Endo[I, O, E] {
     def apply(in: I): Yield[I, O, E] =
       stage(in) match {
         case Yield.Some(out, signal, onDone) => Yield.Some(out, signal, onDone.map(Some(out, _)))
@@ -12,8 +12,8 @@ object KeepLastOutput {
       }
   }
 
-  private[decorators] final case class Some[-I, +O, +E](out: O, stage: Stage[I, O, E])
-      extends Decorator[I, O, E] with Fruitful[I, O, E] {
+  private[morphisms] final case class Some[-I, +O, +E](out: O, stage: Stage[I, O, E])
+      extends Wrapper.Endo[I, O, E] with Fruitful[I, O, E] {
     def apply(in: I): Yield.Some[I, O, E] =
       stage(in) match {
         case Yield.Some(out, signal, onDone) => Yield.Some(out, signal, onDone.map(Some(out, _)))
@@ -21,5 +21,7 @@ object KeepLastOutput {
       }
   }
 
-  def apply[I, O, E](stage: Stage[I, O, E]): Decorator[I, O, E] = None(stage)
+  def apply[I, O, E](stage: Stage[I, O, E]): Wrapper.Endo[I, O, E] = None(stage)
+
+  def morphism[I, O, E]: Morphism.Endo[I, O, E] = apply
 }
