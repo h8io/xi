@@ -9,10 +9,10 @@ import java.time.*
 import java.util.UUID
 
 class StageTest extends AnyFlatSpec with Matchers with MockFactory {
-  "~>" should "produce AndThen object with a stage argument" in {
+  "~>" should "produce Stage.AndThen object with a stage argument" in {
     val previous = mock[Stage[String, Long, Nothing]]
     val next = mock[Stage[Long, Timestamp, String]]
-    previous ~> next shouldBe AndThen(previous, next)
+    previous ~> next shouldBe Stage.AndThen(previous, next)
   }
 
   it should "produce a morphism with a morphism argument" in {
@@ -27,10 +27,10 @@ class StageTest extends AnyFlatSpec with Matchers with MockFactory {
     stage ~> morphism <| morphee shouldBe stage ~> morphed
   }
 
-  "<~" should "produce AndThen object" in {
+  "<~" should "produce Stage.AndThen object" in {
     val previous = mock[Stage[Instant, Int, String]]
     val next = mock[Stage[Int, String, Nothing]]
-    next <~ previous shouldBe AndThen(previous, next)
+    next <~ previous shouldBe Stage.AndThen(previous, next)
   }
 
   "|>" should "apply morphism to stage" in {
