@@ -5,7 +5,7 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
 class WrapperTest extends AnyFlatSpec with Matchers with MockFactory {
-  "Decorator's dispose" should "call underlying stage's dispose method" in {
+  "Wrapper's dispose" should "call underlying stage's dispose method" in {
     val underlying = mock[Stage[Any, Nothing, Nothing]]
     (underlying.dispose _).expects()
     noException should be thrownBy new Wrapper.Endo[Any, Nothing, Nothing] {
