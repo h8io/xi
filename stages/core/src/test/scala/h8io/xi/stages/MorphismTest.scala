@@ -35,4 +35,17 @@ class MorphismTest extends AnyFlatSpec with Matchers with MockFactory {
     (morphism.apply _).expects(stage).returns(morphed)
     morphism <| stage shouldBe morphed
   }
+
+  "Compose" should "apply morphisms to a stage sequentially" in {
+    val outer = mock[Morphism[Stage[ZoneOffset, OffsetDateTime, Exception], Stage[UUID, Instant, Long]]]
+    val inner = mock[Morphism[Stage[ZoneId, ZonedDateTime, Nothing], Stage[ZoneOffset, OffsetDateTime, Exception]]]
+    val input = mock[Stage[ZoneId, ZonedDateTime, Nothing]]
+    val medium = mock[Stage[ZoneOffset, OffsetDateTime, Exception]]
+    val output = mock[Stage[UUID, Instant, Long]]
+    inSequence {
+      (inner.apply _).expects(input).returns(medium)
+      (outer.apply _).expects(medium).returns(output)
+    }
+    Morphism.Compose(outer, inner)(input) shouldBe output
+  }
 }
