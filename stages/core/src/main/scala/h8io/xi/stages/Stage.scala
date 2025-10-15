@@ -1,5 +1,6 @@
 package h8io.xi.stages
 
+@FunctionalInterface
 trait Stage[-I, +O, +E] extends (I => Yield[I, O, E]) {
   def apply(in: I): Yield[I, O, E]
 

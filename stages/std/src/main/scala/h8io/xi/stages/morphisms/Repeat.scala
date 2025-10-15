@@ -1,4 +1,4 @@
-package h8io.xi.stages.decorators
+package h8io.xi.stages.morphisms
 
 import h8io.xi.stages.*
 
@@ -17,4 +17,8 @@ final case class Repeat[-I, +O, +E](stage: Stage[I, O, E]) extends Wrapper.Endo[
     }
     repeat(stage)
   }
+}
+
+object Repeat {
+  def morphism[I, O, E]: Morphism.Endo[I, O, E] = apply
 }

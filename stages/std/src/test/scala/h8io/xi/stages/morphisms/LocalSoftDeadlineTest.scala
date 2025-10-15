@@ -1,4 +1,4 @@
-package h8io.xi.stages.decorators
+package h8io.xi.stages.morphisms
 
 import h8io.xi.stages.*
 import h8io.xi.stages.std.DeadEnd
@@ -26,6 +26,8 @@ class LocalSoftDeadlineTest
       val stage = mock[Stage[Any, Nothing, Nothing]]
       LocalSoftDeadline(FiniteDuration(nanos, TimeUnit.NANOSECONDS), stage) shouldBe DeadEnd
       LocalSoftDeadline(jDuration.ofNanos(nanos), stage) shouldBe DeadEnd
+      LocalSoftDeadline.morphism(FiniteDuration(nanos, TimeUnit.NANOSECONDS))(stage) shouldBe DeadEnd
+      LocalSoftDeadline.morphism(jDuration.ofNanos(nanos))(stage) shouldBe DeadEnd
     }
 
   it should "return initial stage (tsSupplier == now) if duration is positive" in
@@ -40,6 +42,8 @@ class LocalSoftDeadlineTest
 
       test(LocalSoftDeadline(FiniteDuration(nanos, TimeUnit.NANOSECONDS), stage))
       test(LocalSoftDeadline(jDuration.ofNanos(nanos), stage))
+      test(LocalSoftDeadline.morphism(FiniteDuration(nanos, TimeUnit.NANOSECONDS))(stage))
+      test(LocalSoftDeadline.morphism(jDuration.ofNanos(nanos))(stage))
     }
 
   it should "return an yield with signal Break and initial stage (tsSupplier == now) if overdue" in

@@ -1,6 +1,6 @@
 package h8io.xi.stages.examples
 
-import h8io.xi.stages.decorators.Loop
+import h8io.xi.stages.morphisms.Loop
 import h8io.xi.stages.std.{Const, GlobalSoftDeadline}
 import h8io.xi.stages.{OnDone, Signal, Stage, Yield}
 
@@ -21,5 +21,5 @@ object Wallis {
   val InitialStage = Pi(1)
 
   def stage(duration: FiniteDuration): Stage[Any, Double, Nothing] =
-    Const(2d) ~> Loop(InitialStage ~> GlobalSoftDeadline(duration))
+    Const(2d) ~> Loop.morphism[Double, Nothing] <| InitialStage ~> GlobalSoftDeadline(duration)
 }
