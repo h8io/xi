@@ -20,6 +20,9 @@ object Leibniz {
 
   val InitialStage: Pi = Pi(0, 1, 1)
 
-  def stage(duration: FiniteDuration): Stage[Unit, Double, Nothing] =
+  def stage1(duration: FiniteDuration): Stage[Unit, Double, Nothing] =
     Repeat[Unit, Double, Nothing] _ ~> LocalSoftDeadline[Unit, Double, Nothing](duration) <| InitialStage
+
+  def stage2(duration: FiniteDuration): Stage[Unit, Double, Nothing] =
+    Repeat[Unit, Double, Nothing] _ <| LocalSoftDeadline[Unit, Double, Nothing](duration) <| InitialStage
 }

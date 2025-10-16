@@ -20,7 +20,13 @@ class AlterationTest extends AnyFlatSpec with Matchers with MockFactory {
     outer ~> inner shouldBe outer ∘ inner
   }
 
-  "<~" should "compose alterations" in {
+  "<|" should "compose alterations" in {
+    val outer = mock[Alteration[Stage[ZoneOffset, OffsetDateTime, Exception], Stage[UUID, Instant, Long]]]
+    val inner = mock[Alteration[Stage[ZoneId, ZonedDateTime, Nothing], Stage[ZoneOffset, OffsetDateTime, Exception]]]
+    outer <| inner shouldBe outer ∘ inner
+  }
+
+  "<~" should "compose alterations in the reverse order" in {
     val outer = mock[Alteration[Stage[ZoneOffset, OffsetDateTime, Exception], Stage[UUID, Instant, Long]]]
     val inner = mock[Alteration[Stage[ZoneId, ZonedDateTime, Nothing], Stage[ZoneOffset, OffsetDateTime, Exception]]]
     inner <~ outer shouldBe outer ∘ inner
