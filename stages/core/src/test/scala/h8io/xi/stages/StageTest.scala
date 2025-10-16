@@ -15,16 +15,16 @@ class StageTest extends AnyFlatSpec with Matchers with MockFactory {
     previous ~> next shouldBe Stage.AndThen(previous, next)
   }
 
-  it should "produce a morphism with a morphism argument" in {
+  it should "produce a alteration with a alteration argument" in {
     val stage = mock[Stage[Int, Long, UUID]]
-    val morphism = mock[Morphism[Stage[ZoneId, ZonedDateTime, String], Stage[Long, String, Nothing]]]
+    val alteration = mock[Alteration[Stage[ZoneId, ZonedDateTime, String], Stage[Long, String, Nothing]]]
     val morphee = mock[Stage[ZoneId, ZonedDateTime, String]]
     val morphed = mock[Stage[Long, String, Nothing]]
-    (morphism.apply _).expects(morphee).returns(morphed)
-    val result: Stage[Int, String, UUID] = (stage ~> morphism)(morphee)
+    (alteration.apply _).expects(morphee).returns(morphed)
+    val result: Stage[Int, String, UUID] = (stage ~> alteration)(morphee)
     result shouldBe stage ~> morphed
-    (morphism.apply _).expects(morphee).returns(morphed)
-    stage ~> morphism <| morphee shouldBe stage ~> morphed
+    (alteration.apply _).expects(morphee).returns(morphed)
+    stage ~> alteration <| morphee shouldBe stage ~> morphed
   }
 
   "<~" should "produce Stage.AndThen object" in {
@@ -33,12 +33,12 @@ class StageTest extends AnyFlatSpec with Matchers with MockFactory {
     next <~ previous shouldBe Stage.AndThen(previous, next)
   }
 
-  "|>" should "apply morphism to stage" in {
+  "|>" should "apply alteration to stage" in {
     val stage = mock[Stage[ZoneOffset, OffsetDateTime, Exception]]
-    val morphism = mock[Morphism[Stage[ZoneOffset, OffsetDateTime, Exception], Stage[UUID, Instant, Long]]]
+    val alteration = mock[Alteration[Stage[ZoneOffset, OffsetDateTime, Exception], Stage[UUID, Instant, Long]]]
     val morphed = mock[Stage[UUID, Instant, Long]]
-    (morphism.apply _).expects(stage).returns(morphed)
-    stage |> morphism shouldBe morphed
+    (alteration.apply _).expects(stage).returns(morphed)
+    stage |> alteration shouldBe morphed
   }
 
   "dispose" should "do nothing" in {

@@ -1,7 +1,7 @@
 package h8io.xi.stages.examples
 
-import h8io.xi.stages.morphisms.Repeat
-import h8io.xi.stages.{OnDone, Signal, Stage, Yield}
+import h8io.xi.stages.*
+import h8io.xi.stages.alterations.Repeat
 
 object Factorial3 {
   trait FactorialError
@@ -25,5 +25,5 @@ object Factorial3 {
 
   private val Reset: OnDone[Int, BigInt, FactorialError] = OnDone.FromStage(InitialStage)
 
-  val stage: Stage[Int, BigInt, FactorialError] = Repeat.morphism[Int, BigInt, FactorialError] <| InitialStage
+  val stage: Stage[Int, BigInt, FactorialError] = Repeat[Int, BigInt, FactorialError] _ <| InitialStage
 }

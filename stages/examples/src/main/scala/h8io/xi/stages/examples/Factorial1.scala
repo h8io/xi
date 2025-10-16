@@ -1,8 +1,8 @@
 package h8io.xi.stages.examples
 
-import h8io.xi.stages.morphisms.Loop
 import h8io.xi.stages.std.{Const, Countdown}
-import h8io.xi.stages.{OnDone, Signal, Stage, Yield}
+import h8io.xi.stages.*
+import h8io.xi.stages.alterations.Loop
 
 object Factorial1 {
   sealed case class Agg(n: Long) extends Stage.Endo[BigInt, Nothing] with OnDone[BigInt, BigInt, Nothing] {
@@ -15,6 +15,5 @@ object Factorial1 {
 
   object Agg extends Agg(1)
 
-  def stage(n: Int): Stage[Unit, BigInt, Nothing] =
-    Const(One) ~> Loop.morphism[BigInt, Nothing] <| Agg ~> Countdown[BigInt](n)
+  def stage(n: Int): Stage[Unit, BigInt, Nothing] = Const(One) ~> Loop[BigInt, Nothing] _ <| Agg ~> Countdown[BigInt](n)
 }
