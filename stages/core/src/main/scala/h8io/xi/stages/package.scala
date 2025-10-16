@@ -12,6 +12,8 @@ package object stages {
 
     @inline def ~>[_IS <: Stage[?, ?, ?]](that: Alteration[_IS, IS]): Alteration[_IS, OS] = alteration ∘ that
 
+    @inline def <|[_IS <: Stage[?, ?, ?]](that: Alteration[_IS, IS]): Alteration[_IS, OS] = alteration ∘ that
+
     @inline def <~[_OS <: Stage[?, ?, ?]](that: Alteration[OS, _OS]): Alteration[IS, _OS] = that ∘ alteration
 
     @inline def ⋅(stage: IS): OS = alteration(stage)

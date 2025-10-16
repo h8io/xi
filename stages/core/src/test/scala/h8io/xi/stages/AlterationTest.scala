@@ -14,15 +14,11 @@ class AlterationTest extends AnyFlatSpec with Matchers with MockFactory {
     outer ∘ inner shouldBe AlterationCompose(outer, inner)
   }
 
-  "~>" should "compose alterations" in {
+  "arrows" should "compose alterations" in {
     val outer = mock[Alteration[Stage[ZoneOffset, OffsetDateTime, Exception], Stage[UUID, Instant, Long]]]
     val inner = mock[Alteration[Stage[ZoneId, ZonedDateTime, Nothing], Stage[ZoneOffset, OffsetDateTime, Exception]]]
     outer ~> inner shouldBe outer ∘ inner
-  }
-
-  "<~" should "compose alterations" in {
-    val outer = mock[Alteration[Stage[ZoneOffset, OffsetDateTime, Exception], Stage[UUID, Instant, Long]]]
-    val inner = mock[Alteration[Stage[ZoneId, ZonedDateTime, Nothing], Stage[ZoneOffset, OffsetDateTime, Exception]]]
+    outer <| inner shouldBe outer ∘ inner
     inner <~ outer shouldBe outer ∘ inner
   }
 
