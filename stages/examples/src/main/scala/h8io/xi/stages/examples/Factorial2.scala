@@ -1,8 +1,8 @@
 package h8io.xi.stages.examples
 
 import h8io.xi.stages.*
+import h8io.xi.stages.alterations.Loop
 import h8io.xi.stages.binops.And
-import h8io.xi.stages.wrappers.Loop
 import h8io.xi.stages.std.{Const, Identity}
 
 object Factorial2 {
@@ -14,5 +14,5 @@ object Factorial2 {
   }
 
   val stage: Stage[Int, BigInt, String] =
-    And(Identity[Int], Const(One)) ~> Loop.alteration[(Int, BigInt), String] ⋅ Agg ~> projections.Tuple2.Right[BigInt]
+    And(Identity[Int], Const(One)) ~> Loop[(Int, BigInt), String] _ ⋅ Agg ~> projections.Tuple2.Right[BigInt]
 }

@@ -1,4 +1,4 @@
-package h8io.xi.stages.wrappers
+package h8io.xi.stages.alterations
 
 import h8io.xi.stages.*
 import org.scalacheck.{Arbitrary, Gen}
@@ -8,7 +8,6 @@ import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 
-import java.time.Instant
 import java.util.UUID
 import scala.annotation.tailrec
 
@@ -113,10 +112,5 @@ class LoopTest
     val stage = mock[Stage[Any, Nothing, Nothing]]
     (stage.dispose _).expects()
     noException should be thrownBy Loop(stage).dispose()
-  }
-
-  "alteration" should "create a Loop object" in {
-    val stage = mock[Stage.Endo[Instant, Exception]]
-    Loop.alteration(stage) shouldBe Loop(stage)
   }
 }

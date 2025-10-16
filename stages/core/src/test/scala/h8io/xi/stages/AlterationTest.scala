@@ -11,7 +11,7 @@ class AlterationTest extends AnyFlatSpec with Matchers with MockFactory {
   "∘" should "compose alterations" in {
     val outer = mock[Alteration[Stage[ZoneOffset, OffsetDateTime, Exception], Stage[UUID, Instant, Long]]]
     val inner = mock[Alteration[Stage[ZoneId, ZonedDateTime, Nothing], Stage[ZoneOffset, OffsetDateTime, Exception]]]
-    outer ∘ inner shouldBe Alteration.Compose(outer, inner)
+    outer ∘ inner shouldBe AlterationCompose(outer, inner)
   }
 
   "~>" should "compose alterations" in {
@@ -36,7 +36,7 @@ class AlterationTest extends AnyFlatSpec with Matchers with MockFactory {
     alteration <| stage shouldBe morphed
   }
 
-  "Compose" should "apply alterations to a stage sequentially" in {
+  "AlterationCompose" should "apply alterations to a stage sequentially" in {
     val outer = mock[Alteration[Stage[ZoneOffset, OffsetDateTime, Exception], Stage[UUID, Instant, Long]]]
     val inner = mock[Alteration[Stage[ZoneId, ZonedDateTime, Nothing], Stage[ZoneOffset, OffsetDateTime, Exception]]]
     val input = mock[Stage[ZoneId, ZonedDateTime, Nothing]]
@@ -46,6 +46,6 @@ class AlterationTest extends AnyFlatSpec with Matchers with MockFactory {
       (inner.apply _).expects(input).returns(medium)
       (outer.apply _).expects(medium).returns(output)
     }
-    Alteration.Compose(outer, inner)(input) shouldBe output
+    AlterationCompose(outer, inner)(input) shouldBe output
   }
 }

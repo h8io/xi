@@ -1,4 +1,4 @@
-package h8io.xi.stages.wrappers
+package h8io.xi.stages.alterations
 
 import h8io.xi.stages.*
 
@@ -20,8 +20,4 @@ final case class Loop[T, +E](stage: Stage.Endo[T, E]) extends Wrapper.Endo[T, T,
     }
     loop(stage, in)
   }
-}
-
-object Loop {
-  def alteration[T, E]: Alteration.Endo[T, T, E] = apply
 }

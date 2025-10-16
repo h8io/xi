@@ -1,4 +1,4 @@
-package h8io.xi.stages.wrappers
+package h8io.xi.stages.alterations
 
 import h8io.xi.stages.*
 
@@ -17,8 +17,4 @@ final case class Repeat[-I, +O, +E](stage: Stage[I, O, E]) extends Wrapper.Endo[
     }
     repeat(stage)
   }
-}
-
-object Repeat {
-  def alteration[I, O, E]: Alteration.Endo[I, O, E] = apply
 }

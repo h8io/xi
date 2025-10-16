@@ -1,4 +1,4 @@
-package h8io.xi.stages.wrappers
+package h8io.xi.stages.alterations
 
 import h8io.xi.stages.*
 import org.scalamock.scalatest.MockFactory
@@ -104,10 +104,5 @@ class KeepLastOutputTest
     val stage = mock[Stage[Any, Nothing, Nothing]]
     (stage.dispose _).expects()
     noException should be thrownBy KeepLastOutput.Some(mock[AnyRef], stage).dispose()
-  }
-
-  "alteration" should "create the same object as apply object" in {
-    val stage = mock[Stage[Long, Int, Nothing]]
-    KeepLastOutput.alteration(stage) shouldBe KeepLastOutput(stage)
   }
 }
