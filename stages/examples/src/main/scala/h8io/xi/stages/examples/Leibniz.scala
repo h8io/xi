@@ -1,6 +1,6 @@
 package h8io.xi.stages.examples
 
-import h8io.xi.stages.morphisms.{LocalSoftDeadline, Repeat}
+import h8io.xi.stages.wrappers.{LocalSoftDeadline, Repeat}
 import h8io.xi.stages.{OnDone, Signal, Stage, Yield}
 
 import scala.concurrent.duration.FiniteDuration
@@ -21,6 +21,6 @@ object Leibniz {
   val InitialStage: Pi = Pi(0, 1, 1)
 
   def stage(duration: FiniteDuration): Stage[Unit, Double, Nothing] =
-    Repeat.morphism[Unit, Double, Nothing] ~>
-      LocalSoftDeadline.morphism[Unit, Double, Nothing](duration) <| InitialStage
+    Repeat.alteration[Unit, Double, Nothing] ~>
+      LocalSoftDeadline.alteration[Unit, Double, Nothing](duration) <| InitialStage
 }

@@ -1,6 +1,6 @@
-package h8io.xi.stages.morphisms
+package h8io.xi.stages.wrappers
 
-import h8io.xi.stages.morphisms.LocalSoftDeadline._OnDone
+import h8io.xi.stages.wrappers.LocalSoftDeadline._OnDone
 import h8io.xi.stages.std.DeadEnd
 import h8io.xi.stages.*
 
@@ -21,7 +21,7 @@ final case class LocalSoftDeadline[-I, +O, +E](
 }
 
 object LocalSoftDeadline {
-  private[morphisms] final case class _OnDone[-I, +O, +E](
+  private[wrappers] final case class _OnDone[-I, +O, +E](
       ts: () => Long,
       now: () => Long,
       duration: Long,
@@ -42,7 +42,7 @@ object LocalSoftDeadline {
 
   private val now: () => Long = System.nanoTime _
 
-  def morphism[I, O, E](duration: FiniteDuration): Morphism.Endo[I, O, E] = apply(duration, _)
+  def alteration[I, O, E](duration: FiniteDuration): Alteration.Endo[I, O, E] = apply(duration, _)
 
-  def morphism[I, O, E](duration: java.time.Duration): Morphism.Endo[I, O, E] = apply(duration, _)
+  def alteration[I, O, E](duration: java.time.Duration): Alteration.Endo[I, O, E] = apply(duration, _)
 }

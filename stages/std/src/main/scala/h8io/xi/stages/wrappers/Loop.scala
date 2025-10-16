@@ -1,4 +1,4 @@
-package h8io.xi.stages.morphisms
+package h8io.xi.stages.wrappers
 
 import h8io.xi.stages.*
 
@@ -23,5 +23,5 @@ final case class Loop[T, +E](stage: Stage.Endo[T, E]) extends Wrapper.Endo[T, T,
 }
 
 object Loop {
-  def morphism[T, E]: Morphism.Endo[T, T, E] = apply
+  def alteration[T, E]: Alteration.Endo[T, T, E] = apply
 }

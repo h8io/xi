@@ -10,6 +10,12 @@ import org.scalatestplus.scalacheck.Checkers
 import org.typelevel.discipline.scalatest.FunSuiteDiscipline
 
 class EndoStageMonoidTest extends AnyFunSuite with FunSuiteDiscipline with Checkers with CoreStagesArbitraries {
+  private implicit def stageMonoid[T, E]: Monoid[Stage.Endo[T, E]] =
+    new Monoid[Stage.Endo[T, E]] {
+      def empty: Stage.Endo[T, E] = Identity[T]
+      def combine(x: Stage.Endo[T, E], y: Stage.Endo[T, E]): Stage.Endo[T, E] = x ~> y
+    }
+
   private implicit def genStage[T: Arbitrary: Semigroup, E: Arbitrary]: Arbitrary[Stage.Endo[T, E]] =
     Arbitrary {
       for {
@@ -21,12 +27,6 @@ class EndoStageMonoidTest extends AnyFunSuite with FunSuiteDiscipline with Check
 
         override def toString(): String = s"Stage.Endo: $prefix + _ + $suffix"
       }
-    }
-
-  private implicit def stageMonoid[T, E]: Monoid[Stage.Endo[T, E]] =
-    new Monoid[Stage.Endo[T, E]] {
-      def empty: Stage.Endo[T, E] = Identity[T]
-      def combine(x: Stage.Endo[T, E], y: Stage.Endo[T, E]): Stage.Endo[T, E] = x ~> y
     }
 
   // Depth should not be greater than 3

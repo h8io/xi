@@ -1,4 +1,4 @@
-package h8io.xi.stages.morphisms
+package h8io.xi.stages.wrappers
 
 import h8io.xi.stages.*
 import org.scalamock.scalatest.MockFactory
@@ -106,8 +106,8 @@ class KeepLastOutputTest
     noException should be thrownBy KeepLastOutput.Some(mock[AnyRef], stage).dispose()
   }
 
-  "morphism" should "create the same object as apply object" in {
+  "alteration" should "create the same object as apply object" in {
     val stage = mock[Stage[Long, Int, Nothing]]
-    KeepLastOutput.morphism(stage) shouldBe KeepLastOutput(stage)
+    KeepLastOutput.alteration(stage) shouldBe KeepLastOutput(stage)
   }
 }

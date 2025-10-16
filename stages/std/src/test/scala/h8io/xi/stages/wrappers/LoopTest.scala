@@ -1,4 +1,4 @@
-package h8io.xi.stages.morphisms
+package h8io.xi.stages.wrappers
 
 import h8io.xi.stages.*
 import org.scalacheck.{Arbitrary, Gen}
@@ -115,8 +115,8 @@ class LoopTest
     noException should be thrownBy Loop(stage).dispose()
   }
 
-  "morphism" should "create a Loop object" in {
+  "alteration" should "create a Loop object" in {
     val stage = mock[Stage.Endo[Instant, Exception]]
-    Loop.morphism(stage) shouldBe Loop(stage)
+    Loop.alteration(stage) shouldBe Loop(stage)
   }
 }
