@@ -9,9 +9,9 @@ trait Stage[-I, +O, +E] extends (I => Yield[I, O, E]) {
   @inline final def <~[_I, _E >: E](that: Stage[_I, I, _E]): Stage[_I, O, _E] = that ~> this
 
   @inline final def ~>[S <: Stage[?, ?, ?], _O, _E >: E](
-      alter: Alteration[S, Stage[O, _O, _E]]): Alteration[S, Stage[I, _O, _E]] = stage => this ~> alter(stage)
+      alteration: Alteration[S, Stage[O, _O, _E]]): Alteration[S, Stage[I, _O, _E]] = stage => this ~> alteration(stage)
 
-  @inline final def |>[S <: Stage[?, ?, ?]](alter: Alteration[Stage[I, O, E], S]): S = alter ⋅ this
+  @inline final def |>[S <: Stage[?, ?, ?]](alteration: Alteration[Stage[I, O, E], S]): S = alteration ⋅ this
 
   def dispose(): Unit = {}
 }
