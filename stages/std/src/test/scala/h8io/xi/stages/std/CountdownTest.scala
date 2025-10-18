@@ -33,4 +33,16 @@ class CountdownTest extends AnyFlatSpec with Matchers with Inside with ScalaChec
       test(n)
       forAll(Gen.choose(2, n))(i => test(i))
     }
+
+  "Countdown constructor" should "fail if n == 0" in {
+    an[AssertionError] should be thrownBy Countdown(1, 0)
+  }
+
+  it should "fail if n < 0" in forAll(Gen.negNum[Long])(n => an[AssertionError] should be thrownBy Countdown(1, n))
+
+  it should "fail if i == 0" in forAll(Gen.posNum[Long])(n => an[AssertionError] should be thrownBy Countdown(0, n))
+
+  it should "fail if i < 0" in forAll(Gen.zip(Gen.negNum[Long], Gen.posNum[Long])) { case (i, n) =>
+    an[AssertionError] should be thrownBy Countdown(i, n)
+  }
 }
