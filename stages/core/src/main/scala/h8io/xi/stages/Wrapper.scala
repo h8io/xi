@@ -1,6 +1,6 @@
 package h8io.xi.stages
 
-trait Wrapper[+S <: Stage[?, ?, ?], -I, +O, +E] extends Stage[I, O, E] {
+trait Wrapper[+S <: Stage.Any, -I, +O, +E] extends Stage[I, O, E] {
   val stage: S
 
   override def dispose(): Unit = stage.dispose()
