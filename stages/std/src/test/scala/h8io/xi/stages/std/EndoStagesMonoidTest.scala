@@ -4,12 +4,14 @@ import cats.implicits.catsSyntaxSemigroup
 import cats.kernel.laws.discipline.MonoidTests
 import cats.{Eq, Monoid, Semigroup}
 import h8io.xi.stages.*
-import org.scalacheck.Arbitrary
+import org.scalacheck.{Arbitrary, Prop, Shrink, Test}
 import org.scalatest.funsuite.AnyFunSuite
 import org.scalatestplus.scalacheck.Checkers
 import org.typelevel.discipline.scalatest.FunSuiteDiscipline
 
-class EndoStageMonoidTest extends AnyFunSuite with FunSuiteDiscipline with Checkers with CoreStagesArbitraries {
+class EndoStagesMonoidTest extends AnyFunSuite with FunSuiteDiscipline with Checkers with CoreStagesArbitraries {
+  private val parameters = Test.Parameters.default
+
   private implicit def stageMonoid[T, E]: Monoid[Stage.Endo[T, E]] =
     new Monoid[Stage.Endo[T, E]] {
       def empty: Stage.Endo[T, E] = Identity[T]
@@ -37,8 +39,7 @@ class EndoStageMonoidTest extends AnyFunSuite with FunSuiteDiscipline with Check
       case _ => stage :: Nil
     }
 
-  private def toTuple[T, E](
-      onDone: OnDone[T, T, E]): (List[Stage[?, ?, ?]], List[Stage[?, ?, ?]], List[Stage[?, ?, ?]]) =
+  private def toTuple[T, E](onDone: OnDone[T, T, E]): (List[Stage.Any], List[Stage.Any], List[Stage.Any]) =
     (toList(onDone.onSuccess()), toList(onDone.onError()), toList(onDone.onComplete()))
 
   private def toTuple[T, E](yld: Yield[T, T, E]): Product =
@@ -47,13 +48,11 @@ class EndoStageMonoidTest extends AnyFunSuite with FunSuiteDiscipline with Check
       case Yield.None(signal, onDone) => (signal, toTuple(onDone))
     }
 
-  private implicit def stageEq[T: Arbitrary: Monoid, E]: Eq[Stage.Endo[T, E]] = {
+  private implicit def stageEq[T: Arbitrary: Shrink, E]: Eq[Stage.Endo[T, E]] =
     (x: Stage.Endo[T, E], y: Stage.Endo[T, E]) =>
-      val in = Arbitrary.arbitrary[T].sample getOrElse Monoid[T].empty
-      toTuple(x(in)) == toTuple(y(in))
-  }
+      Test.check(parameters, Prop.forAll((in: T) => toTuple(x(in)) == toTuple(y(in)))).passed
 
   checkAll("Stage[Int, String]", MonoidTests[Stage.Endo[Int, String]].monoid)
 
-  checkAll("Stage[String, Int]", MonoidTests[Stage.Endo[Int, String]].monoid)
+  checkAll("Stage[String, Int]", MonoidTests[Stage.Endo[String, Int]].monoid)
 }
