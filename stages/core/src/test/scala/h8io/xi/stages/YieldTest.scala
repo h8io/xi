@@ -1,5 +1,7 @@
 package h8io.xi.stages
 
+import cats.implicits.catsSyntaxSemigroup
+import h8io.xi.stages.test.signalMonoid
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.Inside
 import org.scalatest.flatspec.AnyFlatSpec
@@ -25,7 +27,7 @@ class YieldTest
         val nextYield = nextYieldSupplier(nextOnDone)
         inside(previousYield.compose(nextYield)) {
           case Yield.Some(nextYield.out, signal, onDone) =>
-            signal shouldBe previousYield.signal.compose(nextYield.signal)
+            signal shouldBe previousYield.signal |+| nextYield.signal
             val previousStage = mock[Stage[Long, Instant, String]]
             val nextStage = mock[Stage[Instant, String, String]]
             val stage = previousStage ~> nextStage
@@ -60,7 +62,7 @@ class YieldTest
         val nextYield = nextYieldSupplier(nextOnDone)
         inside(previousYield.compose(nextYield)) {
           case Yield.None(signal, onDone) =>
-            signal shouldBe previousYield.signal.compose(nextYield.signal)
+            signal shouldBe previousYield.signal |+| nextYield.signal
             val previousStage = mock[Stage[Long, Instant, String]]
             val nextStage = mock[Stage[Instant, String, String]]
             val stage = previousStage ~> nextStage
