@@ -68,6 +68,12 @@ val `stages-examples` = (project in file("stages/examples")).settings(
 val cfg = (project in file("cfg"))
   .settings(name := "xi-cfg", libraryDependencies += "com.typesafe" % "config" % "1.4.5")
 
+val lang = (project in file("lang")).settings(
+  name := "xi-lang",
+  libraryDependencies += "org.scala-lang" % "scala-reflect" % scalaVersion.value
+).dependsOn(`stages-core`)
+
 val root =
-  (project in file(".")).settings(name := "xi").aggregate(stages, `stages-core`, `stages-std`, cfg, `stages-examples`)
+  (project in file(".")).settings(name := "xi")
+    .aggregate(stages, `stages-core`, `stages-std`, lang, cfg, `stages-examples`)
     .enablePlugins(ScoverageSummaryPlugin)
