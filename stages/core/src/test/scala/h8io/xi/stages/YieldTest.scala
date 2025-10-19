@@ -1,5 +1,7 @@
 package h8io.xi.stages
 
+import cats.implicits.catsSyntaxSemigroup
+import h8io.xi.stages.test.signalMonoid
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.Inside
 import org.scalatest.flatspec.AnyFlatSpec
@@ -15,7 +17,7 @@ class YieldTest
     with MockFactory
     with ScalaCheckPropertyChecks
     with CoreStagesArbitraries {
-  "~>" should "combine Some and Some correctly" in
+  "compose method" should "compose Some and Some correctly" in
     forAll {
       (previousYieldSupplier: OnDoneToYieldSome[Long, Instant, String],
           nextYieldSupplier: OnDoneToYieldSome[Instant, String, String]) =>
@@ -23,9 +25,9 @@ class YieldTest
         val previousYield = previousYieldSupplier(previousOnDone)
         val nextOnDone = mock[OnDone[Instant, String, String]]
         val nextYield = nextYieldSupplier(nextOnDone)
-        inside(previousYield ~> nextYield) {
+        inside(previousYield.compose(nextYield)) {
           case Yield.Some(nextYield.out, signal, onDone) =>
-            signal shouldBe previousYield.signal ~> nextYield.signal
+            signal shouldBe previousYield.signal |+| nextYield.signal
             val previousStage = mock[Stage[Long, Instant, String]]
             val nextStage = mock[Stage[Instant, String, String]]
             val stage = previousStage ~> nextStage
@@ -50,7 +52,7 @@ class YieldTest
         }
     }
 
-  it should "combine Some and None correctly" in
+  it should "compose Some and None correctly" in
     forAll {
       (previousYieldSupplier: OnDoneToYieldSome[Long, Instant, String],
           nextYieldSupplier: OnDoneToYieldNone[Instant, String, String]) =>
@@ -58,9 +60,9 @@ class YieldTest
         val previousYield = previousYieldSupplier(previousOnDone)
         val nextOnDone = mock[OnDone[Instant, String, String]]
         val nextYield = nextYieldSupplier(nextOnDone)
-        inside(previousYield ~> nextYield) {
+        inside(previousYield.compose(nextYield)) {
           case Yield.None(signal, onDone) =>
-            signal shouldBe previousYield.signal ~> nextYield.signal
+            signal shouldBe previousYield.signal |+| nextYield.signal
             val previousStage = mock[Stage[Long, Instant, String]]
             val nextStage = mock[Stage[Instant, String, String]]
             val stage = previousStage ~> nextStage
@@ -85,12 +87,12 @@ class YieldTest
         }
     }
 
-  it should "combine None and stage correctly" in
+  it should "compose None and stage correctly" in
     forAll { (previousYieldSupplier: OnDoneToYieldNone[Long, Instant, String]) =>
       val previousOnDone = mock[OnDone[Long, Instant, String]]
       val previousYield = previousYieldSupplier(previousOnDone)
       val nextStage = mock[Stage[Instant, String, String]]
-      inside(previousYield ~> nextStage) {
+      inside(previousYield.compose(nextStage)) {
         case Yield.None(previousYield.`signal`, onDone) =>
           val previousStage = mock[Stage[Long, Instant, String]]
           val stage = previousStage ~> nextStage

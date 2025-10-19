@@ -8,8 +8,8 @@ final case class IAnd[-I, +LO, +RO, +E](left: Stage[I, LO, E], right: Stage[I, R
   def apply(in: I): Yield[I, (LO, RO), E] =
     (left(in), right(in)) match {
       case (Yield.Some(leftOut, leftSignal, leftOnDone), Yield.Some(rightOut, rightSignal, rightOnDone)) =>
-        Yield.Some((leftOut, rightOut), leftSignal ~> rightSignal, IAnd.OnDone(leftOnDone, rightOnDone))
-      case (left, right) => Yield.None(left.signal ~> right.signal, IAnd.OnDone(left.onDone, right.onDone))
+        Yield.Some((leftOut, rightOut), leftSignal.compose(rightSignal), IAnd.OnDone(leftOnDone, rightOnDone))
+      case (left, right) => Yield.None(left.signal.compose(right.signal), IAnd.OnDone(left.onDone, right.onDone))
     }
 }
 

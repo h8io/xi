@@ -9,12 +9,12 @@ import java.time.{Instant, ZoneId, ZonedDateTime}
 import java.util.UUID
 
 class OnDoneTest extends AnyFlatSpec with Matchers with MockFactory {
-  "combine method" should "combine OnDone objects correctly" in {
+  "compose method" should "compose OnDone objects correctly" in {
     val previousOnDone = mock[OnDone[String, Instant, Exception]]
     val previousStage = mock[Stage[String, Instant, Exception]]
     val nextOnDone = mock[OnDone[Instant, Long, Exception]]
     val nextStage = mock[Stage[Instant, Long, Exception]]
-    val onDone = previousOnDone combine nextOnDone
+    val onDone = previousOnDone.compose(nextOnDone)
     val stage = previousStage ~> nextStage
 
     inSequence {
@@ -40,7 +40,7 @@ class OnDoneTest extends AnyFlatSpec with Matchers with MockFactory {
     val previousOnDone = mock[OnDone[String, Instant, Exception]]
     val previousStage = mock[Stage[String, Instant, Exception]]
     val nextStage = mock[Stage[Instant, Long, Exception]]
-    val onDone = previousOnDone combine nextStage
+    val onDone = previousOnDone.compose(nextStage)
     val stage = previousStage ~> nextStage
 
     (previousOnDone.onSuccess _).expects().returns(previousStage)

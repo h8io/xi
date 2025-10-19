@@ -10,9 +10,9 @@ final case class Or[-I, +LO, +RO, +E](left: Stage[I, LO, E], right: Stage[I, RO,
       case Yield.None(leftSignal, leftOnDone) =>
         right(in) match {
           case Yield.Some(out, rightSignal, rightOnDone) =>
-            Yield.Some(Right(out), leftSignal ~> rightSignal, Or.BothOnDone(leftOnDone, rightOnDone))
+            Yield.Some(Right(out), leftSignal.compose(rightSignal), Or.BothOnDone(leftOnDone, rightOnDone))
           case Yield.None(rightSignal, rightOnDone) =>
-            Yield.None(leftSignal ~> rightSignal, Or.BothOnDone(leftOnDone, rightOnDone))
+            Yield.None(leftSignal.compose(rightSignal), Or.BothOnDone(leftOnDone, rightOnDone))
         }
     }
 }
