@@ -6,10 +6,13 @@ trait Stage[-I, +O, +E] extends (I => Yield[I, O, E]) {
 
   @inline final def ~>[_O, _E >: E](that: Stage[O, _O, _E]): Stage[I, _O, _E] = Stage.AndThen(this, that)
 
-  @inline final def <~[_I, _E >: E](that: Stage[_I, I, _E]): Stage[_I, O, _E] = that ~> this
-
   @inline final def ~>[S <: Stage.Any, _O, _E >: E](
       alteration: Alteration[S, Stage[O, _O, _E]]): Alteration[S, Stage[I, _O, _E]] = stage => this ~> alteration(stage)
+
+  @inline final def <~[_I, _E >: E](that: Stage[_I, I, _E]): Stage[_I, O, _E] = that ~> this
+
+  @inline final def <~[S <: Stage.Any, _I, _E >: E](
+      alteration: Alteration[S, Stage[_I, I, _E]]): Alteration[S, Stage[_I, O, _E]] = stage => alteration(stage) ~> this
 
   @inline final def |>[S <: Stage.Any](alteration: Alteration[Stage[I, O, E], S]): S = alteration ⋅ this
 
