@@ -18,13 +18,13 @@ class StageTest extends AnyFlatSpec with Matchers with MockFactory {
   it should "produce a alteration with a alteration argument" in {
     val stage = mock[Stage[Int, Long, UUID]]
     val alteration = mock[Alteration[Stage[ZoneId, ZonedDateTime, String], Stage[Long, String, Nothing]]]
-    val morphee = mock[Stage[ZoneId, ZonedDateTime, String]]
-    val morphed = mock[Stage[Long, String, Nothing]]
-    (alteration.apply _).expects(morphee).returns(morphed)
-    val result: Stage[Int, String, UUID] = (stage ~> alteration)(morphee)
-    result shouldBe stage ~> morphed
-    (alteration.apply _).expects(morphee).returns(morphed)
-    stage ~> alteration <| morphee shouldBe stage ~> morphed
+    val alteratee = mock[Stage[ZoneId, ZonedDateTime, String]]
+    val alterated = mock[Stage[Long, String, Nothing]]
+    (alteration.apply _).expects(alteratee).returns(alterated)
+    val result: Stage[Int, String, UUID] = (stage ~> alteration)(alteratee)
+    result shouldBe stage ~> alterated
+    (alteration.apply _).expects(alteratee).returns(alterated)
+    stage ~> alteration <| alteratee shouldBe stage ~> alterated
   }
 
   "<~" should "produce Stage.AndThen object" in {
@@ -45,5 +45,25 @@ class StageTest extends AnyFlatSpec with Matchers with MockFactory {
     noException should be thrownBy new Stage[Instant, Timestamp, String] {
       def apply(in: Instant): Yield[Instant, Timestamp, String] = throw new NotImplementedError
     }.dispose()
+  }
+
+  "alteration" should "be a leftAlteration" in {
+    val left = mock[Stage[Int, Long, Nothing]]
+    val right = mock[Stage[Long, Duration, Exception]]
+    left.alteration(right) shouldBe left ~> right
+  }
+
+  "leftAlteration" should "produce a composition with predefined left operand as an be alteration" in {
+    val left = mock[Stage[Int, Long, Nothing]]
+    val right = mock[Stage[Long, Duration, Exception]]
+    val alteration: Alteration[Stage[Long, Duration, Exception], Stage[Int, Duration, Exception]] = left.leftAlteration
+    alteration(right) shouldBe left ~> right
+  }
+
+  "rightAlteration" should "produce a composition with predefined right operand as an be alteration" in {
+    val left = mock[Stage[Int, Long, Nothing]]
+    val right = mock[Stage[Long, Duration, Exception]]
+    val alteration: Alteration[Stage[Int, Long, Nothing], Stage[Int, Duration, Exception]] = right.rightAlteration
+    alteration(left) shouldBe left ~> right
   }
 }
