@@ -18,13 +18,13 @@ class StageTest extends AnyFlatSpec with Matchers with MockFactory {
   it should "produce a alteration with a alteration argument" in {
     val stage = mock[Stage[Int, Long, UUID]]
     val alteration = mock[Alteration[Stage[ZoneId, ZonedDateTime, String], Stage[Long, String, Nothing]]]
-    val alteratee = mock[Stage[ZoneId, ZonedDateTime, String]]
-    val alterated = mock[Stage[Long, String, Nothing]]
-    (alteration.apply _).expects(alteratee).returns(alterated)
-    val result: Stage[Int, String, UUID] = (stage ~> alteration)(alteratee)
-    result shouldBe stage ~> alterated
-    (alteration.apply _).expects(alteratee).returns(alterated)
-    stage ~> alteration <| alteratee shouldBe stage ~> alterated
+    val in = mock[Stage[ZoneId, ZonedDateTime, String]]
+    val out = mock[Stage[Long, String, Nothing]]
+    (alteration.apply _).expects(in).returns(out)
+    val result: Stage[Int, String, UUID] = (stage ~> alteration)(in)
+    result shouldBe stage ~> out
+    (alteration.apply _).expects(in).returns(out)
+    stage ~> alteration <| in shouldBe stage ~> out
   }
 
   "<~" should "produce Stage.AndThen object" in {
@@ -36,9 +36,9 @@ class StageTest extends AnyFlatSpec with Matchers with MockFactory {
   "|>" should "apply alteration to stage" in {
     val stage = mock[Stage[ZoneOffset, OffsetDateTime, Exception]]
     val alteration = mock[Alteration[Stage[ZoneOffset, OffsetDateTime, Exception], Stage[UUID, Instant, Long]]]
-    val morphed = mock[Stage[UUID, Instant, Long]]
-    (alteration.apply _).expects(stage).returns(morphed)
-    stage |> alteration shouldBe morphed
+    val out = mock[Stage[UUID, Instant, Long]]
+    (alteration.apply _).expects(stage).returns(out)
+    stage |> alteration shouldBe out
   }
 
   "dispose" should "do nothing" in {
