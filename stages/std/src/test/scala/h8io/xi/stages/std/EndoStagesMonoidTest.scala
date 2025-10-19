@@ -9,6 +9,8 @@ import org.scalatest.funsuite.AnyFunSuite
 import org.scalatestplus.scalacheck.Checkers
 import org.typelevel.discipline.scalatest.FunSuiteDiscipline
 
+import scala.annotation.tailrec
+
 class EndoStagesMonoidTest extends AnyFunSuite with FunSuiteDiscipline with Checkers with CoreStagesArbitraries {
   private val parameters = Test.Parameters.default
 
@@ -31,13 +33,16 @@ class EndoStagesMonoidTest extends AnyFunSuite with FunSuiteDiscipline with Chec
       }
     }
 
-  // Depth should not be greater than 3
-  private def toList[E](stage: Stage[?, ?, E]): List[Stage[?, ?, E]] =
-    stage match {
-      case Stage.AndThen(previous, next) => toList(previous) ++ toList(next)
-      case Identity => Nil
-      case _ => stage :: Nil
-    }
+  private def toList[E](stage: Stage[?, ?, E]): List[Stage[?, ?, E]] = {
+    @tailrec def loop(todo: List[Stage[?, ?, E]], acc: List[Stage[?, ?, E]]): List[Stage[?, ?, E]] =
+      todo match {
+        case Nil => acc
+        case Stage.AndThen(previous, next) :: rest => loop(next :: previous :: rest, acc)
+        case Identity :: rest => loop(rest, acc)
+        case other :: rest => loop(rest, other :: acc)
+      }
+    loop(stage :: Nil, Nil)
+  }
 
   private def toTuple[T, E](onDone: OnDone[T, T, E]): (List[Stage.Any], List[Stage.Any], List[Stage.Any]) =
     (toList(onDone.onSuccess()), toList(onDone.onError()), toList(onDone.onComplete()))
