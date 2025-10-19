@@ -3,7 +3,7 @@ package h8io.xi.stages
 import cats.data.NonEmptyChain
 
 sealed trait Signal[+E] {
-  private[stages] def ~>[_E >: E](next: Signal[_E]): Signal[_E]
+  private[stages] def compose[_E >: E](next: Signal[_E]): Signal[_E]
 
   private[stages] def apply[I, O, _E](onDone: OnDone[I, O, _E]): Stage[I, O, _E]
 
@@ -12,7 +12,7 @@ sealed trait Signal[+E] {
 
 object Signal {
   case object Success extends Signal[Nothing] {
-    private[stages] def ~>[E](next: Signal[E]): Signal[E] =
+    private[stages] def compose[E](next: Signal[E]): Signal[E] =
       next match {
         case Success => this
         case that => that
@@ -28,7 +28,7 @@ object Signal {
   }
 
   case object Complete extends Break[Nothing] {
-    private[stages] def ~>[E](next: Signal[E]): Signal[E] =
+    private[stages] def compose[E](next: Signal[E]): Signal[E] =
       next match {
         case Success | Complete => this
         case that => that
@@ -38,7 +38,7 @@ object Signal {
   }
 
   final case class Error[+E](causes: NonEmptyChain[E]) extends Break[E] {
-    private[stages] def ~>[_E >: E](next: Signal[_E]): Signal[_E] =
+    private[stages] def compose[_E >: E](next: Signal[_E]): Signal[_E] =
       next match {
         case Success | Complete => this
         case Error(nextCauses) => Error(causes ++ nextCauses)

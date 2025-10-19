@@ -23,9 +23,9 @@ class YieldTest
         val previousYield = previousYieldSupplier(previousOnDone)
         val nextOnDone = mock[OnDone[Instant, String, String]]
         val nextYield = nextYieldSupplier(nextOnDone)
-        inside(previousYield ~> nextYield) {
+        inside(previousYield.compose(nextYield)) {
           case Yield.Some(nextYield.out, signal, onDone) =>
-            signal shouldBe previousYield.signal ~> nextYield.signal
+            signal shouldBe previousYield.signal.compose(nextYield.signal)
             val previousStage = mock[Stage[Long, Instant, String]]
             val nextStage = mock[Stage[Instant, String, String]]
             val stage = previousStage ~> nextStage
@@ -58,9 +58,9 @@ class YieldTest
         val previousYield = previousYieldSupplier(previousOnDone)
         val nextOnDone = mock[OnDone[Instant, String, String]]
         val nextYield = nextYieldSupplier(nextOnDone)
-        inside(previousYield ~> nextYield) {
+        inside(previousYield.compose(nextYield)) {
           case Yield.None(signal, onDone) =>
-            signal shouldBe previousYield.signal ~> nextYield.signal
+            signal shouldBe previousYield.signal.compose(nextYield.signal)
             val previousStage = mock[Stage[Long, Instant, String]]
             val nextStage = mock[Stage[Instant, String, String]]
             val stage = previousStage ~> nextStage
@@ -90,7 +90,7 @@ class YieldTest
       val previousOnDone = mock[OnDone[Long, Instant, String]]
       val previousYield = previousYieldSupplier(previousOnDone)
       val nextStage = mock[Stage[Instant, String, String]]
-      inside(previousYield ~> nextStage) {
+      inside(previousYield.compose(nextStage)) {
         case Yield.None(previousYield.`signal`, onDone) =>
           val previousStage = mock[Stage[Long, Instant, String]]
           val stage = previousStage ~> nextStage

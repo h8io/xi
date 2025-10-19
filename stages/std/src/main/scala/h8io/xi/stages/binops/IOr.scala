@@ -9,13 +9,13 @@ final case class IOr[-I, +LO, +RO, +E](left: Stage[I, LO, E], right: Stage[I, RO
   def apply(in: I): Yield[I, Ior[LO, RO], E] =
     (left(in), right(in)) match {
       case (Yield.Some(leftOut, leftSignal, leftOnDone), Yield.Some(rightOut, rightSignal, rightOnDone)) =>
-        Yield.Some(Ior.Both(leftOut, rightOut), leftSignal ~> rightSignal, IOr.OnDone(leftOnDone, rightOnDone))
+        Yield.Some(Ior.Both(leftOut, rightOut), leftSignal.compose(rightSignal), IOr.OnDone(leftOnDone, rightOnDone))
       case (Yield.Some(leftOut, leftSignal, leftOnDone), Yield.None(rightSignal, rightOnDone)) =>
-        Yield.Some(Ior.Left(leftOut), leftSignal ~> rightSignal, IOr.OnDone(leftOnDone, rightOnDone))
+        Yield.Some(Ior.Left(leftOut), leftSignal.compose(rightSignal), IOr.OnDone(leftOnDone, rightOnDone))
       case (Yield.None(leftSignal, leftOnDone), Yield.Some(rightOut, rightSignal, rightOnDone)) =>
-        Yield.Some(Ior.Right(rightOut), leftSignal ~> rightSignal, IOr.OnDone(leftOnDone, rightOnDone))
+        Yield.Some(Ior.Right(rightOut), leftSignal.compose(rightSignal), IOr.OnDone(leftOnDone, rightOnDone))
       case (Yield.None(leftSignal, leftOnDone), Yield.None(rightSignal, rightOnDone)) =>
-        Yield.None(leftSignal ~> rightSignal, IOr.OnDone(leftOnDone, rightOnDone))
+        Yield.None(leftSignal.compose(rightSignal), IOr.OnDone(leftOnDone, rightOnDone))
     }
 }
 

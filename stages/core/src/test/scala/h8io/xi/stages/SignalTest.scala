@@ -10,7 +10,7 @@ import java.time.Instant
 
 class SignalTest
     extends AnyFlatSpec with Matchers with MockFactory with ScalaCheckPropertyChecks with CoreStagesArbitraries {
-  "Success" should "be idempotent" in { Signal.Success ~> Signal.Success shouldBe Signal.Success }
+  "Success" should "be idempotent" in { Signal.Success.compose(Signal.Success) shouldBe Signal.Success }
 
   it should "call the method onSuccess() in OnDone object" in {
     val onDone = mock[OnDone[Long, Instant, Exception]]
@@ -21,10 +21,10 @@ class SignalTest
 
   it should "become Complete on break call" in { Signal.Success.break shouldBe Signal.Complete }
 
-  "Complete" should "be idempotent" in { Signal.Complete ~> Signal.Complete shouldBe Signal.Complete }
+  "Complete" should "be idempotent" in { Signal.Complete.compose(Signal.Complete) shouldBe Signal.Complete }
 
   it should "be overridden by Error" in
-    forAll((error: Signal.Error[String]) => Signal.Complete ~> error shouldBe error)
+    forAll((error: Signal.Error[String]) => Signal.Complete.compose(error) shouldBe error)
 
   it should "call the method onComplete() in OnDone object" in {
     val onDone = mock[OnDone[Long, Instant, Exception]]
@@ -37,10 +37,11 @@ class SignalTest
 
   "Error" should "keep the order of causes in composition" in
     forAll { (previous: Signal.Error[String], next: Signal.Error[String]) =>
-      previous ~> next shouldBe Signal.Error(previous.causes ++ next.causes)
+      previous.compose(next) shouldBe Signal.Error(previous.causes ++ next.causes)
     }
 
-  it should "override Complete" in forAll((error: Signal.Error[String]) => error ~> Signal.Complete shouldBe error)
+  it should "override Complete" in forAll((error: Signal.Error[String]) =>
+    error.compose(Signal.Complete) shouldBe error)
 
   it should "call the onError() method in OnDone object" in
     forAll { (error: Signal.Error[String]) =>

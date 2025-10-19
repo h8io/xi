@@ -25,7 +25,7 @@ class StageAndThenTest
           (nextStage.apply _).expects(previousOut).returns(Yield.Some(nextOut, nextSignal, nextOnDone))
         }
         inside(Stage.AndThen(previousStage, nextStage)(in)) { case Yield.Some(`nextOut`, signal, onDone) =>
-          signal shouldBe previousSignal ~> nextSignal
+          signal shouldBe previousSignal.compose(nextSignal)
           val updatedPreviousStage = mock[Stage[Int, String, String]]
           val updatedNextStage = mock[Stage[String, Long, Nothing]]
           inSequence {
@@ -47,7 +47,7 @@ class StageAndThenTest
         (nextStage.apply _).expects(out).returns(Yield.None(nextSignal, nextOnDone))
       }
       inside(Stage.AndThen(previousStage, nextStage)(in)) { case Yield.None(signal, onDone) =>
-        signal shouldBe previousSignal ~> nextSignal
+        signal shouldBe previousSignal.compose(nextSignal)
         val updatedPreviousStage = mock[Stage[Int, String, String]]
         val updatedNextStage = mock[Stage[String, Long, Nothing]]
         inSequence {

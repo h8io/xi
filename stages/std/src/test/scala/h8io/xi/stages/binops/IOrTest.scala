@@ -109,7 +109,7 @@ class IOrTest
       rightYield: Yield[I, RO, E],
       signal: Signal[E],
       onDone: OnDone[I, Ior[LO, RO], E]): Assertion = {
-    signal shouldBe leftYield.signal ~> rightYield.signal
+    signal shouldBe leftYield.signal.compose(rightYield.signal)
 
     val leftOnSuccessStage = mock[Stage[I, LO, E]]("left onSuccess stage")
     val rightOnSuccessStage = mock[Stage[I, RO, E]]("right onSuccess stage")
