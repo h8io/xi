@@ -9,7 +9,7 @@ import java.time.{Instant, ZoneId, ZonedDateTime}
 import java.util.UUID
 
 class OnDoneTest extends AnyFlatSpec with Matchers with MockFactory {
-  "combine method" should "combine OnDone objects correctly" in {
+  "compose method" should "compose OnDone objects correctly" in {
     val previousOnDone = mock[OnDone[String, Instant, Exception]]
     val previousStage = mock[Stage[String, Instant, Exception]]
     val nextOnDone = mock[OnDone[Instant, Long, Exception]]
