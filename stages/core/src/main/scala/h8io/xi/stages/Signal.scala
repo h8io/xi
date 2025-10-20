@@ -24,7 +24,7 @@ object Signal {
 
     override def iterator: Iterator[Nothing] = Iterator.empty
 
-    override def isEmpty: Boolean = false
+    override def isEmpty: Boolean = true
   }
 
   sealed trait Break[+E] extends Signal[E] {
@@ -44,10 +44,10 @@ object Signal {
 
     override def iterator: Iterator[Nothing] = Iterator.empty
 
-    override def isEmpty: Boolean = false
+    override def isEmpty: Boolean = true
   }
 
-  final case class Error[+E](override val head: E, override val tail: List[E] = Nil) extends Break[E] with Iterable[E] {
+  final case class Error[+E](override val head: E, override val tail: List[E] = Nil) extends Break[E] {
     private[stages] def ++[_E >: E](next: Signal[_E]): Signal[_E] =
       next match {
         case Success | Complete => this
