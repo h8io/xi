@@ -46,7 +46,7 @@ class FactorialTest extends AnyFlatSpec with Matchers with Inside with ScalaChec
   }
 
   it should "not calculate factorial for negative arguments" in {
-    val expectedError = Signal.error("negative number")
+    val expectedError = Signal.Error("negative number")
     forAll(Gen.choose(Int.MinValue, -1)) { n =>
       Factorial2.stage(n) should matchPattern { case Yield.None(`expectedError`, _) => }
     }
@@ -68,7 +68,7 @@ class FactorialTest extends AnyFlatSpec with Matchers with Inside with ScalaChec
   }
 
   it should "not calculate factorial for negative arguments" in {
-    val expectedError = Signal.error(Factorial3.NegativeNumberError)
+    val expectedError = Signal.Error(Factorial3.NegativeNumberError)
     forAll(Gen.choose(Int.MinValue, -1)) { n =>
       Factorial3.stage(n) should matchPattern { case Yield.None(`expectedError`, _) => }
     }

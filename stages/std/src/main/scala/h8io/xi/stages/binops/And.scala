@@ -8,9 +8,9 @@ final case class And[-I, +LO, +RO, +E](left: Stage[I, LO, E], right: Stage[I, RO
     left(in) match {
       case Yield.Some(leftOut, leftSignal, leftOnDone) => right(in) match {
           case Yield.Some(rightOut, rightSignal, rightOnDone) =>
-            Yield.Some((leftOut, rightOut), leftSignal.compose(rightSignal), And.BothOnDone(leftOnDone, rightOnDone))
+            Yield.Some((leftOut, rightOut), leftSignal ++ rightSignal, And.BothOnDone(leftOnDone, rightOnDone))
           case Yield.None(rightSignal, rightOnDone) =>
-            Yield.None(leftSignal.compose(rightSignal), And.BothOnDone(leftOnDone, rightOnDone))
+            Yield.None(leftSignal ++ rightSignal, And.BothOnDone(leftOnDone, rightOnDone))
         }
       case Yield.None(signal, onDone) => Yield.None(signal, And.LeftOnDone(onDone, right))
     }

@@ -20,7 +20,7 @@ class LocalSoftDeadlineTest
     with Inside
     with MockFactory
     with ScalaCheckPropertyChecks
-    with CoreStagesArbitraries {
+    with StagesCoreArbitraries {
   "LocalSoftDeadline" should "return DeadEnd if Scala duration is not positive" in
     forAll(Gen.choose(Long.MinValue, 0L)) { nanos =>
       val stage = mock[Stage[Any, Nothing, Nothing]]

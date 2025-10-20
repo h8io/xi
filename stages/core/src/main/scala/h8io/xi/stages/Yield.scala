@@ -19,8 +19,8 @@ object Yield {
     private[stages] def compose[_O, _E >: E](that: Yield[O, _O, _E]): Yield[I, _O, _E] =
       that match {
         case Yield.Some(out, signal, onDone) =>
-          Yield.Some(out, this.signal.compose(signal), this.onDone.compose(onDone))
-        case Yield.None(signal, onDone) => Yield.None(this.signal.compose(signal), this.onDone.compose(onDone))
+          Yield.Some(out, this.signal ++ signal, this.onDone.compose(onDone))
+        case Yield.None(signal, onDone) => Yield.None(this.signal ++ signal, this.onDone.compose(onDone))
       }
 
     private[stages] def mapOnDone[_I, _O >: O, _E](
