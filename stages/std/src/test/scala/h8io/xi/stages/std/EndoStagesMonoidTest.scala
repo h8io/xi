@@ -11,7 +11,7 @@ import org.typelevel.discipline.scalatest.FunSuiteDiscipline
 
 import scala.annotation.tailrec
 
-class EndoStagesMonoidTest extends AnyFunSuite with FunSuiteDiscipline with Checkers with CoreStagesArbitraries {
+class EndoStagesMonoidTest extends AnyFunSuite with FunSuiteDiscipline with Checkers with StagesCoreArbitraries {
   private val parameters = Test.Parameters.default
 
   private implicit def stageMonoid[T, E]: Monoid[Stage.Endo[T, E]] =

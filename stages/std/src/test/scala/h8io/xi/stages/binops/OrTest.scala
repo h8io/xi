@@ -1,8 +1,6 @@
 package h8io.xi.stages.binops
 
-import cats.implicits.catsSyntaxSemigroup
 import h8io.xi.stages.*
-import h8io.xi.stages.test.signalMonoid
 import org.scalacheck.{Arbitrary, Gen}
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.flatspec.AnyFlatSpec
@@ -20,7 +18,7 @@ class OrTest
     with Inside
     with MockFactory
     with ScalaCheckPropertyChecks
-    with CoreStagesArbitraries {
+    with StagesCoreArbitraries {
   "Or" should "return Yield.None if both stages return Yield.None" in
     forAll(
       Gen.zip(Gen.long,
@@ -67,7 +65,7 @@ class OrTest
       rightYield: Yield[I, RO, E],
       signal: Signal[E],
       onDone: OnDone[I, Either[LO, RO], E]): Assertion = {
-    signal shouldBe leftYield.signal |+| rightYield.signal
+    signal shouldBe leftYield.signal ++ rightYield.signal
 
     val leftOnSuccessStage = mock[Stage[I, LO, E]]("left onSuccess stage")
     val rightOnSuccessStage = mock[Stage[I, RO, E]]("right onSuccess stage")

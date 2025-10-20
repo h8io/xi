@@ -41,7 +41,7 @@ ThisBuild / scalacOptions ++=
 
 ThisBuild / javacOptions ++= Seq("-target", "8")
 
-ThisBuild / libraryDependencies ++= Cats ++ TestBundle
+ThisBuild / libraryDependencies ++= TestBundle
 
 val `stages-core` = (project in file("stages/core")).settings(
   name := "xi-stages-core",
@@ -50,7 +50,7 @@ val `stages-core` = (project in file("stages/core")).settings(
 ).enablePlugins(TestKitPlugin)
 
 val `stages-std` =
-  (project in file("stages/std")).settings(name := "xi-stages-std")
+  (project in file("stages/std")).settings(name := "xi-stages-std", libraryDependencies ++= Cats)
     .dependsOn(`stages-core`, `stages-core` % "test->testkit")
 
 val stages = (project in file("stages")).settings(name := "xi-stages").dependsOn(`stages-core`, `stages-std`)

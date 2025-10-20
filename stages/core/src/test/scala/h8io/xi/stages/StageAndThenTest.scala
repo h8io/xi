@@ -1,7 +1,5 @@
 package h8io.xi.stages
 
-import cats.implicits.catsSyntaxSemigroup
-import h8io.xi.stages.test.signalMonoid
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.Inside
 import org.scalatest.flatspec.AnyFlatSpec
@@ -14,7 +12,7 @@ class StageAndThenTest
     with Inside
     with MockFactory
     with ScalaCheckPropertyChecks
-    with CoreStagesArbitraries {
+    with StagesCoreArbitraries {
   "AndThen" should "call sequentially stages and return the correct Yield for Some ~> Some" in
     forAll {
       (previousSignal: Signal[String], nextSignal: Signal[String], in: Int, previousOut: String, nextOut: Long) =>
@@ -27,7 +25,7 @@ class StageAndThenTest
           (nextStage.apply _).expects(previousOut).returns(Yield.Some(nextOut, nextSignal, nextOnDone))
         }
         inside(Stage.AndThen(previousStage, nextStage)(in)) { case Yield.Some(`nextOut`, signal, onDone) =>
-          signal shouldBe previousSignal |+| nextSignal
+          signal shouldBe previousSignal ++ nextSignal
           val updatedPreviousStage = mock[Stage[Int, String, String]]
           val updatedNextStage = mock[Stage[String, Long, Nothing]]
           inSequence {
@@ -49,7 +47,7 @@ class StageAndThenTest
         (nextStage.apply _).expects(out).returns(Yield.None(nextSignal, nextOnDone))
       }
       inside(Stage.AndThen(previousStage, nextStage)(in)) { case Yield.None(signal, onDone) =>
-        signal shouldBe previousSignal |+| nextSignal
+        signal shouldBe previousSignal ++ nextSignal
         val updatedPreviousStage = mock[Stage[Int, String, String]]
         val updatedNextStage = mock[Stage[String, Long, Nothing]]
         inSequence {
@@ -80,7 +78,7 @@ class StageAndThenTest
     signal match {
       case Signal.Success => (onDone.onSuccess _).expects().returns(stage)
       case Signal.Complete => (onDone.onComplete _).expects().returns(stage)
-      case Signal.Error(_) => (onDone.onError _).expects().returns(stage)
+      case Signal.Error(_, _) => (onDone.onError _).expects().returns(stage)
     }
     (onDone, stage)
   }

@@ -16,7 +16,7 @@ class KeepLastOutputTest
     with Inside
     with MockFactory
     with ScalaCheckPropertyChecks
-    with CoreStagesArbitraries {
+    with StagesCoreArbitraries {
   "Initial stage" should "should be None" in {
     val stage = mock[Stage[Any, Nothing, Nothing]]
     KeepLastOutput(stage) shouldBe KeepLastOutput.None(stage)

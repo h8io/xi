@@ -1,6 +1,5 @@
 package h8io.xi.stages
 
-import cats.data.NonEmptyChain
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
@@ -9,8 +8,8 @@ import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import java.time.Instant
 
 class SignalTest
-    extends AnyFlatSpec with Matchers with MockFactory with ScalaCheckPropertyChecks with CoreStagesArbitraries {
-  "Success" should "be idempotent" in { Signal.Success.compose(Signal.Success) shouldBe Signal.Success }
+    extends AnyFlatSpec with Matchers with MockFactory with ScalaCheckPropertyChecks with StagesCoreArbitraries {
+  "Success" should "be idempotent" in { Signal.Success ++ Signal.Success shouldBe Signal.Success }
 
   it should "call the method onSuccess() in OnDone object" in {
     val onDone = mock[OnDone[Long, Instant, Exception]]
@@ -21,10 +20,10 @@ class SignalTest
 
   it should "become Complete on break call" in { Signal.Success.break shouldBe Signal.Complete }
 
-  "Complete" should "be idempotent" in { Signal.Complete.compose(Signal.Complete) shouldBe Signal.Complete }
+  "Complete" should "be idempotent" in { Signal.Complete ++ Signal.Complete shouldBe Signal.Complete }
 
   it should "be overridden by Error" in
-    forAll((error: Signal.Error[String]) => Signal.Complete.compose(error) shouldBe error)
+    forAll((error: Signal.Error[String]) => Signal.Complete ++ error shouldBe error)
 
   it should "call the method onComplete() in OnDone object" in {
     val onDone = mock[OnDone[Long, Instant, Exception]]
@@ -37,11 +36,10 @@ class SignalTest
 
   "Error" should "keep the order of causes in composition" in
     forAll { (previous: Signal.Error[String], next: Signal.Error[String]) =>
-      previous.compose(next) shouldBe Signal.Error(previous.causes ++ next.causes)
+      previous ++ next shouldBe Signal.Error(previous.head, previous.tail ::: next.head :: next.tail)
     }
 
-  it should "override Complete" in forAll((error: Signal.Error[String]) =>
-    error.compose(Signal.Complete) shouldBe error)
+  it should "override Complete" in forAll((error: Signal.Error[String]) => error ++ Signal.Complete shouldBe error)
 
   it should "call the onError() method in OnDone object" in
     forAll { (error: Signal.Error[String]) =>
@@ -50,11 +48,6 @@ class SignalTest
       (onDone.onError _).expects().returns(stage)
       error(onDone) shouldBe stage
     }
-
-  it should "create Error signal with a single error" in {
-    val error = mock[AnyRef]
-    Signal.error(error) shouldBe Signal.Error(NonEmptyChain.of(error))
-  }
 
   it should "not change on break call" in forAll((error: Signal.Error[String]) => error.break shouldBe error)
 }

@@ -11,7 +11,7 @@ object Factorial3 {
   final case class Factorial(i: Int, factorial: BigInt)
       extends Stage[Int, BigInt, FactorialError] with OnDone[Int, BigInt, FactorialError] {
     override def apply(in: Int): Yield[Int, BigInt, FactorialError] =
-      if (in < 0) Yield.None(Signal.error(NegativeNumberError), Reset)
+      if (in < 0) Yield.None(Signal.Error(NegativeNumberError), Reset)
       else if (in < 2) Yield.Some(One, Signal.Complete, Reset)
       else if (in > i) Yield.Some(factorial, Signal.Success, this)
       else Yield.Some(factorial * i, Signal.Complete, OnDone.FromStage(InitialStage))
