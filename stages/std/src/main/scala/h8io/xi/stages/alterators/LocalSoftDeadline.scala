@@ -1,4 +1,4 @@
-package h8io.xi.stages.alterations
+package h8io.xi.stages.alterators
 
 import h8io.xi.stages.*
 import h8io.xi.stages.std.DeadEnd
@@ -17,7 +17,7 @@ final case class LocalSoftDeadline[-I, +O, +E](
 }
 
 object LocalSoftDeadline {
-  private[alterations] final case class _OnDone[-I, +O, +E](
+  private[alterators] final case class _OnDone[-I, +O, +E](
       ts: () => Long, now: () => Long, duration: Long, onDone: OnDone[I, O, E])
       extends OnDone[I, O, E] {
     def onSuccess(): Stage[I, O, E] = LocalSoftDeadline(ts, now, duration, onDone.onSuccess())

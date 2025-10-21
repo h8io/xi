@@ -1,4 +1,4 @@
-package h8io.xi.stages.alterations
+package h8io.xi.stages.alterators
 
 import h8io.xi.stages.*
 import org.scalacheck.{Arbitrary, Gen}
