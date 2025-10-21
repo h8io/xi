@@ -16,46 +16,41 @@ class StageTest
     with Inside
     with MockFactory
     with ScalaCheckPropertyChecks
-    with StagesCoreArbitraries {
+    with StagesCoreArbitraries
+    with StagesCoreTestUtil {
   "dispose" should "do nothing" in {
     noException should be thrownBy new Stage[Instant, Timestamp, String] {
       def apply(in: Instant): Yield[Instant, Timestamp, String] = throw new NotImplementedError
     }.dispose()
   }
 
-  "execute" should "run onDone and return Outcome.Some" in
-    forAll { (in: Long, out: String, signal: Signal[UUID]) =>
+  "outcome" should "run onDone and return Outcome.Some" in
+    forAll { (in: Long, yieldSupplier: OnDoneToYieldSome[Long, String, UUID]) =>
       val stage = mock[Stage[Long, String, UUID]]
       val onDone = mock[OnDone[Long, String, UUID]]
+      val yld = yieldSupplier(onDone)
       val evolved = mock[Stage[Long, String, UUID]]
       inSequence {
-        (stage.apply _).expects(in).returns(Yield.Some(out, signal, onDone))
-        signal match {
-          case Signal.Success => (onDone.onSuccess _).expects().returns(evolved)
-          case Signal.Complete => (onDone.onComplete _).expects().returns(evolved)
-          case _: Signal.Error[UUID] => (onDone.onError _).expects().returns(evolved)
-        }
+        (stage.apply _).expects(in).returns(yld)
+        onDoneMock(onDone, yld.signal, evolved)
       }
-      inside(stage.execute(in)) { case Outcome.Some(`out`, `signal`, dispose) =>
+      inside(stage.outcome(in)) { case Outcome.Some(yld.out, yld.signal, dispose) =>
         (evolved.dispose _).expects()
         dispose()
       }
     }
 
   it should "run onDone and return Outcome.None" in
-    forAll { (in: Instant, signal: Signal[Long]) =>
+    forAll { (in: Instant, yieldSupplier: OnDoneToYieldNone[Instant, Boolean, Long]) =>
       val stage = mock[Stage[Instant, Boolean, Long]]
       val onDone = mock[OnDone[Instant, Boolean, Long]]
+      val yld = yieldSupplier(onDone)
       val evolved = mock[Stage[Instant, Boolean, Long]]
       inSequence {
-        (stage.apply _).expects(in).returns(Yield.None(signal, onDone))
-        signal match {
-          case Signal.Success => (onDone.onSuccess _).expects().returns(evolved)
-          case Signal.Complete => (onDone.onComplete _).expects().returns(evolved)
-          case _: Signal.Error[Long] => (onDone.onError _).expects().returns(evolved)
-        }
+        (stage.apply _).expects(in).returns(yld)
+        onDoneMock(onDone, yld.signal, evolved)
       }
-      inside(stage.execute(in)) { case Outcome.None(`signal`, dispose) =>
+      inside(stage.outcome(in)) { case Outcome.None(yld.signal, dispose) =>
         (evolved.dispose _).expects()
         dispose()
       }

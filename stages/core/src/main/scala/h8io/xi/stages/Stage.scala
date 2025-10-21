@@ -6,13 +6,7 @@ trait Stage[-I, +O, +E] extends (I => Yield[I, O, E]) {
 
   def dispose(): Unit = {}
 
-  @inline final def execute(in: I): Outcome[O, E] = {
-    val yld = this(in)
-    yld match {
-      case Yield.Some(out, signal, onDone) => Outcome.Some(out, signal, signal(onDone).dispose _)
-      case Yield.None(signal, onDone) => Outcome.None(signal, signal(onDone).dispose _)
-    }
-  }
+  @inline final def outcome(in: I): Outcome[O, E] = this(in).outcome()
 
   @inline final def ~>[_O, _E >: E](that: Stage[O, _O, _E]): Stage[I, _O, _E] = Stage.AndThen(this, that)
 
