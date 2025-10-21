@@ -41,11 +41,11 @@ ThisBuild / scalacOptions ++=
 
 ThisBuild / javacOptions ++= Seq("-target", "8")
 
-ThisBuild / libraryDependencies ++= TestBundle
+ThisBuild / libraryDependencies ++= TestBundle % Test
 
 val `stages-core` = (project in file("stages/core")).settings(
   name := "xi-stages-core",
-  libraryDependencies ++= (CatsTest ++ ScalaCheck) % TestKit,
+  libraryDependencies ++= TestBundle % TestKit,
   testkitPublishClassifier := true
 ).enablePlugins(TestKitPlugin)
 

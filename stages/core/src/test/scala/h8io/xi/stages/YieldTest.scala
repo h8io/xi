@@ -14,7 +14,8 @@ class YieldTest
     with Inside
     with MockFactory
     with ScalaCheckPropertyChecks
-    with StagesCoreArbitraries {
+    with StagesCoreArbitraries
+    with StagesCoreTestUtil {
   "compose method" should "compose Some and Some correctly" in
     forAll {
       (previousYieldSupplier: OnDoneToYieldSome[Long, Instant, String],
@@ -167,5 +168,29 @@ class YieldTest
         mock[OnDone[ZonedDateTime, OffsetDateTime, Int] => OnDone[Duration, OffsetDateTime, Int]]("mapOnDone")
       (mapOnDone.apply _).expects(initialOnDone).returns(mappedOnDone)
       Yield.None(signal, initialOnDone).mapOnDoneAndBreak(mapOnDone) shouldBe Yield.None(signal.break, mappedOnDone)
+    }
+
+  "outcome" should "execute onDone and produce Outcome.Some for Yield.Some" in
+    forAll { (yieldSupplier: OnDoneToYieldSome[Int, Array[Byte], String]) =>
+      val onDone = mock[OnDone[Int, Array[Byte], String]]
+      val yld = yieldSupplier(onDone)
+      val stage = mock[Stage[Int, Array[Byte], String]]
+      onDoneMock(onDone, yld.signal, stage)
+      inside(yld.outcome()) { case Outcome.Some(yld.out, yld.signal, dispose) =>
+        (stage.dispose _).expects()
+        dispose()
+      }
+    }
+
+  it should "execute onDone and produce Outcome.None for Yield.None" in
+    forAll { (yieldSupplier: OnDoneToYieldNone[Int, Array[Byte], String]) =>
+      val onDone = mock[OnDone[Int, Array[Byte], String]]
+      val yld = yieldSupplier(onDone)
+      val stage = mock[Stage[Int, Array[Byte], String]]
+      onDoneMock(onDone, yld.signal, stage)
+      inside(yld.outcome()) { case Outcome.None(yld.signal, dispose) =>
+        (stage.dispose _).expects()
+        dispose()
+      }
     }
 }

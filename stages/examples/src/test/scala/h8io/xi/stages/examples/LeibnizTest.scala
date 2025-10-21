@@ -10,14 +10,15 @@ import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 import scala.concurrent.duration.DurationInt
 
 class LeibnizTest extends AnyFlatSpec with Matchers with Inside with ScalaCheckPropertyChecks {
-  "Leibniz series" should "be calculated" in {
-    inside(Leibniz.stage1(100.milliseconds)(())) { case Yield.Some(pi, Signal.Success, _) =>
+  "Leibniz series" should "be calculated for stage1" in
+    inside(Leibniz.stage1(300.milliseconds)(())) { case Yield.Some(pi, Signal.Success, _) =>
       pi shouldEqual (math.Pi +- 0.01)
     }
-    inside(Leibniz.stage2(100.milliseconds)(())) { case Yield.Some(pi, Signal.Success, _) =>
+
+  it should "be calculated for stage2" in
+    inside(Leibniz.stage2(300.milliseconds)(())) { case Yield.Some(pi, Signal.Success, _) =>
       pi shouldEqual (math.Pi +- 0.01)
     }
-  }
 
   "Main stage" should "return the initial stage on error and on complete" in
     forAll(Gen.zip(Gen.long, Gen.double, Gen.double)) { case (n, t, s) =>
