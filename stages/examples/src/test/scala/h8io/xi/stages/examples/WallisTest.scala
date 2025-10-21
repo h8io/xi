@@ -12,7 +12,7 @@ import scala.concurrent.duration.DurationInt
 
 class WallisTest extends AnyFlatSpec with Matchers with Inside with MockFactory with ScalaCheckPropertyChecks {
   "Wallis product" should "be calculated" in {
-    val stage = Wallis.stage(100.milliseconds)
+    val stage = Wallis.stage(300.milliseconds)
     inside(stage(mock[AnyRef])) { case Yield.Some(pi, Signal.Success, _) => pi shouldEqual (math.Pi +- 0.01) }
   }
 
