@@ -36,7 +36,7 @@ ThisBuild / scalacOptions ++=
 ThisBuild / scalacOptions ++=
   (CrossVersion.partialVersion(scalaVersion.value) match {
     case Some((2, 13)) => Seq("--explain-types", "--language:_", "-Wunused:_", "-Wdead-code")
-    case _ => Seq("-Ywarn-unused", "-Ywarn-dead-code", "-Ywarn-unused:-nowarn")
+    case _ => Seq("-Ywarn-unused", "-Ywarn-dead-code", "-Ywarn-unused:-nowarn", "-Ypartial-unification")
   })
 
 ThisBuild / javacOptions ++= Seq("-target", "8")
@@ -66,7 +66,13 @@ val `stages-examples` = (project in file("stages/examples")).settings(
 ).dependsOn(stages, `stages-core` % "test->testkit")
 
 val cfg = (project in file("cfg"))
-  .settings(name := "xi-cfg", libraryDependencies += "com.typesafe" % "config" % "1.4.5")
+  .settings(
+    name := "xi-cfg",
+    libraryDependencies ++= Config ++ Cats ++ (CrossVersion.partialVersion(scalaVersion.value) match {
+      case Some((2, 12)) => Seq(ScalaCollectionCompat)
+      case _ => Nil
+    })
+  )
 
 val lang = (project in file("lang")).settings(
   name := "xi-lang",
