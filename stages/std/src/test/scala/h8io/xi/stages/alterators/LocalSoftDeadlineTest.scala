@@ -20,7 +20,8 @@ class LocalSoftDeadlineTest
     with Inside
     with MockFactory
     with ScalaCheckPropertyChecks
-    with StagesCoreArbitraries {
+    with StagesCoreArbitraries
+    with StagesCoreTestUtil {
   "LocalSoftDeadline" should "return DeadEnd if Scala duration is not positive" in
     forAll(Gen.choose(Long.MinValue, 0L)) { nanos =>
       val stage = mock[Stage[Any, Nothing, Nothing]]
@@ -62,7 +63,7 @@ class LocalSoftDeadlineTest
         val yld = yieldSupplier(onDone)
         val lsd = LocalSoftDeadline(tsSupplier, now, duration, stage)
 
-        def test(currentTS: Long): Assertion = {
+        def test(currentTS: Long): Unit = {
           inSequence {
             (tsSupplier.apply _).expects().returns(ts)
             (stage.apply _).expects(in).returns(yld)
@@ -74,18 +75,8 @@ class LocalSoftDeadlineTest
             case (Yield.Some(expectedOut, _, _), Yield.Some(out, `expectedSignal`, _)) => out shouldEqual expectedOut
             case (Yield.None(_, _), Yield.None(`expectedSignal`, _)) => succeed
           }
-
-          val onSuccessStage = mock[Stage[UUID, Instant, Long]]("onSuccess stage")
-          (onDone.onSuccess _).expects().returns(onSuccessStage)
-          lsdYield.onDone.onSuccess() shouldBe LocalSoftDeadline(now, now, duration, onSuccessStage)
-
-          val onCompleteStage = mock[Stage[UUID, Instant, Long]]("onComplete stage")
-          (onDone.onComplete _).expects().returns(onCompleteStage)
-          lsdYield.onDone.onComplete() shouldBe LocalSoftDeadline(now, now, duration, onCompleteStage)
-
-          val onErrorStage = mock[Stage[UUID, Instant, Long]]("onError stage")
-          (onDone.onError _).expects().returns(onErrorStage)
-          lsdYield.onDone.onError() shouldBe LocalSoftDeadline(now, now, duration, onErrorStage)
+          testWrappedOnDone(
+            lsdYield.onDone, onDone, LocalSoftDeadline(now, now, duration, _: Stage[UUID, Instant, Long]))
         }
 
         test(ts + duration)
@@ -147,17 +138,12 @@ class LocalSoftDeadlineTest
       val now = mock[() => Long]("now")
       val onDone = mock[OnDone[Any, Nothing, Nothing]]("onDone")
       val _onDone = LocalSoftDeadline._OnDone(tsSupplier, now, duration, onDone)
-
-      val onSuccessStage = mock[Stage[Any, Nothing, Nothing]]("onSuccess stage")
-      (onDone.onSuccess _).expects().returns(onSuccessStage)
-      _onDone.onSuccess() shouldBe LocalSoftDeadline(tsSupplier, now, duration, onSuccessStage)
-
-      val onCompleteStage = mock[Stage[Any, Nothing, Nothing]]("onComplete stage")
-      (onDone.onComplete _).expects().returns(onCompleteStage)
-      _onDone.onComplete() shouldBe LocalSoftDeadline(now, now, duration, onCompleteStage)
-
-      val onErrorStage = mock[Stage[Any, Nothing, Nothing]]("onError stage")
-      (onDone.onError _).expects().returns(onErrorStage)
-      _onDone.onError() shouldBe LocalSoftDeadline(now, now, duration, onErrorStage)
+      testWrappedOnDone(
+        _onDone,
+        onDone,
+        LocalSoftDeadline(tsSupplier, now, duration, _: Stage[UUID, Instant, Long]),
+        LocalSoftDeadline(now, now, duration, _: Stage[UUID, Instant, Long]),
+        LocalSoftDeadline(now, now, duration, _: Stage[UUID, Instant, Long])
+      )
     }
 }

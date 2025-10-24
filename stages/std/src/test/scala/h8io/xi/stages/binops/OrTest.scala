@@ -18,7 +18,8 @@ class OrTest
     with Inside
     with MockFactory
     with ScalaCheckPropertyChecks
-    with StagesCoreArbitraries {
+    with StagesCoreArbitraries
+    with StagesCoreTestUtil {
   "Or" should "return Yield.None if both stages return Yield.None" in
     forAll(
       Gen.zip(Gen.long,
@@ -92,7 +93,7 @@ class OrTest
     onDone.onError() shouldBe Or(leftOnErrorStage, rightOnErrorStage)
   }
 
-  it should "return Ior.Left output if the left stage returns Yield.Some" in
+  it should "return Left output if the left stage returns Yield.Some" in
     forAll(Gen.zip(Gen.uuid, Arbitrary.arbitrary[OnDoneToYieldSome[UUID, Long, String]])) {
       case (in, leftYieldSupplier) =>
         val leftStage = mock[Stage[UUID, Long, String]]("left stage")
@@ -102,18 +103,7 @@ class OrTest
         inside(Or(leftStage, rightStage)(in)) { case Yield.Some(out, signal, onDone) =>
           out shouldBe Left(leftYield.out)
           signal shouldBe leftYield.signal
-
-          val leftOnSuccessStage = mock[Stage[UUID, Long, String]]("left onSuccess stage")
-          (leftYield.onDone.onSuccess _).expects().returns(leftOnSuccessStage)
-          onDone.onSuccess() shouldBe Or(leftOnSuccessStage, rightStage)
-
-          val leftOnCompleteStage = mock[Stage[UUID, Long, String]]("left onComplete stage")
-          (leftYield.onDone.onComplete _).expects().returns(leftOnCompleteStage)
-          onDone.onComplete() shouldBe Or(leftOnCompleteStage, rightStage)
-
-          val leftOnErrorStage = mock[Stage[UUID, Long, String]]("left onError stage")
-          (leftYield.onDone.onError _).expects().returns(leftOnErrorStage)
-          onDone.onError() shouldBe Or(leftOnErrorStage, rightStage)
+          testWrappedOnDone(onDone, leftYield.onDone, Or(_: Stage[UUID, Long, String], rightStage))
         }
     }
 }

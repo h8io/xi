@@ -3,9 +3,9 @@ package h8io.xi.stages.examples
 import h8io.xi.stages.*
 import org.scalacheck.{Arbitrary, Gen}
 import org.scalamock.scalatest.MockFactory
+import org.scalatest.Inside
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
-import org.scalatest.{Assertion, Inside}
 import org.scalatestplus.scalacheck.ScalaCheckPropertyChecks
 
 import java.util.UUID
@@ -16,12 +16,13 @@ class CacheTest
     with Inside
     with MockFactory
     with ScalaCheckPropertyChecks
-    with StagesCoreArbitraries {
+    with StagesCoreArbitraries
+    with StagesCoreTestUtil {
   "Cache" should "cache output only if the yield is Some and the signal is Success" in {
     def test(
         yieldSupplier: SignalAndOnDoneToYield[UUID, String, Exception],
         signal: Signal[Exception],
-        in: UUID): Assertion = {
+        in: UUID): Unit = {
       val stage = mock[Stage[UUID, String, Exception]]("underlying stage")
       val onDone = mock[OnDone[UUID, String, Exception]]("underlying onDone")
       val yld = yieldSupplier(signal, onDone)
@@ -32,24 +33,18 @@ class CacheTest
         case (Yield.Some(out, signal, _), Yield.Some(cacheOut, cacheSignal, cacheOnDone)) =>
           cacheOut shouldBe out
           cacheSignal shouldBe signal
-          val onSuccessStage = mock[Stage[UUID, String, Exception]]("on success stage (Yield.Some)")
-          (onDone.onSuccess _).expects().returns(onSuccessStage)
-          if (signal == Signal.Success) cacheOnDone.onSuccess() shouldBe Cache.Cached(out, onSuccessStage)
-          else cacheOnDone.onSuccess() shouldBe Cache(onSuccessStage)
+          testWrappedOnDone(
+            cacheOnDone,
+            onDone,
+            if (signal == Signal.Success) Cache.Cached[UUID, String, Exception](out, _)
+            else Cache[UUID, String, Exception],
+            Cache[UUID, String, Exception],
+            Cache[UUID, String, Exception]
+          )
         case (Yield.None(signal, _), Yield.None(cacheSignal, cacheOnDone)) =>
           cacheSignal shouldBe signal
-          val onSuccessStage = mock[Stage[UUID, String, Exception]]("on success stage (Yield.None)")
-          (onDone.onSuccess _).expects().returns(onSuccessStage)
-          cacheOnDone.onSuccess() shouldBe Cache(onSuccessStage)
+          testWrappedOnDone(cacheOnDone, onDone, Cache[UUID, String, Exception])
       }
-
-      val onCompleteStage = mock[Stage[UUID, String, Exception]]("on complete stage")
-      (onDone.onComplete _).expects().returns(onCompleteStage)
-      cacheYield.onDone.onComplete() shouldBe Cache(onCompleteStage)
-
-      val onErrorStage = mock[Stage[UUID, String, Exception]]("on error stage")
-      (onDone.onError _).expects().returns(onErrorStage)
-      cacheYield.onDone.onError() shouldBe Cache(onErrorStage)
     }
     forAll(
       Gen.zip(
