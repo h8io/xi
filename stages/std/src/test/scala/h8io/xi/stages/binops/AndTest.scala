@@ -18,7 +18,8 @@ class AndTest
     with Inside
     with MockFactory
     with ScalaCheckPropertyChecks
-    with StagesCoreArbitraries {
+    with StagesCoreArbitraries
+    with StagesCoreTestUtil {
   "And" should "return Yield.None if left stage returns Yield.None" in
     forAll(Gen.zip(Gen.long, Arbitrary.arbitrary[OnDoneToYieldNone[Long, Duration, Exception]])) {
       case (in, leftYieldSupplier) =>
@@ -28,18 +29,7 @@ class AndTest
         (leftStage.apply _).expects(in).returns(leftYield)
         inside(And(leftStage, rightStage)(in)) { case Yield.None(signal, onDone) =>
           signal shouldBe leftYield.signal
-
-          val leftOnSuccessStage = mock[Stage[Long, Duration, Exception]]("left onSuccess stage")
-          (leftYield.onDone.onSuccess _).expects().returns(leftOnSuccessStage)
-          onDone.onSuccess() shouldBe And(leftOnSuccessStage, rightStage)
-
-          val leftOnCompleteStage = mock[Stage[Long, Duration, Exception]]("left onComplete stage")
-          (leftYield.onDone.onComplete _).expects().returns(leftOnCompleteStage)
-          onDone.onComplete() shouldBe And(leftOnCompleteStage, rightStage)
-
-          val leftOnErrorStage = mock[Stage[Long, Duration, Exception]]("left onError stage")
-          (leftYield.onDone.onError _).expects().returns(leftOnErrorStage)
-          onDone.onError() shouldBe And(leftOnErrorStage, rightStage)
+          testWrappedOnDone(onDone, leftYield.onDone, And(_: Stage[Long, Duration, Exception], rightStage))
         }
     }
 
