@@ -1,6 +1,5 @@
 package h8io.xi.cfg
 
-import cats.data.ValidatedNec
 import h8io.xi.cfg.errors.CfgError
 
 trait Cfg {

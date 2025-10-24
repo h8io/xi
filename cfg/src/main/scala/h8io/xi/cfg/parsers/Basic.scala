@@ -1,7 +1,5 @@
 package h8io.xi.cfg.parsers
 
-import cats.data.ValidatedNec
-import cats.syntax.all.*
 import com.typesafe.config.{ConfigList, ConfigValue}
 import h8io.xi.cfg.Parser
 import h8io.xi.cfg.errors.CfgError
