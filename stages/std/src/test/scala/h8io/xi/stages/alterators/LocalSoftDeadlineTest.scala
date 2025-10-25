@@ -141,9 +141,9 @@ class LocalSoftDeadlineTest
       testWrappedOnDone(
         _onDone,
         onDone,
-        LocalSoftDeadline(tsSupplier, now, duration, _: Stage[UUID, Instant, Long]),
-        LocalSoftDeadline(now, now, duration, _: Stage[UUID, Instant, Long]),
-        LocalSoftDeadline(now, now, duration, _: Stage[UUID, Instant, Long])
+        LocalSoftDeadline(tsSupplier, now, duration, _: Stage[Any, Nothing, Nothing]),
+        LocalSoftDeadline(now, now, duration, _: Stage[Any, Nothing, Nothing]),
+        LocalSoftDeadline(now, now, duration, _: Stage[Any, Nothing, Nothing])
       )
     }
 }
