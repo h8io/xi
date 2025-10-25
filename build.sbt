@@ -26,7 +26,7 @@ ThisBuild / scmInfo := Some(
 ThisBuild / dynverSonatypeSnapshots := true
 ThisBuild / dynverSeparator := "-"
 
-ThisBuild / scalaVersion := "2.13.16"
+ThisBuild / scalaVersion := "2.13.17"
 ThisBuild / crossScalaVersions += "2.12.20"
 
 ThisBuild / scalacOptions ++=
@@ -36,7 +36,8 @@ ThisBuild / scalacOptions ++=
 ThisBuild / scalacOptions ++=
   (CrossVersion.partialVersion(scalaVersion.value) match {
     case Some((2, 13)) => Seq("--explain-types", "--language:_", "-Wunused:_", "-Wdead-code")
-    case _ => Seq("-Ywarn-unused", "-Ywarn-dead-code", "-Ywarn-unused:-nowarn")
+    case Some((2, 12)) => Seq("-Ywarn-unused", "-Ywarn-dead-code", "-Ywarn-unused:-nowarn", "-Ypartial-unification")
+    case _ => Nil
   })
 
 ThisBuild / javacOptions ++= Seq("-target", "8")
