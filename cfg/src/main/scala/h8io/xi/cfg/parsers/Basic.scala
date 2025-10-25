@@ -1,6 +1,6 @@
 package h8io.xi.cfg.parsers
 
-import cats.data.{Validated, ValidatedNec}
+import cats.data.ValidatedNec
 import cats.syntax.all.*
 import com.typesafe.config.{ConfigList, ConfigValue}
 import h8io.xi.cfg.Parser
@@ -13,7 +13,7 @@ trait Basic {
     new Parser[Option[T]] {
       def apply(node: ConfigValue): ValidatedNec[CfgError, Option[T]] = parser(node) map (Some(_))
 
-      override val empty: Validated[Nothing, Option[T]] = Validated.Valid(None)
+      override val empty: Some[Option[T]] = Some(None)
     }
 
   implicit final def list[T](implicit parser: Parser[T]): Parser[List[T]] =
@@ -24,6 +24,6 @@ trait Basic {
           case value => parser(value) map (_ :: Nil)
         }
 
-      override val empty: Validated[Nothing, List[T]] = Validated.Valid(Nil)
+      override val empty: Option[List[T]] = Some(Nil)
     }
 }
