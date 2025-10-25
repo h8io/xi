@@ -14,10 +14,10 @@ class BinaryOpTest extends AnyFlatSpec with Matchers with MockFactory {
       (leftStage.dispose _).expects()
     }
     noException should be thrownBy new BinaryOp[Any, Nothing, Nothing, Nothing, Nothing] {
-      override val left: Stage[Any, Nothing, Nothing] = leftStage
-      override val right: Stage[Any, Nothing, Nothing] = rightStage
+      val left: Stage[Any, Nothing, Nothing] = leftStage
+      val right: Stage[Any, Nothing, Nothing] = rightStage
 
-      override def apply(in: Any): Yield[Any, Nothing, Nothing] = throw new NoSuchMethodError
+      def apply(in: Any): Yield[Any, Nothing, Nothing] = fail("Method apply should not be called")
     }.dispose()
   }
 }
