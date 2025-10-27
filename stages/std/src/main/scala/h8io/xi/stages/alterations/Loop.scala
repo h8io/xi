@@ -4,7 +4,7 @@ import h8io.xi.stages.*
 
 import scala.annotation.tailrec
 
-final case class Loop[T, +E](underlying: Stage.Endo[T, E]) extends Decorator[T, T, E] {
+final case class Loop[T, +E](alterand: Stage.Endo[T, E]) extends Decorator[T, T, E] {
   def apply(in: T): Yield[T, T, E] = {
     @tailrec def loop(stage: Stage[T, T, E], in: T): Yield[T, T, E] = {
       val yld = stage(in)
@@ -18,6 +18,6 @@ final case class Loop[T, +E](underlying: Stage.Endo[T, E]) extends Decorator[T, 
         case error: Signal.Error[E] => yld.mapOnDone(error, onDone => Loop(onDone.onError()))
       }
     }
-    loop(underlying, in)
+    loop(alterand, in)
   }
 }
