@@ -110,9 +110,9 @@ class StageTest
 
   "OnDone methods" should "return self" in {
     val stage: Stage[Any, Nothing, Nothing] = _ => fail("apply should not be called")
-    stage.onSuccess() shouldBe stage
-    stage.onComplete() shouldBe stage
-    stage.onError() shouldBe stage
+    stage.onSuccess() should be theSameInstanceAs stage
+    stage.onComplete() should be theSameInstanceAs stage
+    stage.onError() should be theSameInstanceAs stage
   }
 
   "AndThen" should "call sequentially stages and return the correct Yield for Some ~> Some" in
