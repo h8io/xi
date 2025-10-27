@@ -1,4 +1,5 @@
 package h8io.xi.stages.std
+
 import h8io.xi.stages.{Signal, Yield}
 
 trait Fn[-I, +O] extends Fruitful[I, O, Nothing] {

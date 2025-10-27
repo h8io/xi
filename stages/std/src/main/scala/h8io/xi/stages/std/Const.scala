@@ -1,5 +1,7 @@
 package h8io.xi.stages.std
 
-final case class Const[+O](out: O) extends Fn[Any, O] {
+import h8io.xi.stages.Stage
+
+final case class Const[+O](out: O) extends Fn[Any, O] with Stage.Static[Any, O, Nothing] {
   override def f(in: Any): O = out
 }
