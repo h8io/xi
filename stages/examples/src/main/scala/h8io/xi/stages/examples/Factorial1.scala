@@ -1,8 +1,8 @@
 package h8io.xi.stages.examples
 
-import h8io.xi.stages.std.{Const, Countdown}
 import h8io.xi.stages.*
-import h8io.xi.stages.alterators.Loop
+import h8io.xi.stages.alterations.Loop
+import h8io.xi.stages.std.{Const, Countdown}
 
 object Factorial1 {
   sealed case class Agg(n: Long) extends Stage.Endo[BigInt, Nothing] {

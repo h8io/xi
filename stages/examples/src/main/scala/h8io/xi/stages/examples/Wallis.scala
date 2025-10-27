@@ -1,8 +1,8 @@
 package h8io.xi.stages.examples
 
-import h8io.xi.stages.std.{Const, GlobalSoftDeadline}
 import h8io.xi.stages.*
-import h8io.xi.stages.alterators.Loop
+import h8io.xi.stages.alterations.Loop
+import h8io.xi.stages.std.{Const, GlobalSoftDeadline}
 
 import scala.concurrent.duration.FiniteDuration
 

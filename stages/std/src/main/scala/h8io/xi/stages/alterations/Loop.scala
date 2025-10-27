@@ -1,10 +1,10 @@
-package h8io.xi.stages.alterators
+package h8io.xi.stages.alterations
 
 import h8io.xi.stages.*
 
 import scala.annotation.tailrec
 
-final case class Loop[T, +E](stage: Stage.Endo[T, E]) extends Wrapper.Endo[T, T, E] {
+final case class Loop[T, +E](alterand: Stage.Endo[T, E]) extends Decorator[T, T, E] {
   def apply(in: T): Yield[T, T, E] = {
     @tailrec def loop(stage: Stage[T, T, E], in: T): Yield[T, T, E] = {
       val yld = stage(in)
@@ -18,6 +18,6 @@ final case class Loop[T, +E](stage: Stage.Endo[T, E]) extends Wrapper.Endo[T, T,
         case error: Signal.Error[E] => yld.mapOnDone(error, onDone => Loop(onDone.onError()))
       }
     }
-    loop(stage, in)
+    loop(alterand, in)
   }
 }
