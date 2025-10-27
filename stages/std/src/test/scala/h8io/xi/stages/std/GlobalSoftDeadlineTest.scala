@@ -41,16 +41,13 @@ class GlobalSoftDeadlineTest
 
         @tailrec def loop(previousTS: Long, previousInterval: Long, parameters: List[(Long, UUID)]): Unit =
           parameters match {
-            case (head :: tail) =>
+            case head :: tail =>
               val (interval, in) = head
               val currentTS = previousTS + interval
               val currentInterval = previousInterval + interval
               (now.apply _).expects().returns(currentTS)
-              inside(stage(in)) { case Yield.Some(`in`, signal, onDone) =>
+              inside(stage(in)) { case Yield.Some(`in`, signal, `stage`) =>
                 if (currentInterval < duration) signal shouldBe Signal.Success else signal shouldBe Signal.Complete
-                onDone.onSuccess() shouldBe stage
-                onDone.onComplete() shouldBe stage
-                onDone.onError() shouldBe stage
               }
               loop(currentTS, currentInterval, tail)
             case Nil =>
