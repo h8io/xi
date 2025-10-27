@@ -108,6 +108,13 @@ class StageTest
     alterator(left) shouldBe left ~> right
   }
 
+  "OnDone methods" should "return self" in {
+    val stage: Stage[Any, Nothing, Nothing] = _ => fail("apply should not be called")
+    stage.onSuccess() shouldBe stage
+    stage.onComplete() shouldBe stage
+    stage.onError() shouldBe stage
+  }
+
   "AndThen" should "call sequentially stages and return the correct Yield for Some ~> Some" in
     forAll {
       (previousSignal: Signal[String], nextSignal: Signal[String], in: Int, previousOut: String, nextOut: Long) =>
