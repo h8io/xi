@@ -6,7 +6,7 @@ import h8io.xi.stages.binops.And
 import h8io.xi.stages.std.{Const, Identity}
 
 object Factorial2 {
-  object Agg extends Stage.Endo[(Int, BigInt), String] with OnDone.Static[(Int, BigInt), (Int, BigInt), String] {
+  object Agg extends Stage.Endo[(Int, BigInt), String] {
     override def apply(in: (Int, BigInt)): Yield[(Int, BigInt), (Int, BigInt), String] =
       if (in._1 > 1) Yield.Some((in._1 - 1, in._2 * in._1), Signal.Success, this)
       else if (in._1 < 0) Yield.None(Signal.Error("negative number"), this)
