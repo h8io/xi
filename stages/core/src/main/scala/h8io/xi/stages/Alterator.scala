@@ -1,7 +1,7 @@
 package h8io.xi.stages
 
 trait Alterator[+S <: Stage.Any, -I, +O, +E] extends Stage[I, O, E] {
-  val stage: S
+  val underlying: S
 
-  override def dispose(): Unit = stage.dispose()
+  override def dispose(): Unit = underlying.dispose()
 }

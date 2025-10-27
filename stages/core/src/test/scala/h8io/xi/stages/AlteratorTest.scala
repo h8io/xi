@@ -9,7 +9,7 @@ class AlteratorTest extends AnyFlatSpec with Matchers with MockFactory {
     val underlying = mock[Stage[Any, Nothing, Nothing]]
     (underlying.dispose _).expects()
     noException should be thrownBy new Decorator[Any, Nothing, Nothing] {
-      val stage: Stage[Any, Nothing, Nothing] = underlying
+      val underlying: Stage[Any, Nothing, Nothing] = underlying
       def apply(in: Any): Yield[Any, Nothing, Nothing] = throw new NoSuchMethodError
     }.dispose()
   }

@@ -6,11 +6,11 @@ import h8io.xi.stages.std.DeadEnd
 import scala.concurrent.duration.FiniteDuration
 
 final case class LocalSoftDeadline[-I, +O, +E](
-    tsSupplier: () => Long, now: () => Long, duration: Long, stage: Stage[I, O, E])
+    tsSupplier: () => Long, now: () => Long, duration: Long, underlying: Stage[I, O, E])
     extends Decorator[I, O, E] {
   def apply(in: I): Yield[I, O, E] = {
     val ts = tsSupplier()
-    val yld = stage(in)
+    val yld = underlying(in)
     if (now() - ts >= duration) yld.mapOnDoneAndBreak(_.map(LocalSoftDeadline(now, now, duration, _)))
     else yld.mapOnDone(LocalSoftDeadline._OnDone(() => ts, now, duration, _))
   }
