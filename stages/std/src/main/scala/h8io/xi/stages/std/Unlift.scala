@@ -1,8 +1,8 @@
 package h8io.xi.stages.std
 
-import h8io.xi.stages.{OnDone, Signal, Stage, Yield}
+import h8io.xi.stages.{Signal, Stage, Yield}
 
-object Unlift extends Stage[Option[Any], Any, Nothing] with OnDone.Static[Option[Any], Any, Nothing] {
+object Unlift extends Stage[Option[Any], Any, Nothing] {
   override def apply(in: Option[Any]): Yield[Option[Any], Any, Nothing] =
     in match {
       case Some(out) => Yield.Some(out, Signal.Success, this)

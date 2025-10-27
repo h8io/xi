@@ -1,10 +1,23 @@
 package h8io.xi.stages
 
 @FunctionalInterface
-trait Stage[-I, +O, +E] extends (I => Yield[I, O, E]) {
+trait Stage[-I, +O, +E] extends (I => Yield[I, O, E]) with OnDone[I, O, E] {
+  self =>
+
   def apply(in: I): Yield[I, O, E]
 
   def dispose(): Unit = {}
+
+  def skip: OnDone[I, O, E] =
+    new OnDone[I, O, E] {
+      def onSuccess(): Stage[I, O, E] = self
+      def onComplete(): Stage[I, O, E] = self
+      def onError(): Stage[I, O, E] = self
+    }
+
+  def onComplete(): Stage[I, O, E] = this
+  def onSuccess(): Stage[I, O, E] = this
+  def onError(): Stage[I, O, E] = this
 
   @inline final def outcome(in: I): Outcome[O, E] = this(in).outcome()
 
@@ -13,15 +26,15 @@ trait Stage[-I, +O, +E] extends (I => Yield[I, O, E]) {
   @inline final def <~[_I, _E >: E](that: Stage[_I, I, _E]): Stage[_I, O, _E] = that ~> this
 
   @inline final def ~>[S <: Stage.Any, _O, _E >: E](
-      alterator: Alterator[S, Stage[O, _O, _E]]): Alterator[S, Stage[I, _O, _E]] = stage => this ~> alterator(stage)
+      alteration: Alteration[S, Stage[O, _O, _E]]): Alteration[S, Stage[I, _O, _E]] = stage => this ~> alteration(stage)
 
-  @inline final def |>[S <: Stage.Any](alterator: Alterator[Stage[I, O, E], S]): S = alterator ⋅ this
+  @inline final def |>[S <: Stage.Any](alteration: Alteration[Stage[I, O, E], S]): S = alteration ⋅ this
 
-  @inline final def alterator[_O, _E >: E]: Alterator[Stage[O, _O, _E], Stage[I, _O, _E]] = leftAlterator[_O, _E]
+  @inline final def alteration[_O, _E >: E]: Alteration[Stage[O, _O, _E], Stage[I, _O, _E]] = leftAlteration[_O, _E]
 
-  @inline final def leftAlterator[_O, _E >: E]: Alterator[Stage[O, _O, _E], Stage[I, _O, _E]] = ~>[_O, _E]
+  @inline final def leftAlteration[_O, _E >: E]: Alteration[Stage[O, _O, _E], Stage[I, _O, _E]] = ~>[_O, _E]
 
-  @inline final def rightAlterator[_I, _E >: E]: Alterator[Stage[_I, I, _E], Stage[_I, O, _E]] = <~[_I, _E]
+  @inline final def rightAlteration[_I, _E >: E]: Alteration[Stage[_I, I, _E], Stage[_I, O, _E]] = <~[_I, _E]
 }
 
 object Stage {
@@ -33,7 +46,7 @@ object Stage {
     def apply(in: I): Yield[I, O, E] =
       previous(in) match {
         case some @ Yield.Some(out, _, _) => some.compose(next(out))
-        case none: Yield.None[I, OI, E] => none.compose(next)
+        case none: Yield.None[I, OI, E] => none.compose(next.skip)
       }
 
     override def dispose(): Unit = {

@@ -1,4 +1,4 @@
-package h8io.xi.stages.alterators
+package h8io.xi.stages.alterations
 
 import h8io.xi.stages.{OnDone, Stage, StagesCoreArbitraries, StagesCoreTestUtil, Yield}
 import org.scalamock.scalatest.MockFactory

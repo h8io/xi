@@ -27,7 +27,7 @@ class EndoStagesMonoidTest extends AnyFunSuite with FunSuiteDiscipline with Chec
         suffix <- Arbitrary.arbitrary[T]
         signal <- Arbitrary.arbitrary[Signal[E]]
       } yield new Stage.Endo[T, E] {
-        def apply(in: T): Yield[T, T, E] = Yield.Some(prefix |+| in |+| suffix, signal, OnDone.FromStage(this))
+        def apply(in: T): Yield[T, T, E] = Yield.Some(prefix |+| in |+| suffix, signal, this)
 
         override def toString(): String = s"Stage.Endo: $prefix + _ + $suffix"
       }

@@ -4,7 +4,6 @@ import org.scalamock.scalatest.MockFactory
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
 
-import java.sql.Timestamp
 import java.time.{Instant, ZoneId, ZonedDateTime}
 import java.util.UUID
 
@@ -33,31 +32,6 @@ class OnDoneTest extends AnyFlatSpec with Matchers with MockFactory {
       (nextOnDone.onError _).expects().returns(nextStage)
       (previousOnDone.onError _).expects().returns(previousStage)
     }
-    onDone.onError() shouldBe stage
-  }
-
-  it should "combine OnDone object and Stage object correctly" in {
-    val previousOnDone = mock[OnDone[String, Instant, Exception]]
-    val previousStage = mock[Stage[String, Instant, Exception]]
-    val nextStage = mock[Stage[Instant, Long, Exception]]
-    val onDone = previousOnDone.compose(nextStage)
-    val stage = previousStage ~> nextStage
-
-    (previousOnDone.onSuccess _).expects().returns(previousStage)
-    onDone.onSuccess() shouldBe stage
-
-    (previousOnDone.onComplete _).expects().returns(previousStage)
-    onDone.onComplete() shouldBe stage
-
-    (previousOnDone.onError _).expects().returns(previousStage)
-    onDone.onError() shouldBe stage
-  }
-
-  "FromStage" should "return the same stage from all methods" in {
-    val stage = mock[Stage[Instant, Timestamp, Long]]
-    val onDone = OnDone.FromStage(stage)
-    onDone.onSuccess() shouldBe stage
-    onDone.onComplete() shouldBe stage
     onDone.onError() shouldBe stage
   }
 

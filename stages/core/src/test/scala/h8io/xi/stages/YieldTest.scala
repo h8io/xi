@@ -86,24 +86,35 @@ class YieldTest
         }
     }
 
-  it should "compose None and stage correctly" in
+  it should "compose None and OnDone correctly" in
     forAll { (previousYieldSupplier: OnDoneToYieldNone[Long, Instant, String]) =>
-      val previousOnDone = mock[OnDone[Long, Instant, String]]
+      val previousOnDone = mock[OnDone[Long, Instant, String]]("previous onDone")
+      val nextOnDone = mock[OnDone[Instant, String, String]]("next onDone")
       val previousYield = previousYieldSupplier(previousOnDone)
-      val nextStage = mock[Stage[Instant, String, String]]
-      inside(previousYield.compose(nextStage)) {
+      inside(previousYield.compose(nextOnDone)) {
         case Yield.None(previousYield.`signal`, onDone) =>
-          val previousStage = mock[Stage[Long, Instant, String]]
-          val stage = previousStage ~> nextStage
+          val previousStage = mock[Stage[Long, Instant, String]]("previous stage")
 
-          (previousOnDone.onSuccess _).expects().returns(previousStage)
-          onDone.onSuccess() shouldBe stage
+          val onSuccessStage = mock[Stage[Instant, String, String]]("onSuccess stage")
+          inSequence {
+            (nextOnDone.onSuccess _).expects().returns(onSuccessStage)
+            (previousOnDone.onSuccess _).expects().returns(previousStage)
+          }
+          onDone.onSuccess() shouldBe previousStage ~> onSuccessStage
 
-          (previousOnDone.onComplete _).expects().returns(previousStage)
-          onDone.onComplete() shouldBe stage
+          val onCompleteStage = mock[Stage[Instant, String, String]]("onComplete stage")
+          inSequence {
+            (nextOnDone.onComplete _).expects().returns(onCompleteStage)
+            (previousOnDone.onComplete _).expects().returns(previousStage)
+          }
+          onDone.onComplete() shouldBe previousStage ~> onCompleteStage
 
-          (previousOnDone.onError _).expects().returns(previousStage)
-          onDone.onError() shouldBe stage
+          val onErrorStage = mock[Stage[Instant, String, String]]("onError stage")
+          inSequence {
+            (nextOnDone.onError _).expects().returns(onErrorStage)
+            (previousOnDone.onError _).expects().returns(previousStage)
+          }
+          onDone.onError() shouldBe previousStage ~> onErrorStage
       }
     }
 
