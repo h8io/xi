@@ -14,13 +14,6 @@ trait OnDone[-I, +O, +E] {
       def onError(): Stage[I, _O, _E] = that.onError() <~ self.onError()
     }
 
-  @inline private[stages] final def compose[_O, _E >: E](stage: Stage[O, _O, _E]): OnDone[I, _O, _E] =
-    new OnDone[I, _O, _E] {
-      def onSuccess(): Stage[I, _O, _E] = self.onSuccess() ~> stage
-      def onComplete(): Stage[I, _O, _E] = self.onComplete() ~> stage
-      def onError(): Stage[I, _O, _E] = self.onError() ~> stage
-    }
-
   final def map[_I, _O, _E](f: Stage[I, O, E] => Stage[_I, _O, _E]): OnDone[_I, _O, _E] =
     new OnDone[_I, _O, _E] {
       def onSuccess(): Stage[_I, _O, _E] = f(self.onSuccess())

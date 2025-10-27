@@ -6,6 +6,8 @@ trait Stage[-I, +O, +E] extends (I => Yield[I, O, E]) with OnDone[I, O, E] {
 
   def dispose(): Unit = {}
 
+  def skip: OnDone[I, O, E] = this
+
   def onComplete(): Stage[I, O, E] = this
   def onSuccess(): Stage[I, O, E] = this
   def onError(): Stage[I, O, E] = this
@@ -37,7 +39,7 @@ object Stage {
     def apply(in: I): Yield[I, O, E] =
       previous(in) match {
         case some @ Yield.Some(out, _, _) => some.compose(next(out))
-        case none: Yield.None[I, OI, E] => none.compose(next)
+        case none: Yield.None[I, OI, E] => none.compose(next.skip)
       }
 
     override def dispose(): Unit = {
