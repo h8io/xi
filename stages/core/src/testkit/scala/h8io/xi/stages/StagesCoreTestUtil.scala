@@ -17,25 +17,25 @@ trait StagesCoreTestUtil extends MockFactory with Matchers {
   def testWrappedOnDone[II, IO, IE, OI, OO, OE](
       wrappedOnDone: OnDone[OI, OO, OE],
       onDone: OnDone[II, IO, IE],
-      alterator: Alterator[Stage[II, IO, IE], Stage[OI, OO, OE]]): Unit =
-    testWrappedOnDone(wrappedOnDone, onDone, alterator, alterator, alterator)
+      alteration: Alteration[Stage[II, IO, IE], Stage[OI, OO, OE]]): Unit =
+    testWrappedOnDone(wrappedOnDone, onDone, alteration, alteration, alteration)
 
   def testWrappedOnDone[II, IO, IE, OI, OO, OE](
       wrappedOnDone: OnDone[OI, OO, OE],
       onDone: OnDone[II, IO, IE],
-      onSuccessAlterator: Alterator[Stage[II, IO, IE], Stage[OI, OO, OE]],
-      onCompleteAlterator: Alterator[Stage[II, IO, IE], Stage[OI, OO, OE]],
-      onErrorAlterator: Alterator[Stage[II, IO, IE], Stage[OI, OO, OE]]): Unit = {
+      onSuccessAlteration: Alteration[Stage[II, IO, IE], Stage[OI, OO, OE]],
+      onCompleteAlteration: Alteration[Stage[II, IO, IE], Stage[OI, OO, OE]],
+      onErrorAlteration: Alteration[Stage[II, IO, IE], Stage[OI, OO, OE]]): Unit = {
     val onSuccessStage = mock[Stage[II, IO, IE]]("onSuccess stage")
     (onDone.onSuccess _).expects().returns(onSuccessStage)
-    wrappedOnDone.onSuccess() shouldBe onSuccessAlterator(onSuccessStage)
+    wrappedOnDone.onSuccess() shouldBe onSuccessAlteration(onSuccessStage)
 
     val onCompleteStage = mock[Stage[II, IO, IE]]("onComplete stage")
     (onDone.onComplete _).expects().returns(onCompleteStage)
-    wrappedOnDone.onComplete() shouldBe onCompleteAlterator(onCompleteStage)
+    wrappedOnDone.onComplete() shouldBe onCompleteAlteration(onCompleteStage)
 
     val onErrorStage = mock[Stage[II, IO, IE]]("onError stage")
     (onDone.onError _).expects().returns(onErrorStage)
-    wrappedOnDone.onError() shouldBe onErrorAlterator(onErrorStage)
+    wrappedOnDone.onError() shouldBe onErrorAlteration(onErrorStage)
   }
 }

@@ -1,7 +1,7 @@
 package h8io.xi.stages.examples
 
 import h8io.xi.stages.*
-import h8io.xi.stages.alterators.Repeat
+import h8io.xi.stages.alterations.Repeat
 
 object Factorial3 {
   trait FactorialError

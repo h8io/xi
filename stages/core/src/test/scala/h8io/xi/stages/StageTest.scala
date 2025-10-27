@@ -62,16 +62,16 @@ class StageTest
     previous ~> next shouldBe Stage.AndThen(previous, next)
   }
 
-  it should "produce a alterator with a alterator argument" in {
+  it should "produce a alteration with a alteration argument" in {
     val stage = mock[Stage[Int, Long, UUID]]
-    val alterator = mock[Alterator[Stage[ZoneId, ZonedDateTime, String], Stage[Long, String, Nothing]]]
+    val alteration = mock[Alteration[Stage[ZoneId, ZonedDateTime, String], Stage[Long, String, Nothing]]]
     val in = mock[Stage[ZoneId, ZonedDateTime, String]]
     val out = mock[Stage[Long, String, Nothing]]
-    (alterator.apply _).expects(in).returns(out)
-    val result: Stage[Int, String, UUID] = (stage ~> alterator)(in)
+    (alteration.apply _).expects(in).returns(out)
+    val result: Stage[Int, String, UUID] = (stage ~> alteration)(in)
     result shouldBe stage ~> out
-    (alterator.apply _).expects(in).returns(out)
-    stage ~> alterator <| in shouldBe stage ~> out
+    (alteration.apply _).expects(in).returns(out)
+    stage ~> alteration <| in shouldBe stage ~> out
   }
 
   "<~" should "produce Stage.AndThen object" in {
@@ -80,32 +80,32 @@ class StageTest
     next <~ previous shouldBe Stage.AndThen(previous, next)
   }
 
-  "|>" should "apply alterator to stage" in {
+  "|>" should "apply alteration to stage" in {
     val stage = mock[Stage[ZoneOffset, OffsetDateTime, Exception]]
-    val alterator = mock[Alterator[Stage[ZoneOffset, OffsetDateTime, Exception], Stage[UUID, Instant, Long]]]
+    val alteration = mock[Alteration[Stage[ZoneOffset, OffsetDateTime, Exception], Stage[UUID, Instant, Long]]]
     val out = mock[Stage[UUID, Instant, Long]]
-    (alterator.apply _).expects(stage).returns(out)
-    stage |> alterator shouldBe out
+    (alteration.apply _).expects(stage).returns(out)
+    stage |> alteration shouldBe out
   }
 
-  "alterator" should "be a leftAlterator" in {
+  "alteration" should "be a leftAlteration" in {
     val left = mock[Stage[Int, Long, Nothing]]
     val right = mock[Stage[Long, Duration, Exception]]
-    left.alterator(right) shouldBe left ~> right
+    left.alteration(right) shouldBe left ~> right
   }
 
-  "leftAlterator" should "produce a composition with predefined left operand as an be alterator" in {
+  "leftAlteration" should "produce a composition with predefined left operand as an be alteration" in {
     val left = mock[Stage[Int, Long, Nothing]]
     val right = mock[Stage[Long, Duration, Exception]]
-    val alterator: Alterator[Stage[Long, Duration, Exception], Stage[Int, Duration, Exception]] = left.leftAlterator
-    alterator(right) shouldBe left ~> right
+    val alteration: Alteration[Stage[Long, Duration, Exception], Stage[Int, Duration, Exception]] = left.leftAlteration
+    alteration(right) shouldBe left ~> right
   }
 
-  "rightAlterator" should "produce a composition with predefined right operand as an be alterator" in {
+  "rightAlteration" should "produce a composition with predefined right operand as an be alteration" in {
     val left = mock[Stage[Int, Long, Nothing]]
     val right = mock[Stage[Long, Duration, Exception]]
-    val alterator: Alterator[Stage[Int, Long, Nothing], Stage[Int, Duration, Exception]] = right.rightAlterator
-    alterator(left) shouldBe left ~> right
+    val alteration: Alteration[Stage[Int, Long, Nothing], Stage[Int, Duration, Exception]] = right.rightAlteration
+    alteration(left) shouldBe left ~> right
   }
 
   "OnDone methods" should "return self" in {
