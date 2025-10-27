@@ -18,7 +18,7 @@ class CountdownTest extends AnyFlatSpec with Matchers with Inside with ScalaChec
 
   it should "return a yield with signal Complete or Error when i == 1" in
     forAll(Gen.zip(Gen.choose(1, Long.MaxValue), Arbitrary.arbitrary[Short])) { case (n, in) =>
-      Countdown[Short](1, n)(in) shouldBe Yield.Some(in, Signal.Complete, OnDone.FromStage(Countdown[Short](n, n)))
+      Countdown[Short](1, n)(in) shouldBe Yield.Some(in, Signal.Complete, Countdown[Short](n, n))
     }
 
   it should "return yield with the same signal if i > 1" in

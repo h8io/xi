@@ -12,10 +12,10 @@ final case class Loop[T, +E](stage: Stage.Endo[T, E]) extends Wrapper.Endo[T, T,
         case Signal.Success =>
           yld match {
             case Yield.Some(out, _, _) => loop(yld.onDone.onSuccess(), out)
-            case Yield.None(_, _) => Yield.None(Signal.Success, OnDone.FromStage(Loop(yld.onDone.onComplete())))
+            case Yield.None(_, _) => Yield.None(Signal.Success, Loop(yld.onDone.onComplete()))
           }
-        case Signal.Complete => yld.mapOnDone(Signal.Success, onDone => OnDone.FromStage(Loop(onDone.onComplete())))
-        case error: Signal.Error[E] => yld.mapOnDone(error, onDone => OnDone.FromStage(Loop(onDone.onError())))
+        case Signal.Complete => yld.mapOnDone(Signal.Success, onDone => Loop(onDone.onComplete()))
+        case error: Signal.Error[E] => yld.mapOnDone(error, onDone => Loop(onDone.onError()))
       }
     }
     loop(stage, in)

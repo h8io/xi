@@ -1,10 +1,14 @@
 package h8io.xi.stages
 
 @FunctionalInterface
-trait Stage[-I, +O, +E] extends (I => Yield[I, O, E]) {
+trait Stage[-I, +O, +E] extends (I => Yield[I, O, E]) with OnDone[I, O, E] {
   def apply(in: I): Yield[I, O, E]
 
   def dispose(): Unit = {}
+
+  def onComplete(): Stage[I, O, E] = this
+  def onSuccess(): Stage[I, O, E] = this
+  def onError(): Stage[I, O, E] = this
 
   @inline final def outcome(in: I): Outcome[O, E] = this(in).outcome()
 

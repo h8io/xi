@@ -11,8 +11,8 @@ final case class Repeat[-I, +O, +E](stage: Stage[I, O, E]) extends Wrapper.Endo[
       yld.signal match {
         case Signal.Success => repeat(yld.onDone.onSuccess())
         case Signal.Complete =>
-          yld.mapOnDone(Signal.Success, onDone => OnDone.FromStage(Repeat(onDone.onComplete())))
-        case error: Signal.Error[E] => yld.mapOnDone(error, onDone => OnDone.FromStage(Repeat(onDone.onError())))
+          yld.mapOnDone(Signal.Success, onDone => Repeat(onDone.onComplete()))
+        case error: Signal.Error[E] => yld.mapOnDone(error, onDone => Repeat(onDone.onError()))
       }
     }
     repeat(stage)
