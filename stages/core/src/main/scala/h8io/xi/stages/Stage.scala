@@ -54,12 +54,4 @@ object Stage {
       previous.dispose()
     }
   }
-
-  trait Static[-I, +O, +E] extends Stage[I, O, E] {
-    override final def skip: OnDone[I, O, E] = this
-
-    override final def onSuccess(): Stage[I, O, E] = this
-    override final def onComplete(): Stage[I, O, E] = this
-    override final def onError(): Stage[I, O, E] = this
-  }
 }

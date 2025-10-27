@@ -5,8 +5,7 @@ import h8io.xi.stages.*
 import java.time.Duration
 import scala.concurrent.duration.FiniteDuration
 
-final case class GlobalSoftDeadline[T](now: () => Long, duration: Long)
-    extends Fruitful.Endo[T, Nothing] with Stage.Static[T, T, Nothing] {
+final case class GlobalSoftDeadline[T](now: () => Long, duration: Long) extends Fruitful.Endo[T, Nothing] {
   private val ts: Long = now()
 
   def apply(in: T): Yield.Some[T, T, Nothing] =

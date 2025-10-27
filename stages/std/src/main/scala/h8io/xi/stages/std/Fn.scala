@@ -7,3 +7,7 @@ trait Fn[-I, +O] extends Fruitful[I, O, Nothing] {
 
   final def apply(in: I): Yield.Some[I, O, Nothing] = Yield.Some(f(in), Signal.Success, this)
 }
+
+object Fn {
+  type Endo[T] = Fn[T, T]
+}
