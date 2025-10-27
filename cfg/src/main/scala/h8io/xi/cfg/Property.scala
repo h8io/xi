@@ -5,5 +5,4 @@ trait Property[T] {
   def description: Option[String]
 
   def map[U](f: T => U): Property[U]
-  
 }
