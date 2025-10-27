@@ -7,5 +7,5 @@ trait Wrapper[+S <: Stage.Any, -I, +O, +E] extends Stage[I, O, E] {
 }
 
 object Wrapper {
-  type Endo[-I, +O, +E] = Wrapper[Stage[I, O, E], I, O, E]
+  type Deco[-I, +O, +E] = Wrapper[Stage[I, O, E], I, O, E]
 }
