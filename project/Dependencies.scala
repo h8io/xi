@@ -6,6 +6,8 @@ object Dependencies {
 
   val Cats: Seq[ModuleID] = "org.typelevel" %% Seq("cats-core") % CatsVersion
 
+  val H8IO: Seq[ModuleID] = Seq("io.h8" %% "stages" % "0.0.0")
+
   val TestBundle: Seq[ModuleID] =
     Seq(
       "org.scalatest" %% "scalatest" % "3.2.19",
