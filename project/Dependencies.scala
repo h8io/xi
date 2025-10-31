@@ -9,7 +9,7 @@ object Dependencies {
   val Cats: Seq[ModuleID] = "org.typelevel" %% Seq("cats-core") % CatsVersion
 
   val Config: Seq[ModuleID] = Seq("com.typesafe" % "config" % "1.4.5")
-  
+
   val H8IO: Seq[ModuleID] = Seq("io.h8" %% "stages" % "0.0.0")
 
   val TestBundle: Seq[ModuleID] =
