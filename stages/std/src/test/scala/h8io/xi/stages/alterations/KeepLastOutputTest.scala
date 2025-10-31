@@ -23,7 +23,7 @@ class KeepLastOutputTest
     KeepLastOutput(stage) shouldBe KeepLastOutput.None(stage)
   }
 
-  "None" should "stay None if decorated stage returns Yield.None" in
+  "None" should "stay None if alterand returns Yield.None" in
     forAll { (in: UUID, signal: Signal[Exception]) =>
       val stage = mock[Stage[UUID, Instant, Exception]]
       val onDone = mock[OnDone[UUID, Instant, Exception]]
@@ -33,7 +33,7 @@ class KeepLastOutputTest
       }
     }
 
-  it should "become Some if decorated stage returns Yield.Some" in
+  it should "become Some if alterand returns Yield.Some" in
     forAll { (in: Long, out: String, signal: Signal[Exception]) =>
       val stage = mock[Stage[Long, String, Exception]]
       val onDone = mock[OnDone[Long, String, Exception]]
@@ -43,7 +43,7 @@ class KeepLastOutputTest
       }
     }
 
-  "Some" should "keep the old output if decorated stage returns Yield.None" in
+  "Some" should "keep the old output if alterand returns Yield.None" in
     forAll { (in: ZonedDateTime, out: ZoneId, signal: Signal[Exception]) =>
       val stage = mock[Stage[ZonedDateTime, ZoneId, Exception]]
       val onDone = mock[OnDone[ZonedDateTime, ZoneId, Exception]]
@@ -53,7 +53,7 @@ class KeepLastOutputTest
       }
     }
 
-  it should "memoize the new output if decorated stage returns Yield.Some" in
+  it should "memoize the new output if alterand returns Yield.Some" in
     forAll { (in: Array[Int], out: BigInt, newOut: BigInt, signal: Signal[Exception]) =>
       val stage = mock[Stage[Array[Int], BigInt, Exception]]
       val onDone = mock[OnDone[Array[Int], BigInt, Exception]]
@@ -63,13 +63,13 @@ class KeepLastOutputTest
       }
     }
 
-  "dispose" should "call stage's dispose for None" in {
+  "dispose" should "call alterand's dispose for None" in {
     val stage = mock[Stage[Any, Nothing, Nothing]]
     (stage.dispose _).expects()
     noException should be thrownBy KeepLastOutput.None(stage).dispose()
   }
 
-  it should "call stage's dispose for Some" in {
+  it should "call alterand's dispose for Some" in {
     val stage = mock[Stage[Any, Nothing, Nothing]]
     (stage.dispose _).expects()
     noException should be thrownBy KeepLastOutput.Some(mock[AnyRef], stage).dispose()

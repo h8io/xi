@@ -108,9 +108,9 @@ class LoopTest
       case Nil => (in, stage)
     }
 
-  "dispose" should "call stage's dispose" in {
-    val stage = mock[Stage[Any, Nothing, Nothing]]
-    (stage.dispose _).expects()
-    noException should be thrownBy Loop(stage).dispose()
+  "dispose" should "call alterand's dispose" in {
+    val alterand = mock[Stage[Any, Nothing, Nothing]]
+    (alterand.dispose _).expects()
+    noException should be thrownBy Loop(alterand).dispose()
   }
 }

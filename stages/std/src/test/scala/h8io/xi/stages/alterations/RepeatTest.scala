@@ -85,9 +85,9 @@ class RepeatTest
       yieldSupplier: SignalAndOnDoneToYield[I, O, E], signal: Signal[E]): Yield[I, O, E] =
     yieldSupplier(signal, mock[OnDone[I, O, E]](s"onDone $id"))
 
-  "dispose" should "call stage's dispose" in {
-    val stage = mock[Stage[Any, Nothing, Nothing]]
-    (stage.dispose _).expects()
-    noException should be thrownBy Repeat(stage).dispose()
+  "dispose" should "call alterand's dispose" in {
+    val alterand = mock[Stage[Any, Nothing, Nothing]]
+    (alterand.dispose _).expects()
+    noException should be thrownBy Repeat(alterand).dispose()
   }
 }
