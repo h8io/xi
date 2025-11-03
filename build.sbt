@@ -44,17 +44,8 @@ ThisBuild / javacOptions ++= Seq("-target", "8")
 
 ThisBuild / libraryDependencies ++= TestBundle % Test
 
-val cfg = (project in file("cfg"))
-  .settings(
-    name := "xi-cfg",
-    libraryDependencies ++= Config ++ Cats ++ (CrossVersion.partialVersion(scalaVersion.value) match {
-      case Some((2, 12)) => Seq(ScalaCollectionCompat)
-      case _ => Nil
-    })
-  )
-
 val root =
   (project in file(".")).settings(
     name := "xi",
     libraryDependencies ++= H8IO
-  ).aggregate(cfg).enablePlugins(ScoverageSummaryPlugin)
+  ).enablePlugins(ScoverageSummaryPlugin)
