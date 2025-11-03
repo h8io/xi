@@ -4,9 +4,13 @@ import sbt.*
 object Dependencies {
   private val CatsVersion = "2.13.0"
 
+  val ScalaCollectionCompat: ModuleID = "org.scala-lang.modules" %% "scala-collection-compat" % "2.14.0"
+
   val Cats: Seq[ModuleID] = "org.typelevel" %% Seq("cats-core") % CatsVersion
 
-  val H8IO: Seq[ModuleID] = Seq("io.h8" %% "stages" % "0.0.0")
+  val Config: Seq[ModuleID] = Seq("com.typesafe" % "config" % "1.4.5")
+
+  val H8IO: Seq[ModuleID] = Seq("io.h8" %% "stages" % "0.0.2")
 
   val TestBundle: Seq[ModuleID] =
     Seq(
