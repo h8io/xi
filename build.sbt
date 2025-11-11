@@ -27,7 +27,7 @@ ThisBuild / dynverSonatypeSnapshots := true
 ThisBuild / dynverSeparator := "-"
 
 ThisBuild / scalaVersion := "2.13.17"
-ThisBuild / crossScalaVersions += "2.12.20"
+// ThisBuild / crossScalaVersions += "2.12.20"
 
 ThisBuild / scalacOptions ++=
   Seq("-Xsource:3", "-language:higherKinds", "--deprecation", "--feature", "--unchecked", "-Xlint:_",
