@@ -47,5 +47,6 @@ ThisBuild / libraryDependencies ++= TestBundle % Test
 val root =
   (project in file(".")).settings(
     name := "xi",
-    libraryDependencies ++= H8IO
+    libraryDependencies ++= H8IO ++ ScalaModules,
+    libraryDependencies += Reflect
   ).enablePlugins(ScoverageSummaryPlugin)
