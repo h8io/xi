@@ -23,10 +23,10 @@ class TypeTest extends AnyFlatSpec with Matchers {
   }
 
   it should "be summoned and compared for a reference type with invariant type parameters" in {
-    implicitly[Type[ju.List[String]]] <:< implicitly[Type[ju.SequencedCollection[CharSequence]]] shouldBe false
-    implicitly[Type[ju.List[String]]] <:< implicitly[Type[ju.SequencedCollection[String]]] shouldBe true
-    implicitly[Type[ju.List[String]]] <:< implicitly[Type[ju.SequencedCollection[Nothing]]] shouldBe false
-    implicitly[Type[ju.List[CharSequence]]] <:< implicitly[Type[ju.SequencedCollection[String]]] shouldBe false
+    implicitly[Type[ju.List[String]]] <:< implicitly[Type[ju.Collection[CharSequence]]] shouldBe false
+    implicitly[Type[ju.List[String]]] <:< implicitly[Type[ju.Collection[String]]] shouldBe true
+    implicitly[Type[ju.List[String]]] <:< implicitly[Type[ju.Collection[Nothing]]] shouldBe false
+    implicitly[Type[ju.List[CharSequence]]] <:< implicitly[Type[ju.Collection[String]]] shouldBe false
 
     implicitly[Type[ju.List[String]]] <:< implicitly[Type[ju.List[CharSequence]]] shouldBe false
     implicitly[Type[ju.List[String]]] <:< implicitly[Type[ju.List[String]]] shouldBe true
