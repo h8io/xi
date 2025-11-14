@@ -4,13 +4,13 @@ import sbt.*
 object Dependencies {
   private val CatsVersion = "2.13.0"
 
-  val ScalaCollectionCompat: ModuleID = "org.scala-lang.modules" %% "scala-collection-compat" % "2.14.0"
+  val ScalaModules: Seq[ModuleID] = Seq(
+    // "org.scala-lang.modules" %% "scala-collection-compat" % "2.14.0",
+    "org.scala-lang" % "scala-reflect" % "2.13.17")
 
-  val Cats: Seq[ModuleID] = "org.typelevel" %% Seq("cats-core") % CatsVersion
+  val H8IO: Seq[ModuleID] = Seq("io.h8" %% "stages" % "0.0.3", "io.h8" %% "cfg" % "0.0.1")
 
-  val Config: Seq[ModuleID] = Seq("com.typesafe" % "config" % "1.4.5")
-
-  val H8IO: Seq[ModuleID] = Seq("io.h8" %% "stages" % "0.0.3", "io.h8" %% "cfg" % "0.0.0")
+  val Reflect = "dev.zio" %% "izumi-reflect" % "3.0.6"
 
   val TestBundle: Seq[ModuleID] =
     Seq(
