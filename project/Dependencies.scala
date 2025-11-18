@@ -1,16 +1,10 @@
-import h8io.sbt.dependencies.*
 import sbt.*
 
 object Dependencies {
   private val CatsVersion = "2.13.0"
 
-  val ScalaModules: Seq[ModuleID] = Seq(
-    // "org.scala-lang.modules" %% "scala-collection-compat" % "2.14.0",
-    "org.scala-lang" % "scala-reflect" % "2.13.17")
-
-  val H8IO: Seq[ModuleID] = Seq("io.h8" %% "stages" % "0.0.3", "io.h8" %% "cfg" % "0.0.1")
-
-  val Reflect = "dev.zio" %% "izumi-reflect" % "3.0.6"
+  val H8IO: Seq[ModuleID] =
+    Seq("io.h8" %% "stages" % "0.0.3", "io.h8" %% "cfg" % "0.0.2", "io.h8" %% "reflect" % "0.0.0")
 
   val TestBundle: Seq[ModuleID] =
     Seq(

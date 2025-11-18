@@ -26,8 +26,8 @@ ThisBuild / scmInfo := Some(
 ThisBuild / dynverSonatypeSnapshots := true
 ThisBuild / dynverSeparator := "-"
 
-ThisBuild / scalaVersion := "2.13.17"
-// ThisBuild / crossScalaVersions += "2.12.20"
+ThisBuild / scalaVersion := "2.13.18"
+ThisBuild / crossScalaVersions += "2.12.20"
 
 ThisBuild / scalacOptions ++=
   Seq("-Xsource:3", "-language:higherKinds", "--deprecation", "--feature", "--unchecked", "-Xlint:_",
@@ -47,6 +47,5 @@ ThisBuild / libraryDependencies ++= TestBundle % Test
 val root =
   (project in file(".")).settings(
     name := "xi",
-    libraryDependencies ++= H8IO ++ ScalaModules,
-    libraryDependencies += Reflect
+    libraryDependencies ++= H8IO
   ).enablePlugins(ScoverageSummaryPlugin)
