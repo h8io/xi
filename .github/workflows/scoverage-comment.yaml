@@ -20,10 +20,11 @@ jobs:
 
     steps:
       - name: Download scoverage report artifact
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
+          github-token: ${{ github.token }}
           run-id: ${{ github.event.workflow_run.id }}
-          name: scoverage-report
+#          name: scoverage-report
           path: scoverage
 
       - name: Publish scoverage summary comment
@@ -35,7 +36,8 @@ jobs:
         run: |
           set -euo pipefail
 
-          summary="scoverage/scoverage-summary.md"
+          ls scoverage
+          summary=$(find scoverage -type f -name 'scoverage-summary.md' | head -n1)
           if [ ! -f "$summary" ]; then
             echo "Summary file '$summary' not found" >&2
             exit 1
