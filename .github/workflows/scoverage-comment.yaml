@@ -24,8 +24,8 @@ jobs:
         with:
           github-token: ${{ github.token }}
           run-id: ${{ github.event.workflow_run.id }}
-#          name: scoverage-report
-          path: scoverage
+          name: scoverage-report
+          path: scoverage-report
 
       - name: Publish scoverage summary comment
         env:
@@ -36,13 +36,15 @@ jobs:
         run: |
           set -euo pipefail
 
-          ls scoverage
-          summary=$(find scoverage -type f -name 'scoverage-summary.md' | head -n1)
+          ls scoverage-report
+
+          summary=scoverage-report/scoverage-summary.md
           if [ ! -f "$summary" ]; then
             echo "Summary file '$summary' not found" >&2
             exit 1
           fi
 
+          echo "${{ github.event.workflow_run }}"
           pr_number="${{ github.event.workflow_run.pull_requests[0].number }}"
           if [ -z "$pr_number" ]; then
             echo "No pull request associated with this workflow_run" >&2
