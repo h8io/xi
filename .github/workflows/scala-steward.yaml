@@ -14,5 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     name: Scala Steward
     steps:
-      - name: Scala Steward
-        uses: scala-steward-org/scala-steward-action@v2
+      - uses: scala-steward-org/scala-steward-action@v2
+        with:
+          github-app-id: ${{ secrets.H8IO_APP_ID }}
+          github-app-key: ${{ secrets.H8IO_APP_PK }}
