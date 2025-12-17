@@ -4,7 +4,7 @@ object Dependencies {
   private val CatsVersion = "2.13.0"
 
   val H8IO: Seq[ModuleID] =
-    Seq("io.h8" %% "stages" % "0.0.4", "io.h8" %% "cfg" % "0.0.2", "io.h8" %% "reflect" % "0.0.4")
+    Seq("io.h8" %% "stages" % "0.0.4", "io.h8" %% "cfg" % "0.0.9", "io.h8" %% "reflect" % "0.0.4")
 
   val TestBundle: Seq[ModuleID] =
     Seq(
