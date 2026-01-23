@@ -26,7 +26,7 @@ ThisBuild / scmInfo := Some(
 ThisBuild / dynverSonatypeSnapshots := true
 ThisBuild / dynverSeparator := "-"
 
-ThisBuild / scalaVersion := "2.13.18"
+ThisBuild / scalaVersion := "3.8.1"
 ThisBuild / crossScalaVersions += "2.12.21"
 
 ThisBuild / scalacOptions ++=
