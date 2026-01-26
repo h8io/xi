@@ -44,8 +44,7 @@ ThisBuild / javacOptions ++= Seq("-target", "8")
 
 ThisBuild / libraryDependencies ++= TestBundle % Test
 
-val root =
-  (project in file(".")).settings(
-    name := "xi",
-    libraryDependencies ++= H8IO
-  ).enablePlugins(ScoverageSummaryPlugin)
+val root = (project in file(".")).settings(
+  name := "xi",
+  libraryDependencies ++= H8IO
+).enablePlugins(ScoverageSummaryPlugin)
