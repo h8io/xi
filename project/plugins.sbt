@@ -1,4 +1,4 @@
-addSbtPlugin("org.scalameta" % "sbt-scalafmt" % "2.6.1")
+addSbtPlugin("org.scalameta" % "sbt-scalafmt" % "2.6.2")
 addSbtPlugin("com.github.sbt" % "sbt-ci-release" % "1.12.0")
 addSbtPlugin("io.h8.sbt" %% "sbt-dependencies" % "1.1.1")
 addSbtPlugin("io.h8.sbt" % "sbt-scoverage-summary" % "1.1.2")
