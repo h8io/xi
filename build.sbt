@@ -19,9 +19,7 @@ ThisBuild / developers := List(
     url = url("https://github.com/eshu/")))
 
 ThisBuild / scmInfo := Some(
-  ScmInfo(
-    url("https://github.com/h8io/sbt-scoverage-summary"),
-    "scm:git@github.com:h8io/sbt-scoverage-summary.git"))
+  ScmInfo(url("https://github.com/h8io/xi"), "scm:git@github.com:h8io/xi.git"))
 
 ThisBuild / dynverSonatypeSnapshots := true
 ThisBuild / dynverSeparator := "-"
