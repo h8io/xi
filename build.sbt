@@ -11,6 +11,11 @@ ThisBuild / licenses := List("Apache-2.0" -> url("http://www.apache.org/licenses
 
 ThisBuild / versionScheme := Some("semver-spec")
 
+ThisBuild / coverageSummaryStmtLowThreshold := 100
+ThisBuild / coverageSummaryStmtHighThreshold := 100
+ThisBuild / coverageSummaryBranchLowThreshold := 100
+ThisBuild / coverageSummaryBranchHighThreshold := 100
+
 ThisBuild / developers := List(
   Developer(
     id = "eshu",
