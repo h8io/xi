@@ -2,9 +2,15 @@ import sbt.*
 
 object Dependencies {
   private val CatsVersion = "2.13.0"
+  private val CfgVersion = "0.0.12"
 
   val H8IO: Seq[ModuleID] =
-    Seq("io.h8" %% "stages" % "0.0.4", "io.h8" %% "cfg" % "0.0.11", "io.h8" %% "reflect" % "0.0.4")
+    Seq(
+      "io.h8" %% "stages" % "0.0.4",
+      "io.h8" %% "cfg" % CfgVersion,
+      "io.h8" %% "cfg-schema" % CfgVersion,
+      "io.h8" %% "reflect" % "0.0.4"
+    )
 
   val TestBundle: Seq[ModuleID] =
     Seq(
