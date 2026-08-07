@@ -6,7 +6,7 @@ object Dependencies {
 
   val H8IO: Seq[ModuleID] =
     Seq(
-      "io.h8" %% "stages" % "0.0.4",
+      "io.h8" %% "stages" % "0.0.22",
       "io.h8" %% "cfg" % CfgVersion,
       "io.h8" %% "cfg-schema" % CfgVersion,
       "io.h8" %% "reflect" % "0.0.4"
