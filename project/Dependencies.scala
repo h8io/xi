@@ -2,7 +2,7 @@ import sbt.*
 
 object Dependencies {
   private val CatsVersion = "2.13.0"
-  private val CfgVersion = "0.0.14"
+  private val CfgVersion = "0.0.15"
 
   val H8IO: Seq[ModuleID] =
     Seq(
