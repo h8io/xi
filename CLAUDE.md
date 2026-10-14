@@ -133,8 +133,12 @@ The build is on sbt 2, which differs from sbt 1 in ways that matter here:
 - Every project's `target` lives under the root's `target/out`. `pages` writes mdoc and unidoc output to
   `pages/target` instead, where Docusaurus and `release.sh` read it; `pages/clean` empties it, `cleanFull` does not.
 
-`+` prefixes cross-build a command over Scala 2.13.18 and 2.12.21. A bare `sbt test` only exercises 2.13,
-which is where most `-Xsource:3`-dependent breakage hides — cross-build before claiming a change compiles.
+`+` prefixes cross-build a command over Scala 2.13.18, 2.12.21 and 3.9.0 (LTS), through `crossScalaVersions`, not
+`projectMatrix`. 2.13 is the main version and the priority, being the one native to current Spark. A bare `sbt test`
+only exercises 2.13, and breakage hides in the other two — cross-build before claiming a change compiles. All three
+share one source tree, written in Scala 2 style that Scala 3 also accepts; idiomatic Scala 3 (`enum`, `extension`,
+version-specific source directories) is for later. Every branch on the Scala version in `build.sbt` lists the
+versions it knows and ends in `unsupportedScala`, so a new version fails the build until each one has been looked at.
 
 ## Build layout
 
@@ -146,8 +150,9 @@ Two sbt projects in `build.sbt`:
   `pages/target`, then Docusaurus (`pages/package.json`, Node ≥ 20) renders mdoc's output. The navigation is
   `pages/sidebars.js` — a new page must be listed there. Docs are CommonMark, not MDX
   (`markdown.format: 'detect'`), and broken links fail the build. The navbar's API dropdown links to the
-  unidoc output that `release.sh` copies in beside the site (`target/pages/api/scala-*`), through
-  `pathname://` so the link checker leaves it alone.
+  unidoc output that `release.sh` copies in beside the site, one per Scala version (`api/scala-3`,
+  `api/scala-2.13`, `api/scala-2.12`) and listed there by hand, through `pathname://` so the link checker
+  leaves it alone.
 
 Common settings are bare, so they apply to both projects; `project/Dependencies.scala` holds versions. `build.sbt`
 imports `h8io.sbt.dependencies.*` from the sbt-dependencies plugin, which is what makes
@@ -194,8 +199,13 @@ statement and branch, or the build goes red. The check must come right after `+c
 row and leaves the remaining rows' reports unwritten — and before `pages/mdoc`, which recompiles the
 library with coverage still on and wipes the measurement files.
 
-**Warnings are errors.** `-Xfatal-warnings` plus `-Xlint:_`, `-Wunused:_`, `-Wdead-code` on 2.13. An
-unused import or a non-exhaustive match fails compilation, on both Scala versions.
+**Warnings are errors** on every version: `-Xfatal-warnings` plus `-Xlint:_`, `-Wunused:_`, `-Wdead-code` on 2.13,
+`-Werror` with `-Wall` on 3. An unused import or a non-exhaustive match fails compilation everywhere. Discarded
+values are warned about too (`-Wvalue-discard`, `-Wnonunit-statement`; `-Ywarn-value-discard` on 2.12). Tests and
+the docs' mdoc snippets silence those two through `-Wconf` (`lenientScalacOptions` in `build.sbt`): a ScalaMock
+expectation, a ScalaTest assertion or an expression shown with its result is a statement whose value is dropped on
+purpose. The one other exception is Scala 3's notice that a trailing `_` for eta-expansion is unnecessary — Scala 2
+needs it.
 
 **Sources are `-Xsource:3`.** Write `import cats.syntax.all.*`, `f(args*)`, `Node.IScalar[?]` — the Scala 3
 spellings — not the 2.13 ones. scalafmt is pinned to the `scala213source3` dialect with
@@ -208,6 +218,10 @@ expectations are set with the `(() => node.tag).expects()` arity-0 form. `cfg` d
 sources, so helpers like `src/test/scala/h8io/xi/cfg/testutil/MockLocation.scala` are copied here rather
 than imported. Decoder results are `Validated`, compared with cats syntax (`shouldBe Tagged(...).valid` /
 `.invalid`).
+
+Under Scala 3 ScalaMock cannot mock Java classes, so an opaque value is `new AnyRef`, not `mock[AnyRef]`; and a direct
+call of an untyped polymorphic singleton from stages, such as `Identity(x)`, is an ambiguous overload, so name the
+type: `Identity[Int](x)`.
 
 ## Release and CI
 
