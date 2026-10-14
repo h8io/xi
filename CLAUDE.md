@@ -108,10 +108,10 @@ the parts that exist, and they are drafts too.
 
 ```bash
 ./test.sh                      # everything CI runs: fmt check, cross-build, coverage gate, docs, site
-sbt +test                      # cross-build the tests only
+sbt +testFull                  # cross-build the tests only; plain `test` skips what already passed
 sbt "testOnly h8io.xi.cfg.TaggedDecoderTest"
 sbt "testOnly *TaggedDecoderTest -- -z \"single key\""   # one example by name substring
-sbt scalafmtAll scalafmtSbt    # format (test.sh only *checks*, it does not fix)
+sbt "scalafmtAll; scalafmtSbt" # format (test.sh only *checks*, it does not fix)
 sbt pages/mdoc                 # compile the docs' `scala mdoc` blocks, into pages/target/mdoc
 (cd pages && npm ci && npm run build)  # render pages/target/mdoc with Docusaurus, into pages/target/site
 (cd pages && npm start)        # live preview; pair with `sbt "pages/mdoc --watch"`
@@ -119,6 +119,19 @@ sbt pages/mdoc                 # compile the docs' `scala mdoc` blocks, into pag
 
 `.sbtopts` sets `-batch`, so an `sbt` invocation always needs its commands on the command line; there is
 no interactive shell to fall back into.
+
+The build is on sbt 2, which differs from sbt 1 in ways that matter here:
+- `sbt` starts a thin client that keeps a server running in the background. The client takes one command line, so
+  several commands as separate arguments fail to parse; scripts run `sbt --server`, which works like sbt 1.
+- `test` is incremental: it skips suites that passed before and have not changed since, even after `clean`. `testFull`
+  runs everything.
+- Task results, compilation included, are cached on disk machine-wide (`~/.cache/sbt`). A cached compilation bypasses
+  the scoverage compiler plugin, so its instrumentation data is never written; `cleanFull` empties that cache (and
+  `target`) and is how `test.sh` starts. CI starts with an empty cache anyway.
+- Bare settings in `build.sbt` apply to every project, which is what `ThisBuild` used to be for. sbt-dynver's keys are
+  the exception: the plugin reads them from `ThisBuild`.
+- Every project's `target` lives under the root's `target/out`. `pages` writes mdoc and unidoc output to
+  `pages/target` instead, where Docusaurus and `release.sh` read it; `pages/clean` empties it, `cleanFull` does not.
 
 `+` prefixes cross-build a command over Scala 2.13.18 and 2.12.21. A bare `sbt test` only exercises 2.13,
 which is where most `-Xsource:3`-dependent breakage hides — cross-build before claiming a change compiles.
@@ -136,7 +149,7 @@ Two sbt projects in `build.sbt`:
   unidoc output that `release.sh` copies in beside the site (`target/pages/api/scala-*`), through
   `pathname://` so the link checker leaves it alone.
 
-Common settings are `ThisBuild /` scoped; `project/Dependencies.scala` holds versions. `build.sbt`
+Common settings are bare, so they apply to both projects; `project/Dependencies.scala` holds versions. `build.sbt`
 imports `h8io.sbt.dependencies.*` from the sbt-dependencies plugin, which is what makes
 `libraryDependencies ++= TestBundle % Test` work on a `Seq[ModuleID]`.
 
@@ -174,11 +187,12 @@ be the thing that puts it there.
 
 ## Constraints worth knowing before you edit
 
-**Coverage is gated at 100%.** `ThisBuild / coverageSummary{Stmt,Branch}{Low,High}Threshold := 100`, and
+**Coverage is gated at 100%.** `coverageSummary{Stmt,Branch}{Low,High}Threshold := 100`, and
 `+coverageSummaryCheck` in `test.sh` fails the build below that. New code needs tests covering every
-statement and branch, or the build goes red. The check must stay *last* in the sbt command line, after
-`+coverageSummary` and `+coverageAggregate` — a `+` command runs per cross-build row, so a check placed
-earlier fails on the first row and leaves the remaining rows' reports unwritten.
+statement and branch, or the build goes red. The check must come right after `+coverageSummary` and
+`+coverageAggregate` — a `+` command runs per cross-build row, so a check placed earlier fails on the first
+row and leaves the remaining rows' reports unwritten — and before `pages/mdoc`, which recompiles the
+library with coverage still on and wipes the measurement files.
 
 **Warnings are errors.** `-Xfatal-warnings` plus `-Xlint:_`, `-Wunused:_`, `-Wdead-code` on 2.13. An
 unused import or a non-exhaustive match fails compilation, on both Scala versions.

@@ -1,54 +1,46 @@
 import Dependencies.*
 import h8io.sbt.dependencies.*
-import sbt.url
 
-ThisBuild / organization := "io.h8"
-ThisBuild / organizationName := "H8IO"
-ThisBuild / organizationHomepage := Some(url("https://github.com/h8io/"))
-ThisBuild / homepage := Some(url("https://github.com/h8io/xi"))
+val ProjectName = "xi"
 
-ThisBuild / licenses := List("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0.txt"))
+organization := "io.h8"
+organizationName := "H8IO"
+organizationHomepage := Some(uri("https://github.com/h8io/"))
+homepage := Some(uri(s"https://github.com/h8io/$ProjectName"))
+scmInfo := Some(ScmInfo(uri(s"https://github.com/h8io/$ProjectName"), s"scm:git@github.com:h8io/$ProjectName.git"))
+licenses := List(License.Apache2)
+developers := List(
+  Developer(id = "eshu", name = "Pavel", email = "tjano.xibalba@gmail.com", url = uri("https://github.com/eshu/")))
 
-ThisBuild / versionScheme := Some("semver-spec")
+scalaVersion := "2.13.18"
+crossScalaVersions += "2.12.21"
+javacOptions ++= Seq("-target", "8")
 
-ThisBuild / coverageSummaryStmtLowThreshold := 100
-ThisBuild / coverageSummaryStmtHighThreshold := 100
-ThisBuild / coverageSummaryBranchLowThreshold := 100
-ThisBuild / coverageSummaryBranchHighThreshold := 100
-
-ThisBuild / developers := List(
-  Developer(
-    id = "eshu",
-    name = "Pavel",
-    email = "tjano.xibalba@gmail.com",
-    url = url("https://github.com/eshu/")))
-
-ThisBuild / scmInfo := Some(
-  ScmInfo(url("https://github.com/h8io/xi"), "scm:git@github.com:h8io/xi.git"))
-
+versionScheme := Some("semver-spec")
+// sbt-dynver computes the version once for the whole build, from these two in ThisBuild
 ThisBuild / dynverSonatypeSnapshots := true
 ThisBuild / dynverSeparator := "-"
 
-ThisBuild / scalaVersion := "2.13.18"
-ThisBuild / crossScalaVersions += "2.12.21"
-
-ThisBuild / scalacOptions ++=
+scalacOptions ++=
   Seq("-Xsource:3", "-language:higherKinds", "--deprecation", "--feature", "--unchecked", "-Xlint:_",
     "-Xfatal-warnings", "-opt:l:inline", "-opt-warnings")
 
-ThisBuild / scalacOptions ++=
+scalacOptions ++=
   (CrossVersion.partialVersion(scalaVersion.value) match {
     case Some((2, 13)) => Seq("--explain-types", "--language:_", "-Wunused:_", "-Wdead-code")
     case Some((2, 12)) => Seq("-Ywarn-unused", "-Ywarn-dead-code", "-Ywarn-unused:-nowarn", "-Ypartial-unification")
     case _ => Nil
   })
 
-ThisBuild / javacOptions ++= Seq("-target", "8")
+coverageSummaryStmtLowThreshold := 100
+coverageSummaryStmtHighThreshold := 100
+coverageSummaryBranchLowThreshold := 100
+coverageSummaryBranchHighThreshold := 100
 
-ThisBuild / libraryDependencies ++= TestBundle % Test
+libraryDependencies ++= TestBundle % Test
 
 val root = (project in file(".")).settings(
-  name := "xi",
+  name := ProjectName,
   libraryDependencies ++= H8IO
 ).enablePlugins(ScoverageSummaryPlugin)
 
