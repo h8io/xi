@@ -143,21 +143,21 @@ these libraries change under xi.
 
 | Repo | Path | What xi uses from it | Pinned in `Dependencies.scala` |
 | --- | --- | --- | --- |
-| [stages](https://stages.h8.io/) | `../stages` | `Stage[-I, +O, +E]`, `~>`, `Yield`, `Evolution`, `Status`; `lib/` has ready-made stages | `stages` 0.0.22 |
-| [cfg](https://cfg.h8.io/) | `../cfg` | `Node` tree, `Id`, `Location`, `NodeError`; `cfg-schema` for `Decoder`, `SelectiveDecoder`, `CfgValue`, `Property` | `cfg` / `cfg-schema` 0.0.12 |
-| reflect (on the way out) | `../reflect` | `Type[T]` — runtime types with `<:<` / `=:=` | `reflect` 0.0.4 |
+| [stages](https://stages.h8.io/) | `../stages` | `Stage[-I, +O, +E]`, `~>`, `Yield`, `Evolution`, `Status`; `lib/` has ready-made stages | `stages` 0.0.24 |
+| [cfg](https://cfg.h8.io/) | `../cfg` | `Node` tree, `Id`, `Location`, `NodeError`; `cfg-schema` for `Decoder`, `SelectiveDecoder`, `CfgValue`, `Property` | `cfg` / `cfg-schema` 0.0.15 |
+| reflect (on the way out) | `../reflect` | `Type[T]` — runtime types with `<:<` / `=:=` | `reflect` 0.0.6 |
 
-**Check the pin before trusting local source.** `../stages` at v0.0.22 and `../cfg` at v0.0.12 currently
+**Check the pin before trusting local source.** `../stages` at v0.0.24 and `../cfg` at v0.0.15 currently
 match what `Dependencies.scala` asks for, but they drift — these libraries move under xi, and a local
 checkout is normally the *newer* API. Bumping a pin is its own commit (cfg 0.0.12 and stages 0.0.22 both
 arrived that way), so the two can be a release apart at any moment.
 
-`reflect` is the one that is genuinely out of step, and the reason it is being dropped rather than bumped.
-The pinned
-0.0.4 is built on `scala.reflect.runtime.universe` and carries variance machinery (`Variant`, `Covariant`,
-`Contravariant`); the local v0.0.5 is a rewrite over izumi's `LightTypeTag` with primitive/boxed pairs and
-`Any`/`AnyVal`/`AnyRef`/`Nothing`/`Null` special-cased. Two different libraries under one name — and once
-the newer one is mostly a wrapper over izumi, xi may as well use izumi itself.
+`reflect` is pinned at 0.0.6, which matches `../reflect`, but it is still on its way out rather than a
+dependency to build on. Up to 0.0.4 it was built on `scala.reflect.runtime.universe` and carried variance
+machinery (`Variant`, `Covariant`, `Contravariant`), which has no Scala 3 build; 0.0.5 rewrote it over izumi's
+`LightTypeTag` with primitive/boxed pairs and `Any`/`AnyVal`/`AnyRef`/`Nothing`/`Null` special-cased, and 0.0.6
+publishes that for Scala 3 too. Two different libraries under one name — and once it is mostly a wrapper over
+izumi, xi may as well use izumi itself.
 
 What that gives up is the special-casing 0.0.5 added — primitive-vs-boxed above all, and the
 `Any`/`AnyVal`/`AnyRef`/`Nothing`/`Null` cases. Whether xi needs any of it is genuinely open: a wrapper
