@@ -112,7 +112,9 @@ sbt +test                      # cross-build the tests only
 sbt "testOnly h8io.xi.cfg.TaggedDecoderTest"
 sbt "testOnly *TaggedDecoderTest -- -z \"single key\""   # one example by name substring
 sbt scalafmtAll scalafmtSbt    # format (test.sh only *checks*, it does not fix)
-sbt pages/tlSite               # build the docs site into pages/target/docs/site
+sbt pages/mdoc                 # compile the docs' `scala mdoc` blocks, into pages/target/mdoc
+(cd pages && npm ci && npm run build)  # render pages/target/mdoc with Docusaurus, into pages/target/site
+(cd pages && npm start)        # live preview; pair with `sbt "pages/mdoc --watch"`
 ```
 
 `.sbtopts` sets `-batch`, so an `sbt` invocation always needs its commands on the command line; there is
@@ -127,9 +129,12 @@ Two sbt projects in `build.sbt`:
 
 - **root** (`xi`, `src/`) — the library. Enables `ScoverageSummaryPlugin`.
 - **pages** (`xi-pages`, `pages/`) — the documentation site. `publish / skip`, depends on root, enables
-  `ScalaUnidocPlugin` + `TypelevelSitePlugin`. Its markdown source lives in `docs/`, is run through mdoc
-  and rendered by Laika, and `tlSiteApiUrl` points at the unidoc output that `release.sh` copies in
-  beside it (`target/pages/api/scala-2.{12,13}`).
+  `ScalaUnidocPlugin` + `MdocPlugin`. Two halves: sbt runs mdoc over `docs/` and unidoc, both into
+  `pages/target`, then Docusaurus (`pages/package.json`, Node ≥ 20) renders mdoc's output. The navigation is
+  `pages/sidebars.js` — a new page must be listed there. Docs are CommonMark, not MDX
+  (`markdown.format: 'detect'`), and broken links fail the build. The navbar's API dropdown links to the
+  unidoc output that `release.sh` copies in beside the site (`target/pages/api/scala-*`), through
+  `pathname://` so the link checker leaves it alone.
 
 Common settings are `ThisBuild /` scoped; `project/Dependencies.scala` holds versions. `build.sbt`
 imports `h8io.sbt.dependencies.*` from the sbt-dependencies plugin, which is what makes
@@ -192,11 +197,13 @@ than imported. Decoder results are `Validated`, compared with cats syntax (`shou
 
 ## Release and CI
 
-GitHub Actions delegates entirely to reusable workflows in `h8io/gha` at `@v6`: `test.yaml` on PRs to
+GitHub Actions delegates entirely to reusable workflows in `h8io/gha` at `@v7` (which installs Node.js for
+the Docusaurus build): `test.yaml` on PRs to
 `main`, `snapshot.yaml` on dispatch, `release.yaml` on a `v[0-9]+.[0-9]+.[0-9]+` tag (which also deploys
 the site via `publish-pages: true`). Version numbers come from sbt-dynver — from the git tag, never from a
 literal in `build.sbt`. `release.sh` deliberately builds the site *before* `ci-release`, because
-publishing to Maven Central cannot be undone and everything that can still fail belongs in front of it.
+publishing to Maven Central cannot be undone and everything that can still fail belongs in front of it —
+which is why sbt runs twice there, with Docusaurus in between.
 
 ## Repository habits
 

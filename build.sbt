@@ -2,8 +2,6 @@ import Dependencies.*
 import h8io.sbt.dependencies.*
 import sbt.url
 
-val SiteRoot = "https://xi.h8.io/"
-
 ThisBuild / organization := "io.h8"
 ThisBuild / organizationName := "H8IO"
 ThisBuild / organizationHomepage := Some(url("https://github.com/h8io/"))
@@ -59,8 +57,13 @@ val pages = (project in file("pages"))
     name := "xi-pages",
     publish / skip := true,
     publishLocal / skip := true,
-    tlSiteApiUrl := Some(url(s"${SiteRoot}api/scala-2.13/")),
-    tlSiteHelium ~= { _.site.mainNavigation(depth = 3) }
+    // sbt 2 moves every target under the root's target/out; npm and release.sh expect the site's inputs here
+    cleanFiles += baseDirectory.value / "target",
+    ScalaUnidoc / unidoc / target := baseDirectory.value / "target" / s"scala-${scalaBinaryVersion.value}" / "unidoc",
+    mdocIn := (ThisBuild / baseDirectory).value / "docs",
+    mdocOut := baseDirectory.value / "target" / "mdoc",
+    mdocVariables :=
+      Map("VERSION" -> (if (isSnapshot.value) previousStableVersion.value else None).getOrElse(version.value))
   )
   .dependsOn(root)
-  .enablePlugins(ScalaUnidocPlugin, TypelevelSitePlugin)
+  .enablePlugins(ScalaUnidocPlugin, MdocPlugin)
