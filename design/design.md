@@ -20,14 +20,18 @@ domain modules, Apache Spark being the first.
 
 | Decision | Where |
 | --- | --- |
-| A pipeline is a `Stage`: a single tagged node or a list of them folded with `~>`, nesting wherever a stage takes a stage | §4 |
+| xi builds one `Stage` from a config and an input type given by its caller, and returns it with its output type; nothing else | §4 |
+| xi takes the config already loaded and merged; the pipeline is its root field `xi`, a sequence of tagged nodes | §4 |
+| A later source replaces `xi` whole; what is to be overridden lives outside it and is reached with `${…}` | §4 |
+| A pipeline is a `Stage`: a list of tagged nodes folded with `~>`, nesting wherever a stage takes a stage (one node alone: open, §9) | §4 |
+| Configs are Psi or YAML; a tag is a node tag, written in the source, and nothing else | §5 |
 | Two modules: core (domain-agnostic conversion) and spark (Spark-bound stages) | §3 |
 | spark is built for Scala 2.13 only; core is cross-built over 2.13 and 3.9 | §3 |
 | Spark stages work on `DataFrame`, not on a typed `Dataset[T]` | §3 |
 | The tag selects the builder; a tag is the FQN of a stage class or an alias for one | §5 |
 | Each domain module brings its own alias table; core only consults the tables it is given | §5 |
-| The builder is the stage's companion object, in the same module as the stage, and parses its own parameters | §6 |
-| core finds the builder by reflection from the FQN, and uses reflection for nothing else | §6 |
+| The builder is the stage's companion object, in the same module as the stage, and parses its own parameters (reopened: may a tag name a constructor instead, §9) | §6 |
+| core finds the builder by reflection from the FQN, and uses reflection for nothing else (reopened with it) | §6 |
 | Types are carried at runtime; a builder returns the stage together with the witness of its output type | §7 |
 | Errors are accumulated, not thrown, each with its node's `Location` | §8 |
 
@@ -55,31 +59,67 @@ type computations of §7 are mostly needed by the generic stages of `h8io.stages
 
 ## 4. Pipelines
 
+**What xi does, and all it does:** given a config and an input type, it builds the pipeline — one
+`Stage` — and gives its output type. The input type is the caller's: xi accepts any, and does not
+assume one (a pipeline that starts from nothing is simply one whose caller passes `Unit`). Running the
+pipeline, and loading the config, are not xi's.
+
+**The config arrives loaded and merged.** An application may be configured from a list of sources;
+merging them is the loader's work (Psi's, which also brings YAML in through `#yaml(…)`), and xi takes the
+one root map it produces. The pipeline is that map's **root field `xi`**, so a pipeline can live in the
+same files as the rest of an application's settings:
+
+```
+xi: [
+  @read { path: ${input.path} }
+  @filter { condition: ${filter.condition} }
+]
+```
+
+**A later source replaces the pipeline whole.** cfg merges maps deeply, but a sequence is replaced
+wholesale and there is no append operator (cfg `design/format.md` §7), and no path addresses the element
+of a sequence. So a source after the one that defines `xi` can swap the pipeline for another, but cannot
+insert a stage into it or change a parameter of one. That is accepted: a value meant to be overridden is
+written outside `xi`, in an ordinary map, and the stage reaches it with `${…}`, as above. Rejected: `xi`
+as a map of named steps, which would make every parameter overridable but would put the order of the
+pipeline on the order of the keys.
+
+That convention holds for Psi only. cfg's YAML loader also merges a list of files, last wins, sequences
+replaced, but it has no substitution step — a YAML file is taken as written, and its anchors and `<<`
+reach only within one document. So a pipeline loaded from YAML files alone has no way to override a
+stage's parameter short of replacing `xi`; loaded through Psi, with YAML brought in by `#yaml(…)`, it
+has `${…}` again.
+
 **A pipeline is a `Stage`.** `Stage ~> Stage` is itself a `Stage`, so there is no separate "pipeline"
 concept to model — in config as in code, a pipeline is just a stage that happens to be built out of
-others. Two spellings, and whatever consumes them cannot tell the difference:
-
-- a **single stage** — one tagged node;
-- a **chain** — a list of tagged nodes, folded left with `~>` in list order.
+others: a **chain**, a list of tagged nodes, folded left with `~>` in list order. Whether a single tagged
+node, not in a list, is a pipeline as well, and what an empty list is, are open (§9).
 
 And it nests: a stage's own configuration can take **a pipeline as a parameter**. `cycles.Loop` and
 `cycles.Repeat` each wrap one inner stage; `operators.And` and `operators.Or` each take two branches. The
-parameter positions in those configs accept exactly the two spellings above, so the pipeline decoder is
-recursive and reused wherever a stage asks for a stage.
+parameter positions in those configs accept exactly what `xi` does, so the pipeline decoder is recursive
+and reused wherever a stage asks for a stage. A nested pipeline's input is the input of the stage that
+holds it, not the caller's: the decoder takes the input type as a parameter at every level, and only the
+top level gets it from the caller.
 
 ## 5. Tags
 
 Every stage type comes with a **`StageBuilder`**, the object that turns one config node into the `Stage`
-itself. **The tag selects the builder.** `Tagged` resolves a node to that tag plus the node that is left,
-accepting four spellings: a node tag from the source (`!kind {…}` in YAML, `@kind {…}` in Psi), a `_` key
-holding the tag (`{_: kind, …}`, stripped from the map), a single-key map (`{kind: {…}}`), or a bare scalar
-(`kind`, with `Node.Null` as the config). A map with no tag, no `_` and several keys is `AmbiguousMap`; a
-`_` that is not a scalar is `NonScalarTag`.
+itself. **The tag selects the builder.** A stage is written `@stage-tag stage-cfg` in Psi and
+`!stage-tag stage-cfg` in YAML, where `stage-cfg` is any cfg node — null, scalar, map or sequence — and is
+handed to the builder as it is. **The node tag is the only spelling:** a node with no tag where a stage is
+expected is an error on that node. A stage with no parameters is `@identity null` in Psi, which needs a
+value after a tag, and `!identity` in YAML — where it is an empty *scalar*, not a null: an explicit tag
+takes the node out of YAML's null resolution (cfg-yaml wraps a scalar as `Node.Null` only when its tag is
+`!!null`), and so does `!identity ~`. A builder that takes no parameters has to accept both.
 
-Three of those four spellings are a crutch, and deliberately so: only cfg's YAML and Psi loaders produce
-real node tags. The HOCON/JSON loader goes through Typesafe Config, which has no notion of a tag at all —
-every node it builds has `tag == None`, unconditionally. So for HOCON the tag has to be carved out of
-ordinary map structure, which is what `_` and the single-key map do.
+**Configs are Psi or YAML**, because those are the loaders that produce node tags. The HOCON/JSON loader
+goes through Typesafe Config, which has no notion of a tag — every node it builds has `tag == None` — so
+a pipeline cannot be written in HOCON. HOCON can still reach a config through Psi's `#hocon(…)`, untagged,
+which makes it a place for the parameters a stage refers to with `${…}` (§4), not for stages. Dropped with
+this (§10, session 2): the three spellings the first draft carved out of map structure for HOCON — a `_`
+key holding the tag, a single-key map, a bare scalar — and their errors, `AmbiguousMap` and
+`NonScalarTag`.
 
 A tag is either **the FQN of a stage class** or **an alias** for one. Aliases depend on the domain the
 pipeline is written for, so each domain module brings its own table (spark has one for its stages); core
@@ -169,6 +209,14 @@ Errors are accumulated rather than thrown, so that a bad config reports every pr
 
 ## 9. Open questions
 
+- **Constructor or builder.** Whether a tag may name a stage's constructor as well as a builder — say, for
+  a stage with no parameters, where a companion that only calls `new` is boilerplate. §6 and session 1
+  rejected core calling constructors by reflection (parameter parsing moving into core, mistakes surfacing
+  only at runtime); the question is reopened, not decided the other way. A generic builder in core for
+  stages without parameters would remove the boilerplate without calling constructors from config.
+- **A single stage as a pipeline.** Whether `xi`, and a pipeline parameter of a nested stage, may also be one
+  tagged node rather than a list of one. Whatever is chosen holds at every level, as the decoder is one.
+- **An empty pipeline**, `xi: []`: an error, or `Identity` of the input type.
 - **What accumulates errors.** cfg-schema gave `CfgValue`, an alias of cats' `Validated`; cfg 0.4.x has
   neither. cats-core is still on the classpath, but only transitively, through the `io.h8 %% stages`
   umbrella artifact and its `stages-cats`. Options: depend on cats-core directly, or a small accumulating
@@ -221,3 +269,25 @@ witness (§7); accumulated errors (§8); izumi-reflect argued for over `h8io.ref
   which would leave coverage on 3.9 without the root that aggregates and gates it. So spark cross-builds
   over both and is empty on 3.9 (`sparkSupported` in `build.sbt`). This also settles the docs: `pages`
   depends on core and spark, and the Scala 3 API simply has no spark.
+
+### Session 2 — 2026-11-23
+
+- **What xi is for, narrowed.** xi builds one `Stage` from a config and an input type given by its caller,
+  and returns it with its output type. Proposed first: every pipeline starts from `Unit`. Settled instead:
+  any input type, the caller's choice — `Unit` is just what a caller passes for a pipeline that starts from
+  nothing. Nested pipelines take the input of the stage that holds them either way, so the decoder carries
+  the input type at every level.
+- **The pipeline is the root field `xi`** of a config that arrives loaded and merged: a sequence of
+  `@stage-tag stage-cfg`, `stage-cfg` any cfg node. Loading a list of sources and merging them is the
+  loader's work, not xi's.
+- **A later source replaces `xi` whole.** cfg replaces sequences on merge and has no append operator, so
+  a later source cannot insert a stage or change one's parameter. Accepted, with the convention that what
+  is to be overridden lives outside `xi` and is reached with `${…}` — which works under Psi only, cfg's
+  YAML loader having no substitution. Rejected: `xi` as a map of named steps, which would make every
+  parameter overridable at the price of ordering the pipeline by its keys.
+- **Psi and YAML only; the node tag is the only spelling.** Dropped: HOCON as a format for pipelines, and
+  with it the three spellings the first draft carved out of map structure for it (`_`, the single-key map,
+  the bare scalar) and the errors `AmbiguousMap` and `NonScalarTag`. HOCON stays reachable through Psi's
+  `#hocon(…)` for untagged parameters.
+- **Constructor or builder, reopened** (§9). The proposal was a tag bound to "a constructor or a builder";
+  session 1 had rejected core calling constructors. Not decided either way yet.
