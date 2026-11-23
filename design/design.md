@@ -88,7 +88,8 @@ That convention holds for Psi only. cfg's YAML loader also merges a list of file
 replaced, but it has no substitution step — a YAML file is taken as written, and its anchors and `<<`
 reach only within one document. So a pipeline loaded from YAML files alone has no way to override a
 stage's parameter short of replacing `xi`; loaded through Psi, with YAML brought in by `#yaml(…)`, it
-has `${…}` again.
+has `${…}` again. Psi is the loader xi is designed around, and a configuration of YAML files alone is not
+a case the design caters for: it works, without overrides of parameters.
 
 **A pipeline is a `Stage`.** `Stage ~> Stage` is itself a `Stage`, so there is no separate "pipeline"
 concept to model — in config as in code, a pipeline is just a stage that happens to be built out of
@@ -285,6 +286,8 @@ witness (§7); accumulated errors (§8); izumi-reflect argued for over `h8io.ref
   is to be overridden lives outside `xi` and is reached with `${…}` — which works under Psi only, cfg's
   YAML loader having no substitution. Rejected: `xi` as a map of named steps, which would make every
   parameter overridable at the price of ordering the pipeline by its keys.
+  That limit was judged not to matter: YAML on its own is not a case worth designing for, YAML comes in
+  through Psi's `#yaml(…)`.
 - **Psi and YAML only; the node tag is the only spelling.** Dropped: HOCON as a format for pipelines, and
   with it the three spellings the first draft carved out of map structure for it (`_`, the single-key map,
   the bare scalar) and the errors `AmbiguousMap` and `NonScalarTag`. HOCON stays reachable through Psi's
