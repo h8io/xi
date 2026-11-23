@@ -61,19 +61,26 @@ versions it knows and ends in `unsupportedScala`, so a new version fails the bui
 
 ## Build layout
 
-Two sbt projects in `build.sbt`:
+Four sbt projects in `build.sbt`:
 
-- **root** (`xi`, `src/`) — the library. Enables `ScoverageSummaryPlugin`.
-- **pages** (`xi-pages`, `pages/`) — the documentation site. `publish / skip`, depends on root, enables
+- **core** (`xi-core`, `core/`) — the domain-agnostic library, package `h8io.xi.core`.
+- **spark** (`xi-spark`, `spark/`) — the Spark-bound stages; Spark is `Provided`. **Real only on 2.13**: Spark
+  has no Scala 3 build, so on 3.9 the project is empty — no source directories, no Spark, `publish / skip`
+  (`sparkSupported` in `build.sbt`). It still lists 3.9 in `crossScalaVersions`, because `+` runs a task on
+  the root alone wherever the root supports the version, and the root's aggregation would otherwise pull a
+  2.13-only spark onto a core switched to 3.9 (`Scala version mismatch`).
+- **root** (`xi`, the repository root) — aggregates core and spark, publishes nothing. Enables
+  `ScoverageSummaryPlugin`, so coverage is measured, aggregated and gated here.
+- **pages** (`xi-pages`, `pages/`) — the documentation site. `publish / skip`, depends on core and spark, enables
   `ScalaUnidocPlugin` + `MdocPlugin`. Two halves: sbt runs mdoc over `docs/` and unidoc, both into
   `pages/target`, then Docusaurus (`pages/package.json`, Node ≥ 20) renders mdoc's output. The navigation is
   `pages/sidebars.js` — a new page must be listed there. Docs are CommonMark, not MDX
   (`markdown.format: 'detect'`), and broken links fail the build. The navbar's API dropdown links to the
   unidoc output that `release.sh` copies in beside the site, one per Scala version (`api/scala-3`,
-  `api/scala-2.13`) and listed there by hand, through `pathname://` so the link checker
+  `api/scala-2.13`; the Scala 3 one has no spark in it) and listed there by hand, through `pathname://` so the link checker
   leaves it alone.
 
-Common settings are bare, so they apply to both projects; `project/Dependencies.scala` holds versions. `build.sbt`
+Common settings are bare, so they apply to every project; `project/Dependencies.scala` holds versions. `build.sbt`
 imports `h8io.sbt.dependencies.*` from the sbt-dependencies plugin, which is what makes
 `libraryDependencies ++= TestBundle % Test` work on a `Seq[ModuleID]`.
 

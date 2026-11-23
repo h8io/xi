@@ -1,3 +1,5 @@
+package h8io.xi.core.stages
+
 import cats.data.Validated
 import h8io.cfg.{Node, NodeError}
 import h8io.reflect.Type

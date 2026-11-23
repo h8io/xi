@@ -43,8 +43,10 @@ domain modules, Apache Spark being the first.
 **spark is built for Scala 2.13 only**, because Spark publishes no Scala 3 build. It is not going to be
 reached from Scala 3 through `CrossVersion.for3Use2_13` either: `DataFrame` operations would work that way,
 but `spark.implicits._` and `Encoder` derivation rest on scala-reflect's `TypeTag`, which Scala 3 does not
-have. So the module sets its own `crossScalaVersions` to 2.13 alone, `+` commands skip it on the 3.9 row,
-and the Scala 3 API docs have no spark in them.
+have. So on 3.9 the module is empty — no sources, no Spark dependency, nothing published — and the Scala 3
+API docs have no spark in them. It stays in the 3.9 row of the cross build rather than leaving it, because
+sbt's `+` runs a task on the aggregating root alone wherever the root supports the version, and the root
+would then pull a 2.13-only spark onto a core switched to 3.9 (§10, session 1).
 
 **Spark stages work on `DataFrame`** (`Dataset[Row]`), not on a typed `Dataset[T]`. A typed dataset needs an
 `Encoder[T]`, and when the pipeline comes from config `T` is only known at runtime, where no implicit can be
@@ -183,9 +185,6 @@ Errors are accumulated rather than thrown, so that a bad config reports every pr
 - **The alias table**: its format and how a domain module hands it to core.
 - **FQN tags in Psi** need backticks — ``@`h8io.xi.spark.Filter` `` — because a dot does not fit
   `Id.SafeKeyPattern`. Aliases make that rare; whether anything more is needed is open.
-- **The documentation site with a 2.13-only module.** `pages` cannot depend on spark on the 3.9 row, and
-  `dependsOn` does not vary with the Scala version: either the site is built for 2.13 only, or the Scala 3
-  API is built separately, without spark.
 
 ## 10. Decision log
 
@@ -215,3 +214,10 @@ witness (§7); accumulated errors (§8); izumi-reflect argued for over `h8io.ref
   constructors and the config's fields — parameter parsing would move into core and every mistake would
   surface only at runtime.
 - **Aliases per domain module.** Each domain module brings its own table; core consults what it is given.
+- **spark is empty on 3.9, not absent from it.** Tried first: `spark / crossScalaVersions := Seq("2.13.18")`.
+  `+testFull` then failed with `Scala version mismatch: spark (Scala 2.13.18) depends on core (Scala 3.9.0)`:
+  sbt 2.1.0's `Cross.scala` runs a task on the current project alone when it supports the version, and the
+  root's aggregation reaches spark, which was left on 2.13. Rejected as well: dropping 3.9 from the root,
+  which would leave coverage on 3.9 without the root that aggregates and gates it. So spark cross-builds
+  over both and is empty on 3.9 (`sparkSupported` in `build.sbt`). This also settles the docs: `pages`
+  depends on core and spark, and the Scala 3 API simply has no spark.
