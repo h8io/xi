@@ -7,13 +7,15 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 `xi` (Xi Query Language) is a Scala library that builds [stages](https://stages.h8.io/) pipelines out of
 configuration: it reads a [cfg](https://cfg.h8.io/) node tree and turns it into stages wired together, so
 a pipeline can be described in a config file rather than in code. It is early — nothing is published to
-Maven Central yet, and `Factorial` is scaffolding left from the project template rather than real API.
+Maven Central yet, and `src/` holds no code at the moment: the first draft (`Tagged`, built on cfg-schema) was
+removed when cfg 0.4.x dropped cfg-schema, and the design below is waiting to be written against the new cfg.
 
 ## The design
 
-> The code in `src/` is a **very rough draft**. `StageBuilder`, `StageSpec` and `Tagged` sketch a
-> direction; none of the signatures are settled. Read this section for intent, not as a contract, and
-> expect to change what is there rather than work around it.
+> This section is **intent, not code**. `StageBuilder`, `StageSpec` and `Tagged` below sketch a direction;
+> none of the signatures are settled, and none of them exist in `src/` right now. Several pieces the sketch
+> leans on came from cfg-schema (`Decoder`, `SelectiveDecoder`, `CfgValue`, cats' `Validated`), which cfg
+> 0.4.x no longer has: whatever replaces them is part of writing this down again.
 
 **A pipeline is a `Stage`.** `Stage ~> Stage` is itself a `Stage`, so there is no separate "pipeline"
 concept to model — in config as in code, a pipeline is just a stage that happens to be built out of
@@ -96,21 +98,20 @@ reports a `NodeError` against that node's `Location`.
 
 That is the argument for izumi-reflect over `h8io.reflect`: `LightTypeTag` has `typeArgs`, `withoutArgs`
 and `combine` for exactly this taking-apart and rebuilding, alongside `<:<`/`=:=`, while
-`h8io.reflect.Type` exposes only the comparisons. izumi is also already on the classpath — cfg-schema
-depends on izumi-reflect 3.0.9 and `SelectiveDecoder` requires a `Tag` — so `io.h8 %% reflect` would just
-go away. Treat the `h8io.reflect.Type` in `StageBuilder`/`StageSpec` as provisional.
+`h8io.reflect.Type` exposes only the comparisons. izumi is on the classpath today only through `reflect`
+0.0.6 itself (izumi-reflect 3.0.11; cfg-schema, which also brought it, is gone), so moving to izumi means
+depending on it directly, and `io.h8 %% reflect` would then go away. Treat the `h8io.reflect.Type` in `StageBuilder`/`StageSpec` as provisional.
 
-Most of this is still intent, not code: `StageBuilder`'s companion is empty, there is no builder registry,
-and nothing yet decodes either pipeline form or descends into a nested one. `Tagged` and `StageSpec` are
-the parts that exist, and they are drafts too.
+All of this is still intent: there is no `StageBuilder`, no builder registry, and nothing yet decodes
+either pipeline form or descends into a nested one.
 
 ## Commands
 
 ```bash
 ./test.sh                      # everything CI runs: fmt check, cross-build, coverage gate, docs, site
 sbt +testFull                  # cross-build the tests only; plain `test` skips what already passed
-sbt "testOnly h8io.xi.cfg.TaggedDecoderTest"
-sbt "testOnly *TaggedDecoderTest -- -z \"single key\""   # one example by name substring
+sbt "testOnly h8io.xi.SomeTest"
+sbt "testOnly *SomeTest -- -z \"some example\""   # one example by name substring
 sbt "scalafmtAll; scalafmtSbt" # format (test.sh only *checks*, it does not fix)
 sbt pages/mdoc                 # compile the docs' `scala mdoc` blocks, into pages/target/mdoc
 (cd pages && npm ci && npm run build)  # render pages/target/mdoc with Docusaurus, into pages/target/site
@@ -166,11 +167,11 @@ these libraries change under xi.
 
 | Repo | Path | What xi uses from it | Pinned in `Dependencies.scala` |
 | --- | --- | --- | --- |
-| [stages](https://stages.h8.io/) | `../stages` | `Stage[-I, +O, +E]`, `~>`, `Yield`, `Evolution`, `Status`; `lib/` has ready-made stages | `stages` 0.0.24 |
-| [cfg](https://cfg.h8.io/) | `../cfg` | `Node` tree, `Id`, `Location`, `NodeError`; `cfg-schema` for `Decoder`, `SelectiveDecoder`, `CfgValue`, `Property` | `cfg` / `cfg-schema` 0.0.15 |
+| [stages](https://stages.h8.io/) | `../stages` | `Stage[-I, +O, +E]`, `~>`, `Yield`, `Evolution`, `Status`; `lib/` has ready-made stages | `stages` 0.1.0 |
+| [cfg](https://cfg.h8.io/) | `../cfg` | `Node` tree, `Id`, `Location`, `NodeError`, `CfgError` | `cfg` 0.4.1 |
 | reflect (on the way out) | `../reflect` | `Type[T]` — runtime types with `<:<` / `=:=` | `reflect` 0.0.6 |
 
-**Check the pin before trusting local source.** `../stages` at v0.0.24 and `../cfg` at v0.0.15 currently
+**Check the pin before trusting local source.** `../stages` at v0.1.0 and `../cfg` at v0.4.1 currently
 match what `Dependencies.scala` asks for, but they drift — these libraries move under xi, and a local
 checkout is normally the *newer* API. Bumping a pin is its own commit (cfg 0.0.12 and stages 0.0.22 both
 arrived that way), so the two can be a release apart at any moment.
@@ -215,9 +216,7 @@ spellings — not the 2.13 ones. scalafmt is pinned to the `scala213source3` dia
 
 ScalaTest `AnyFlatSpec` with `Matchers`; ScalaMock's `MockFactory` for cfg's `Node` traits, where
 expectations are set with the `(() => node.tag).expects()` arity-0 form. `cfg` does not publish its test
-sources, so helpers like `src/test/scala/h8io/xi/cfg/testutil/MockLocation.scala` are copied here rather
-than imported. Decoder results are `Validated`, compared with cats syntax (`shouldBe Tagged(...).valid` /
-`.invalid`).
+sources, so a helper such as a mock `Location` is copied here rather than imported.
 
 Under Scala 3 ScalaMock cannot mock Java classes, so an opaque value is `new AnyRef`, not `mock[AnyRef]`; and a direct
 call of an untyped polymorphic singleton from stages, such as `Identity(x)`, is an ambiguous overload, so name the
