@@ -3,6 +3,8 @@ import h8io.sbt.dependencies.*
 
 val ProjectName = "xi"
 
+val ScalaVersion213 = "2.13.18"
+
 // Every branch on the Scala version lists the versions it knows and ends here, so that a new one fails the build until
 // each of them has been looked at
 def unsupportedScala(version: String): Nothing = throw new MessageOnlyException(s"Unsupported Scala version $version")
@@ -16,7 +18,7 @@ licenses := List(License.Apache2)
 developers := List(
   Developer(id = "eshu", name = "Pavel", email = "tjano.xibalba@gmail.com", url = uri("https://github.com/eshu/")))
 
-scalaVersion := "2.13.18"
+scalaVersion := ScalaVersion213
 crossScalaVersions += "3.9.0"
 javacOptions ++= Seq("--release", "11")
 
@@ -80,10 +82,21 @@ coverageSummaryBranchHighThreshold := 100
 
 libraryDependencies ++= TestBundle % Test
 
-val root = (project in file(".")).settings(
-  name := ProjectName,
+val core = (project in file("core")).settings(
+  name := "xi-core",
   libraryDependencies ++= H8IO
-).enablePlugins(ScoverageSummaryPlugin)
+)
+
+val spark = (project in file("core")).settings(
+  name := "xi-spark",
+  libraryDependencies ++= H8IO ++ Spark % Provided,
+  crossScalaVersions := Seq(ScalaVersion213)
+).dependsOn(core)
+
+val root = (project in file("."))
+  .enablePlugins(ScoverageSummaryPlugin)
+  .settings(name := ProjectName)
+  .aggregate(core, spark)
 
 val pages = (project in file("pages"))
   .settings(

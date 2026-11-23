@@ -2,11 +2,16 @@ import sbt.*
 
 object Dependencies {
   private val CatsVersion = "2.13.0"
+  val SparkVersion = "4.3.0"
 
   val H8IO: Seq[ModuleID] = Seq(
     "io.h8" %% "stages" % "0.1.0",
     "io.h8" %% "cfg" % "0.4.1",
     "io.h8" %% "reflect" % "0.0.6"
+  )
+
+  val Spark: Seq[ModuleID] = Seq(
+    "org.apache.spark" %% "spark-sql" % SparkVersion
   )
 
   val TestBundle: Seq[ModuleID] = Seq(
