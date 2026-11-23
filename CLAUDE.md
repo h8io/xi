@@ -4,106 +4,24 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-`xi` (Xi Query Language) is a Scala library that builds [stages](https://stages.h8.io/) pipelines out of
-configuration: it reads a [cfg](https://cfg.h8.io/) node tree and turns it into stages wired together, so
-a pipeline can be described in a config file rather than in code. It is early — nothing is published to
-Maven Central yet, and `src/` holds no code at the moment: the first draft (`Tagged`, built on cfg-schema) was
-removed when cfg 0.4.x dropped cfg-schema, and the design below is waiting to be written against the new cfg.
+`xi` (Xi Query Language) is a Scala library that turns [cfg](https://cfg.h8.io/) configuration into
+[stages](https://stages.h8.io/) pipelines: it reads a cfg node tree and builds stages wired together, so a
+pipeline can be described in a config file rather than in code. It is early — nothing is published to Maven
+Central yet, and the only library code is two drafts, `StageBuilder` and `StageSpec`: the rest of the first
+draft (`Tagged`, built on cfg-schema) was removed when cfg 0.4.x dropped cfg-schema.
 
 ## The design
 
-> This section is **intent, not code**. `StageBuilder`, `StageSpec` and `Tagged` below sketch a direction;
-> none of the signatures are settled, and none of them exist in `src/` right now. Several pieces the sketch
-> leans on came from cfg-schema (`Decoder`, `SelectiveDecoder`, `CfgValue`, cats' `Validated`), which cfg
-> 0.4.x no longer has: whatever replaces them is part of writing this down again.
+The design lives in **`design/design.md`**, the design notes. Read the relevant sections before changing
+anything they describe: §2 lists what is settled, §9 what is open, and §10 logs how each decision was reached,
+so a question already argued through is not reopened. A design change is decided with the user before it is
+coded, and recorded there, in its section and in §10.
 
-**A pipeline is a `Stage`.** `Stage ~> Stage` is itself a `Stage`, so there is no separate "pipeline"
-concept to model — in config as in code, a pipeline is just a stage that happens to be built out of
-others. Two spellings, and whatever consumes them cannot tell the difference:
-
-- a **single stage** — one tagged node;
-- a **chain** — a list of tagged nodes, folded left with `~>` in list order.
-
-And it nests: a stage's own configuration can take **a pipeline as a parameter**. `cycles.Loop` and
-`cycles.Repeat` each wrap one inner stage; `operators.And` and `operators.Or` each take two branches. The
-parameter positions in those configs accept exactly the two spellings above, so the pipeline decoder is
-recursive and reused wherever a stage asks for a stage.
-
-Every stage type comes with a **`StageBuilder`**, the object that turns one config node into the `Stage`
-itself. **The tag selects the builder.** `Tagged` resolves a node to that tag plus the node that is left,
-accepting four spellings: a node tag from the source (`!kind {…}`), a `_` key holding the tag
-(`{_: kind, …}`, stripped from the map), a single-key map (`{kind: {…}}`), or a bare scalar (`kind`, with
-`Node.Null` as the config). A map with no tag, no `_` and several keys is `AmbiguousMap`; a `_` that is
-not a scalar is `NonScalarTag`.
-
-Three of those four spellings are a crutch, and deliberately so: only cfg's YAML backend produces real
-node tags. The HOCON/JSON backend goes through Typesafe Config, which has no notion of a tag at all —
-`MapImpl.tag`, `SeqImpl.tag` and every scalar it builds return `None`, unconditionally. So for HOCON the
-tag has to be carved out of ordinary map structure, which is what `_` and the single-key map do.
-
-A tag is either **an FQN of a class** or **an alias** for one. Aliases will depend on the domain the
-pipeline is written for, so what they are and where the table of them lives is deliberately open — it gets
-settled per concrete implementation, not here.
-
-Types are carried at runtime, because the pipeline shape is only known once the config is read:
-
-```scala
-trait StageBuilder[E] {
-  def apply[I](cfg: Node, in: Type[I]): Validated[NodeError, StageSpec[I, ?, E]]
-}
-final case class StageSpec[-I, O, +E](out: Type[O], stage: Stage[I, O, E])
-```
-
-**`StageSpec` is the builder's result**: the stage it built, plus the witness of that stage's output type.
-It exists because of erasure. A stage assembled from config is abstract — the return type is
-`StageSpec[I, ?, E]`, and `?` is exactly the point: what `O` is was decided at runtime, from the config,
-so nothing static remains of it. Pairing `out: Type[O]` with `stage: Stage[I, O, E]` in one value is what
-keeps the erased `O` recoverable and keeps the witness from drifting away from the stage it describes.
-
-That is what makes a chain fold: each element's `StageSpec.out` becomes the next element's `in`, and the
-stages compose with `Stage.~>`. At that seam the compiler cannot help — the two `?`s are unrelated to it —
-so the `Type` comparison is what stands in for the typecheck, and whatever cast joins the two stages is
-sound only because that comparison passed. Keep the check and the cast next to each other.
-
-The same `StageSpec` comes back from a nested pipeline: a builder for `And` decodes its two branches, gets
-a `StageSpec` for each, and derives its own output type from theirs. Errors are accumulated as
-`Validated[NodeError, _]` (cfg's `CfgValue`) rather than thrown, so a bad config reports every problem
-with its source `Location` at once.
-
-### Why runtime types at all
-
-Because **many stages derive their output type from their input type**, and the input type is only known
-once the config has been read. The stages library is full of polymorphic singletons cast to a concrete
-type at the use site, where the type parameter comes from the caller and nothing else:
-
-| Stage (`h8io.stages`) | Input | Output |
-| --- | --- | --- |
-| `std.Identity[T]` | `T` | `T` |
-| `projections.Unlift[T]` | `Option[T]` | `T` |
-| `std.Coalesce[T]` | `Either[T, T]` | `T` |
-| `std.Swap[L, R]` | `(L, R)` | `(R, L)` |
-| `projections.Either.Left[T]` | `Either[T, ?]` | `T` |
-| `operators.And(l, r)` | `I` | `(LO, RO)` — from the branches' outputs |
-| `operators.Or(l, r)` | `I` | `Either[LO, RO]` — likewise |
-| `cycles.Loop(s)` | `T` | `T` (the inner stage is an endo) |
-| `cycles.Repeat(s)` | `I` | the inner stage's output |
-
-A builder for any of these cannot summon `Tag[O]` implicitly — `O` is a function of the runtime `in`, or
-of what a nested pipeline turned out to produce. It has to *compute* the output tag: pass it through
-(`Identity`, `Repeat`), take the input tag apart (`Unlift`, `Coalesce`), take it apart and rebuild it in a
-new shape (`Swap`), or build a new applied type out of the tags two nested pipelines reported (`And`,
-`Or`). And it has to check the input in the first place — `Unlift` is only applicable if
-`in <:< Option[?]`, `Loop` only if its inner stage's output matches its input — otherwise the builder
-reports a `NodeError` against that node's `Location`.
-
-That is the argument for izumi-reflect over `h8io.reflect`: `LightTypeTag` has `typeArgs`, `withoutArgs`
-and `combine` for exactly this taking-apart and rebuilding, alongside `<:<`/`=:=`, while
-`h8io.reflect.Type` exposes only the comparisons. izumi is on the classpath today only through `reflect`
-0.0.6 itself (izumi-reflect 3.0.11; cfg-schema, which also brought it, is gone), so moving to izumi means
-depending on it directly, and `io.h8 %% reflect` would then go away. Treat the `h8io.reflect.Type` in `StageBuilder`/`StageSpec` as provisional.
-
-All of this is still intent: there is no `StageBuilder`, no builder registry, and nothing yet decodes
-either pipeline form or descends into a nested one.
+In short, as of now: two modules, **core** (domain-agnostic: tags, builder lookup, chains, nested pipelines,
+runtime types, error accumulation; 2.13 and 3.9) and **spark** (simple stages bound to Spark on `DataFrame`,
+each with its builder as the companion object; 2.13 only). A tag is a stage class's FQN or a domain alias,
+and core finds the builder by reflection — with the class checked before it is initialized, through the
+context classloader.
 
 ## Commands
 

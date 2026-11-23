@@ -1,5 +1,3 @@
-package h8io.xi.stages
-
 import h8io.reflect.Type
 import h8io.stages.Stage
 
