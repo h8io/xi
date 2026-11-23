@@ -18,15 +18,15 @@ developers := List(
 
 scalaVersion := "2.13.18"
 crossScalaVersions += "3.9.0"
-javacOptions ++= Seq("-target", "8")
+javacOptions ++= Seq("--release", "11")
 
 versionScheme := Some("semver-spec")
 // sbt-dynver computes the version once for the whole build, from these two in ThisBuild
 ThisBuild / dynverSonatypeSnapshots := true
 ThisBuild / dynverSeparator := "-"
 
-scalacOptions ++= {
-  CrossVersion.partialVersion(scalaVersion.value) match {
+scalacOptions ++=
+  (CrossVersion.partialVersion(scalaVersion.value) match {
     case Some((2, 13)) =>
       Seq(
         "-Xsource:3",
@@ -58,8 +58,7 @@ scalacOptions ++= {
         "-Wconf:msg=eta-expansion is unnecessary:s"
       )
     case _ => unsupportedScala(scalaVersion.value)
-  }
-}
+  })
 
 // For code whose statements are values on purpose: a ScalaMock expectation or a ScalaTest assertion in tests, an
 // expression shown with its result in the docs. Those are spared the warnings about discarded values. On 2.13 the
