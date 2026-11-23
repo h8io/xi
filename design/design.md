@@ -23,7 +23,7 @@ domain modules, Apache Spark being the first.
 | xi builds one `Stage` from a config and an input type given by its caller, and returns it with its output type; nothing else | §4 |
 | xi takes the config already loaded and merged; the pipeline is its root field `xi`, a sequence of tagged nodes | §4 |
 | A later source replaces `xi` whole; what is to be overridden lives outside it and is reached with `${…}` | §4 |
-| A pipeline is a `Stage`: a list of tagged nodes folded with `~>`, nesting wherever a stage takes a stage (one node alone: open, §9) | §4 |
+| A pipeline is a `Stage`: a list of tagged nodes folded with `~>`, nesting wherever a stage takes a stage; an empty list is `Identity` (one node alone: open, §9) | §4 |
 | Configs are Psi or YAML; a tag is a node tag, written in the source, and nothing else | §5 |
 | Two modules: core (domain-agnostic conversion) and spark (Spark-bound stages) | §3 |
 | spark is built for Scala 2.13 only; core is cross-built over 2.13 and 3.9 | §3 |
@@ -93,8 +93,9 @@ a case the design caters for: it works, without overrides of parameters.
 
 **A pipeline is a `Stage`.** `Stage ~> Stage` is itself a `Stage`, so there is no separate "pipeline"
 concept to model — in config as in code, a pipeline is just a stage that happens to be built out of
-others: a **chain**, a list of tagged nodes, folded left with `~>` in list order. Whether a single tagged
-node, not in a list, is a pipeline as well, and what an empty list is, are open (§9).
+others: a **chain**, a list of tagged nodes, folded left with `~>` in list order. An empty list, `xi: []`,
+is `std.Identity` of the input type: its output type is its input type. Whether a single tagged node, not
+in a list, is a pipeline as well is open (§9).
 
 And it nests: a stage's own configuration can take **a pipeline as a parameter**. `cycles.Loop` and
 `cycles.Repeat` each wrap one inner stage; `operators.And` and `operators.Or` each take two branches. The
@@ -217,7 +218,10 @@ Errors are accumulated rather than thrown, so that a bad config reports every pr
   stages without parameters would remove the boilerplate without calling constructors from config.
 - **A single stage as a pipeline.** Whether `xi`, and a pipeline parameter of a nested stage, may also be one
   tagged node rather than a list of one. Whatever is chosen holds at every level, as the decoder is one.
-- **An empty pipeline**, `xi: []`: an error, or `Identity` of the input type.
+- **An empty pipeline inside a cycle.** An empty list is `Identity` at every level, and `std.Identity` always
+  yields with `Success`; `cycles.Loop`, `Repeat`, `Fold` and `Reduce` go on while their inner stage reports
+  `Success`, so `@loop []` never returns. Whether the builders of the cycles reject an empty inner pipeline
+  as an error on its node, or leave it to the author, is open.
 - **What accumulates errors.** cfg-schema gave `CfgValue`, an alias of cats' `Validated`; cfg 0.4.x has
   neither. cats-core is still on the classpath, but only transitively, through the `io.h8 %% stages`
   umbrella artifact and its `stages-cats`. Options: depend on cats-core directly, or a small accumulating
@@ -292,5 +296,7 @@ witness (§7); accumulated errors (§8); izumi-reflect argued for over `h8io.ref
   with it the three spellings the first draft carved out of map structure for it (`_`, the single-key map,
   the bare scalar) and the errors `AmbiguousMap` and `NonScalarTag`. HOCON stays reachable through Psi's
   `#hocon(…)` for untagged parameters.
+- **An empty pipeline is `Identity`** of the input type, at every level. Noted with it: inside a cycle
+  it never returns (§9).
 - **Constructor or builder, reopened** (§9). The proposal was a tag bound to "a constructor or a builder";
   session 1 had rejected core calling constructors. Not decided either way yet.
