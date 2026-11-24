@@ -30,10 +30,11 @@ domain modules, Apache Spark being the first.
 | Spark stages work on `DataFrame`, not on a typed `Dataset[T]` | §3 |
 | The tag selects the builder; a tag is the FQN of a stage class or an alias for one (being reworked: tags from `xi.stages`, §9) | §5 |
 | Each domain module brings its own alias table; core only consults the tables it is given (being reworked with it, §9) | §5 |
-| The builder is the stage's companion object, in the same module as the stage, and parses its own parameters; a tag never names a constructor | §6 |
+| Builders only, for now: a builder takes the input type and the stage's cfg `Node`, checks that its stage can be built on that input, and returns the stage with its output type; a tag never names a constructor | §6, §7 |
+| A builder is any object that is a `StageBuilder`; by convention the stage's companion, in the same module, which parses its own parameters | §6 |
 | core finds the builder by reflection from the FQN, and uses reflection for nothing else | §6 |
 | Types are carried at runtime; a builder returns the stage together with the witness of its output type | §7 |
-| Errors are accumulated, not thrown, each with its node's `Location` | §8 |
+| Errors are accumulated, not thrown; xi's own `XiError`, carrying as many `Location`s as the error has, none included | §8 |
 
 ## 3. Modules
 
@@ -130,9 +131,15 @@ only knows how to consult the tables it is given and expand an alias into an FQN
 
 ## 6. Builders and their lookup
 
-**The builder is the stage's companion object**, in the same module as the stage:
-`object Filter extends StageBuilder[...]` next to `class Filter`. It parses its own parameters from the
-config node. **core finds it by reflection**, from the FQN: it loads the companion class (`<FQN>$`) and takes
+**Builders only, for now.** What builds a stage from config is a builder: it takes the input type and the
+cfg of that one stage, checks that its stage can be built on that input, and if so builds it, returning the
+stage with its output type. Other ways — a factory method, say — may be added later; none is designed now.
+
+**A builder is any object that is a `StageBuilder`.** By convention it is the stage's companion, in the
+same module as the stage: `object Filter extends StageBuilder[...]` next to `class Filter`, so the FQN of
+the stage and of its builder are one string. But nothing requires it: a builder in core for stages without
+parameters, named in `stages` by its own FQN, serves as well. It parses its own parameters from the config
+node. **core finds it by reflection**, from the FQN: it loads the class of the object (`<FQN>$`) and takes
 its `MODULE$`, which both 2.13 and 3.9 emit for an object. Reflection is used only to *find* the builder —
 core never calls a stage's constructor or reads its parameters itself. Three things this lookup has to get
 right:
@@ -140,17 +147,22 @@ right:
 1. **Check before initializing.** The tag comes from config, which is effectively outside input, and
    `Class.forName(name)` with initialization runs the static initializer of whatever class it names. Load
    with `initialize = false`, check `classOf[StageBuilder[?]].isAssignableFrom(cls)`, and only then read
-   `MODULE$`. A class that fails the check is a `NodeError` on the tag's node, not an exception.
+   `MODULE$`. A class that fails the check is an `XiError` on the tag's node, not an exception.
 2. **The right classloader.** Under Spark, user jars (`--jars`, `spark.jars`) are loaded by a classloader of
    their own, which the one that loaded xi-core cannot see into. Use the thread's context classloader, or
    one passed in explicitly — not `getClass.getClassLoader`.
 3. **A precise error.** A stage class without a companion object has no `<FQN>$`, and the error has to say
    that the class has no builder, not that the class was not found.
 
+**The builder reads `Node`, for now.** A builder gets the stage's cfg as a cfg `Node` and reads it itself.
+Decoding into case classes, à la circe, comes later, as a layer over this one — a builder for a `T` made
+from a decoder of `Node` into `T` — so that it adds to the `Node` builder rather than replacing it.
+
 ## 7. Runtime types
 
 Types are carried at runtime, because the pipeline shape is only known once the config is read. The two
-drafts that exist in code:
+drafts that exist in code — an illustration of the idea, not a signature to follow to the letter (it
+returns `NodeError`, where §8 now has `XiError`):
 
 ```scala
 trait StageBuilder[E] {
@@ -197,7 +209,7 @@ of what a nested pipeline turned out to produce. It has to *compute* the output 
 new shape (`Swap`), or build a new applied type out of the tags two nested pipelines reported (`And`,
 `Or`). And it has to check the input in the first place — `Unlift` is only applicable if
 `in <:< Option[?]`, `Loop` only if its inner stage's output matches its input — otherwise the builder
-reports a `NodeError` against that node's `Location`.
+reports an `XiError` against that node's `Location`.
 
 That is the argument for izumi-reflect over `h8io.reflect`: `LightTypeTag` has `typeArgs`, `withoutArgs`
 and `combine` for exactly this taking-apart and rebuilding, alongside `<:<`/`=:=`, while
@@ -209,9 +221,12 @@ enough as it is; treat the `h8io.reflect.Type` in `StageBuilder`/`StageSpec` as 
 ## 8. Errors
 
 Errors are accumulated rather than thrown, so that a bad config reports every problem with its source
-`Location` at once. Each is a cfg `NodeError`, tied to the node it is about. `StageBuilder` returns
-`Validated[NodeError, _]`, which used to be cfg-schema's `CfgValue`; what replaces it is decided during
-implementation (§9).
+`Location` at once. **The error is xi's own `XiError`, not cfg's `NodeError`**, because an error of xi is
+not always about one node: a mismatch of types at the seam of two stages is about the output of one and the
+input of the next, and a missing field such as `pipeline` is about a node that is not there, so only its
+parent can be pointed at. An `XiError` carries as many `Location`s as its error has, none included. The
+draft `StageBuilder` returns `Validated[NodeError, _]`, which used to be cfg-schema's `CfgValue`; what
+accumulates the errors is decided during implementation (§9).
 
 ## 9. Open questions
 
@@ -221,45 +236,42 @@ xi starts from the config: what it is for is that pipelines are convenient to wr
 settled first and the code follows it. Agreed so far:
 
 - `xi` is a **map** with at least two fields: **`stages`**, a mapping of stage tags to what builds the
-  stage (a builder, or a factory — open below), and **`pipeline`**, the sequence of `@stage-tag stage-cfg`
+  stage (a builder — the only kind for now, §6), and **`pipeline`**, the sequence of `@stage-tag stage-cfg`
   that `xi` itself used to be (§4). `stages` is a map, so it merges across sources and each can add tags;
   `pipeline` is a sequence and is still replaced whole.
-- **What an FQN in `stages` names is found out by reflection** — a companion that is a `StageBuilder`
-  is a builder, and so on — not declared by the author.
-- **An entry in `stages` can be more than an FQN.**
+- **An FQN in `stages` names a builder**, an object that is a `StageBuilder` (§6) — the stage's
+  companion by convention, any such object in fact — checked by reflection, not declared by the author.
+- **An entry in `stages` is an FQN, a scalar, and nothing more.** No tags derived from others: a stage
+  with its cfg preset is written with Psi's injection (cfg `design/format.md` §9), not by xi. `$a*` among
+  the fields of a block puts `a`'s fields there; what follows overrides them as `:` merges, maps deep and
+  anything else replaced, and a `:=` after it replaces whole. The injected fields keep their own
+  locations, and Psi reports a cycle of substitutions itself. A graft, `- $presets.strict` with
+  `strict: @filter { mode: strict }`, brings a whole stage, its tag included, but cannot be added to.
 
 ```
+presets {
+  strict { mode: strict, options { a: 1, b: 2 } }
+}
 xi {
   stages {
-    filter: h8io.xi.spark.Filter              # a scalar: an FQN, its kind found by reflection
-    strict-filter: @filter { mode: strict }   # proposed: a tagged node, filter with cfg preset
+    filter: h8io.xi.spark.Filter                          # an FQN, the builder found by reflection
   }
   pipeline: [
-    @strict-filter { condition: "x > 0" }
+    @filter { $presets.strict*, condition: "x > 0" }      # the preset, plus a field of its own
+    @filter { $presets.strict*, options := { c: 3 } }     # the preset, with options replaced whole
   ]
 }
 ```
 
 Open:
 
-- **What a richer entry is.** Proposed: a stage written as in `pipeline`, `@other-tag cfg`, a tag derived
-  from another with its cfg preset — no new syntax, and an FQN still appears only as a scalar. To preset
-  over a class directly, a base tag is declared first.
-- **How a preset cfg meets the cfg at the use site.** cfg's rule — maps merge deeply, the last wins,
-  anything else replaces — is the obvious one, but cfg's public API (`Node`, `Id`, `Location`, …) has no
-  merge: it lives inside Psi's loader, over its own tree. So: (a) xi merges `Node`s itself, (b) cfg makes
-  its merge of `Node`s public, one rule for both libraries — proposed, or (c) no merge, the use-site cfg
-  replaces the preset whole and `@strict-filter null` takes the preset as it is. With (a) or (b) the
-  location of a merged node has to point an error at where the value came from, not at one of the two.
-- **Chains and cycles of derived tags.** `a: @b {…}` with `b: @c {…}` follows naturally; a cycle
-  `a → b → a` is then an error that names every node of the cycle, not the first only.
-- **What a factory is**, as distinct from a builder: a method (`Obj.method`) returning a `Stage`, or
-  something else. It decides what reflection looks for at an FQN.
 - **Tags in `pipeline` only from `stages`**, no FQN as a tag. Proposed: one lookup, an unknown tag
   reported as missing from `stages` rather than as a class not found, and no backticks in Psi tags.
 - **A later source redefining a tag in `stages`**: a feature, swapping an implementation, or something to
   warn about, since it changes what a pipeline runs without a trace.
 - **Unknown fields in `xi`**, such as a misspelt `pipline`: an error — proposed — or ignored.
+- **Where presets live.** Outside `xi`, as `presets` above, which xi never reads; or a field of `xi`
+  such as `xi.presets`, which only Psi reads, and which unknown fields being an error would have to allow.
 - **Where the domain modules' tables go.** §5 has each domain module bring an alias table in code. With
   `stages` in the config, spark could ship a Psi resource with its `xi.stages { … }` instead, included with
   `#include(…)`: one mechanism for aliases rather than two, and all of it in config.
@@ -271,8 +283,6 @@ Open:
   umbrella artifact and its `stages-cats`. Options: depend on cats-core directly, or a small accumulating
   type of xi's own. Not to be settled in advance: decided during implementation, by what the builders
   turn out to need.
-- **What replaces cfg-schema's `Decoder`** for the builders' parameters: each builder reading `Node` by
-  hand, or a small decoding layer in core that builders share.
 - **izumi-reflect or `h8io.reflect`.** `h8io.reflect` exists because izumi does not get every type right.
   Measured in session 3 on izumi-reflect 3.0.11, Scala 2.13.18 and 3.9.0 alike, `LightTypeTag.<:<` answers
   `true` for all of: `Int <: AnyRef`, `AnyVal <: AnyRef`, `Any <: AnyRef`, a universal trait or a value
@@ -375,3 +385,28 @@ witness (§7); accumulated errors (§8); izumi-reflect argued for over `h8io.ref
   level.** Measured, not argued: the cases are listed in §9. The izumi-or-`reflect` question becomes how
   to have both correct comparisons at every depth and the taking-apart §7 needs.
 - **The `StageBuilder` signature stays open** (§9), deliberately.
+- **Presets are Psi's injections; a `stages` entry is an FQN only.** Proposed first: an entry could be
+  `@other-tag cfg`, a tag derived from another with its cfg preset, merged with the use site's cfg. cfg's
+  merge lives in Psi's loader, over syntax trees before resolution, with `:=` and a `MergedLocation`; a
+  loaded `Node` keeps neither. So rejected: (a) xi merging `Node`s itself and (b) cfg making a merge of
+  `Node`s public — both a second merge rule over a poorer representation, both without `:=`, so a use site
+  could never replace a map of the preset, and (b) would add a generic `IMap` and a merged `Location` to
+  cfg's API; and (c) no merge, `@strict-filter null` taking the preset as is — a preset that cannot be
+  added to. Psi's `$a*`, in cfg 0.4.0 on, already does it with the one rule, `:=` and the right locations,
+  and catches cycles; xi needs no code for it. Given up: presets work under Psi only (YAML's `<<` reaches
+  within one document, and YAML alone is not a case designed for, §4), and the use site writes the base
+  tag — `@filter { $presets.strict*, … }` — so a variant of a stage has no name of its own as a tag. This
+  closes what a richer entry is, how a preset merges, and chains and cycles of derived tags; the entry
+  above, that an entry can be more than an FQN, is withdrawn.
+- **Builders only, for now.** A builder takes the input type and the stage's cfg, checks that its stage
+  can be built on that input, and builds it, returning the stage with its output type. Other ways, the
+  factory among them, may come later and are not designed now; the open question of what a factory is
+  goes. `StageBuilder` and `StageSpec` illustrate the idea and are not to be followed to the letter.
+- **A builder is any `StageBuilder` object**, the stage's companion by convention only. Loading `<FQN>$`
+  finds a non-companion object as well, and allowing it costs nothing: a generic builder in core covers
+  stages without parameters, the boilerplate that made a constructor look attractive.
+- **The builder reads `Node` for now**; case classes decoded à la circe come later, as a layer over it.
+  This answers what replaces cfg-schema's `Decoder`, for now.
+- **`XiError` instead of cfg's `NodeError`.** An error of xi can be about several nodes — a mismatch of
+  types between two stages — or about one that is absent, a missing field, so an `XiError` carries any
+  number of `Location`s, none included.
