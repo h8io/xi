@@ -94,25 +94,26 @@ these libraries change under xi.
 | --- | --- | --- | --- |
 | [stages](https://stages.h8.io/) | `../stages` | `Stage[-I, +O, +E]`, `~>`, `Yield`, `Evolution`, `Status`; `lib/` has ready-made stages | `stages` 0.1.0 |
 | [cfg](https://cfg.h8.io/) | `../cfg` | `Node` tree, `Id`, `Location`, `NodeError`, `CfgError` | `cfg` 0.4.1 |
-| reflect (on the way out) | `../reflect` | `Type[T]` — runtime types with `<:<` / `=:=` | `reflect` 0.0.6 |
+| reflect | `../reflect` | `Type[T]` — runtime types with `<:<` / `=:=` | `reflect` 0.0.6 |
 
 **Check the pin before trusting local source.** `../stages` at v0.1.0 and `../cfg` at v0.4.1 currently
 match what `Dependencies.scala` asks for, but they drift — these libraries move under xi, and a local
 checkout is normally the *newer* API. Bumping a pin is its own commit (cfg 0.0.12 and stages 0.0.22 both
 arrived that way), so the two can be a release apart at any moment.
 
-`reflect` is pinned at 0.0.6, which matches `../reflect`, but it is still on its way out rather than a
-dependency to build on. Up to 0.0.4 it was built on `scala.reflect.runtime.universe` and carried variance
-machinery (`Variant`, `Covariant`, `Contravariant`), which has no Scala 3 build; 0.0.5 rewrote it over izumi's
-`LightTypeTag` with primitive/boxed pairs and `Any`/`AnyVal`/`AnyRef`/`Nothing`/`Null` special-cased, and 0.0.6
-publishes that for Scala 3 too. Two different libraries under one name — and once it is mostly a wrapper over
-izumi, xi may as well use izumi itself.
+`reflect` is pinned at 0.0.6, which matches `../reflect`. Up to 0.0.4 it was built on
+`scala.reflect.runtime.universe` and carried variance machinery (`Variant`, `Covariant`, `Contravariant`),
+which has no Scala 3 build; 0.0.5 rewrote it over izumi's `LightTypeTag` with primitives and
+`Any`/`AnyVal`/`AnyRef`/`Nothing`/`Null` special-cased, and 0.0.6 publishes that for Scala 3 too. Two
+different libraries under one name.
 
-What that gives up is the special-casing 0.0.5 added — primitive-vs-boxed above all, and the
-`Any`/`AnyVal`/`AnyRef`/`Nothing`/`Null` cases. Whether xi needs any of it is genuinely open: a wrapper
-over `LightTypeTag` may end up back here for exactly those edge cases, or the question may never come up.
-Don't settle it in advance, and don't write the wrapper on speculation — let a real pipeline that needs it
-be the thing that puts it there.
+**It exists because izumi gets types wrong, so do not swap it for bare izumi.** izumi-reflect 3.0.11 says
+`Int <: AnyRef`, `Any <: AnyRef`, `Null <: Int` and the like are true, on 2.13 and 3.9 alike: it treats
+`AnyRef` as `Any` and `Null` as a bottom type. `reflect` corrects that, but only at the top of a type —
+inside type arguments it delegates to izumi, so `Box[Int] <: Box[AnyRef]` and
+`Stage[AnyRef, Int] <: Stage[Int, Int]` still come out true — and it does not expose the taking-apart
+(`typeArgs`, `combine`) that builders deriving an output type need. Neither is enough as it is; how to get
+both is open (`design/design.md` §7, §9, with the measured cases).
 
 `../cfg` has its own CLAUDE.md; all three follow the same build conventions as this repo.
 

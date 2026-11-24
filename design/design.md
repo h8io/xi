@@ -23,15 +23,15 @@ domain modules, Apache Spark being the first.
 | xi builds one `Stage` from a config and an input type given by its caller, and returns it with its output type; nothing else | §4 |
 | xi takes the config already loaded and merged; the pipeline is its root field `xi`, a sequence of tagged nodes (being replaced: `xi` becomes a map, §9) | §4 |
 | A later source replaces `xi` whole; what is to be overridden lives outside it and is reached with `${…}` | §4 |
-| A pipeline is a `Stage`: a list of tagged nodes folded with `~>`, nesting wherever a stage takes a stage; an empty list is `Identity` (one node alone: open, §9) | §4 |
+| A pipeline is a `Stage`: a list of tagged nodes folded with `~>`, nesting wherever a stage takes a stage; an empty list is `Identity`, one tagged node alone a pipeline of one stage | §4 |
 | Configs are Psi or YAML; a tag is a node tag, written in the source, and nothing else | §5 |
 | Two modules: core (domain-agnostic conversion) and spark (Spark-bound stages) | §3 |
 | spark is built for Scala 2.13 only; core is cross-built over 2.13 and 3.9 | §3 |
 | Spark stages work on `DataFrame`, not on a typed `Dataset[T]` | §3 |
 | The tag selects the builder; a tag is the FQN of a stage class or an alias for one (being reworked: tags from `xi.stages`, §9) | §5 |
 | Each domain module brings its own alias table; core only consults the tables it is given (being reworked with it, §9) | §5 |
-| The builder is the stage's companion object, in the same module as the stage, and parses its own parameters (reopened: may a tag name a constructor instead, §9) | §6 |
-| core finds the builder by reflection from the FQN, and uses reflection for nothing else (reopened with it) | §6 |
+| The builder is the stage's companion object, in the same module as the stage, and parses its own parameters; a tag never names a constructor | §6 |
+| core finds the builder by reflection from the FQN, and uses reflection for nothing else | §6 |
 | Types are carried at runtime; a builder returns the stage together with the witness of its output type | §7 |
 | Errors are accumulated, not thrown, each with its node's `Location` | §8 |
 
@@ -94,8 +94,9 @@ a case the design caters for: it works, without overrides of parameters.
 **A pipeline is a `Stage`.** `Stage ~> Stage` is itself a `Stage`, so there is no separate "pipeline"
 concept to model — in config as in code, a pipeline is just a stage that happens to be built out of
 others: a **chain**, a list of tagged nodes, folded left with `~>` in list order. An empty list, `xi: []`,
-is `std.Identity` of the input type: its output type is its input type. Whether a single tagged node, not
-in a list, is a pipeline as well is open (§9).
+is `std.Identity` of the input type: its output type is its input type. A single tagged node, not in a
+list, is a pipeline as well — the same as a list of that one node — at every level, since the decoder is
+one: `xi`'s pipeline and a pipeline parameter of a nested stage alike.
 
 And it nests: a stage's own configuration can take **a pipeline as a parameter**. `cycles.Loop` and
 `cycles.Repeat` each wrap one inner stage; `operators.And` and `operators.Or` each take two branches. The
@@ -200,14 +201,17 @@ reports a `NodeError` against that node's `Location`.
 
 That is the argument for izumi-reflect over `h8io.reflect`: `LightTypeTag` has `typeArgs`, `withoutArgs`
 and `combine` for exactly this taking-apart and rebuilding, alongside `<:<`/`=:=`, while
-`h8io.reflect.Type` exposes only the comparisons. Treat the `h8io.reflect.Type` in
-`StageBuilder`/`StageSpec` as provisional (§9).
+`h8io.reflect.Type` exposes only the comparisons. But izumi's comparisons are wrong exactly at the
+`Any`/`AnyVal`/`AnyRef`/`Null` boundary, which is why `h8io.reflect` was written, and `h8io.reflect` fixes
+them only at the top of a type, not inside its arguments (measured in session 3, §9). Neither library is
+enough as it is; treat the `h8io.reflect.Type` in `StageBuilder`/`StageSpec` as provisional (§9).
 
 ## 8. Errors
 
 Errors are accumulated rather than thrown, so that a bad config reports every problem with its source
 `Location` at once. Each is a cfg `NodeError`, tied to the node it is about. `StageBuilder` returns
-`Validated[NodeError, _]`, which used to be cfg-schema's `CfgValue`; whether it stays that is open (§9).
+`Validated[NodeError, _]`, which used to be cfg-schema's `CfgValue`; what replaces it is decided during
+implementation (§9).
 
 ## 9. Open questions
 
@@ -217,7 +221,7 @@ xi starts from the config: what it is for is that pipelines are convenient to wr
 settled first and the code follows it. Agreed so far:
 
 - `xi` is a **map** with at least two fields: **`stages`**, a mapping of stage tags to what builds the
-  stage (a builder, a constructor or a factory), and **`pipeline`**, the sequence of `@stage-tag stage-cfg`
+  stage (a builder, or a factory — open below), and **`pipeline`**, the sequence of `@stage-tag stage-cfg`
   that `xi` itself used to be (§4). `stages` is a map, so it merges across sources and each can add tags;
   `pipeline` is a sequence and is still replaced whole.
 - **What an FQN in `stages` names is found out by reflection** — a companion that is a `StageBuilder`
@@ -259,36 +263,27 @@ Open:
 - **Where the domain modules' tables go.** §5 has each domain module bring an alias table in code. With
   `stages` in the config, spark could ship a Psi resource with its `xi.stages { … }` instead, included with
   `#include(…)`: one mechanism for aliases rather than two, and all of it in config.
-- **Constructors, if they stay** (below): the fields of a map matched to a constructor's parameters by
-  name need the names at runtime, which Java reflection gives only with a `MethodParameters` attribute —
-  whether scalac emits it, for 2.13 and for 3.9, is unchecked; turning a `Node` into a parameter's type is
-  the decoder question below; and the output type can be read from the generic signature of the class's
-  `Stage` supertype for a monomorphic stage only (`DataFrame → DataFrame`), not for `Identity[T]` or
-  `Unlift[T]`, whose output depends on the input.
 
 ### Other questions
 
-- **Constructor or builder.** Whether a tag may name a stage's constructor as well as a builder — say, for
-  a stage with no parameters, where a companion that only calls `new` is boilerplate. §6 and session 1
-  rejected core calling constructors by reflection (parameter parsing moving into core, mistakes surfacing
-  only at runtime); the question is reopened, not decided the other way. A generic builder in core for
-  stages without parameters would remove the boilerplate without calling constructors from config.
-- **A single stage as a pipeline.** Whether `xi`, and a pipeline parameter of a nested stage, may also be one
-  tagged node rather than a list of one. Whatever is chosen holds at every level, as the decoder is one.
-- **An empty pipeline inside a cycle.** An empty list is `Identity` at every level, and `std.Identity` always
-  yields with `Success`; `cycles.Loop`, `Repeat`, `Fold` and `Reduce` go on while their inner stage reports
-  `Success`, so `@loop []` never returns. Whether the builders of the cycles reject an empty inner pipeline
-  as an error on its node, or leave it to the author, is open.
 - **What accumulates errors.** cfg-schema gave `CfgValue`, an alias of cats' `Validated`; cfg 0.4.x has
   neither. cats-core is still on the classpath, but only transitively, through the `io.h8 %% stages`
   umbrella artifact and its `stages-cats`. Options: depend on cats-core directly, or a small accumulating
-  type of xi's own.
+  type of xi's own. Not to be settled in advance: decided during implementation, by what the builders
+  turn out to need.
 - **What replaces cfg-schema's `Decoder`** for the builders' parameters: each builder reading `Node` by
   hand, or a small decoding layer in core that builders share.
-- **izumi-reflect or `h8io.reflect`.** izumi is on the classpath today only through `reflect` 0.0.6
-  (izumi-reflect 3.0.11), so moving to izumi means depending on it directly and dropping `io.h8 %% reflect`.
-  What that gives up is reflect's special-casing (primitive vs boxed, `Any`/`AnyVal`/`AnyRef`/`Nothing`/
-  `Null`); whether xi needs it is to be found out from a real pipeline, not settled in advance.
+- **izumi-reflect or `h8io.reflect`.** `h8io.reflect` exists because izumi does not get every type right.
+  Measured in session 3 on izumi-reflect 3.0.11, Scala 2.13.18 and 3.9.0 alike, `LightTypeTag.<:<` answers
+  `true` for all of: `Int <: AnyRef`, `AnyVal <: AnyRef`, `Any <: AnyRef`, a universal trait or a value
+  class `<: AnyRef`, and `Null <:` `Int`, `AnyVal`, a value class or `Nothing`. izumi treats `AnyRef` as
+  `Any` and `Null` as a bottom type. `Int` and `java.lang.Integer`, and `Unit` and `BoxedUnit`, it does tell
+  apart. `reflect` 0.0.6 corrects all of these — but only at the top of a type: inside type arguments it
+  delegates to izumi, so `Box[Int] <: Box[AnyRef]`, `Box[Null] <: Box[Int]` (`Box` covariant) and
+  `Stage[AnyRef, Int] <: Stage[Int, Int]` still come out `true` through `h8io.reflect.Type`. And §7 needs
+  izumi's taking-apart (`typeArgs`, `combine`), which `reflect` does not expose. So the question is no
+  longer which of the two, but how a type that compares correctly at every depth and can be taken apart is
+  had: `reflect` growing both, or something else.
 - **The `StageBuilder` signature**: the error type parameter `E`, how a builder receives what it needs to
   build nested pipelines (core's decoder, the alias tables), and whether the alias tables are passed in or
   discovered.
@@ -369,3 +364,14 @@ witness (§7); accumulated errors (§8); izumi-reflect argued for over `h8io.ref
   convenience of writing is the aim.
 - **An entry in `stages` can be more than an FQN.** What it is, and the rest of the format, are open
   (§9, the format of `xi`).
+- **Builder, not constructor.** A tag names a builder; core never calls a stage's constructor. Session 1's
+  decision stands, and with it the constructor questions of the format go: matching map fields to
+  parameter names, decoding a parameter, reading the output type from the class's `Stage` supertype.
+- **A single tagged node is a pipeline**, the same as a list of that one node, at every level.
+- **No special rule for an empty pipeline inside a cycle.** `@loop []` never returns, and that is the
+  author's to avoid: the cycles' builders are like every other builder and do not reject it.
+- **Error accumulation is decided during implementation**, not in advance.
+- **izumi gets the `Any`/`AnyVal`/`AnyRef`/`Null` boundary wrong, and `reflect` fixes it only at the top
+  level.** Measured, not argued: the cases are listed in §9. The izumi-or-`reflect` question becomes how
+  to have both correct comparisons at every depth and the taking-apart §7 needs.
+- **The `StageBuilder` signature stays open** (§9), deliberately.
