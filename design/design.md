@@ -276,6 +276,10 @@ Open:
   `stages` in the config, spark could ship a Psi resource with its `xi.stages { … }` instead, included with
   `#include(…)`: one mechanism for aliases rather than two, and all of it in config.
 
+They are not independent, and the first is the one to take first: with tags in `pipeline` only from
+`stages`, the backticks of FQN tags in Psi (below) never arise, and the alias table (below) becomes the
+question of where the domain modules' `stages` entries go, the last one above.
+
 ### Other questions
 
 - **What accumulates errors.** cfg-schema gave `CfgValue`, an alias of cats' `Validated`; cfg 0.4.x has
