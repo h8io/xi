@@ -3,6 +3,8 @@ import h8io.sbt.dependencies.*
 
 val ProjectName = "xi"
 
+val ScalaVersion213 = "2.13.18"
+
 // Every branch on the Scala version lists the versions it knows and ends here, so that a new one fails the build until
 // each of them has been looked at
 def unsupportedScala(version: String): Nothing = throw new MessageOnlyException(s"Unsupported Scala version $version")
@@ -16,7 +18,7 @@ licenses := List(License.Apache2)
 developers := List(
   Developer(id = "eshu", name = "Pavel", email = "tjano.xibalba@gmail.com", url = uri("https://github.com/eshu/")))
 
-scalaVersion := "2.13.18"
+scalaVersion := ScalaVersion213
 crossScalaVersions += "3.9.0"
 javacOptions ++= Seq("--release", "11")
 
@@ -80,10 +82,38 @@ coverageSummaryBranchHighThreshold := 100
 
 libraryDependencies ++= TestBundle % Test
 
-val root = (project in file(".")).settings(
-  name := ProjectName,
+val core = (project in file("core")).settings(
+  name := "xi-core",
   libraryDependencies ++= H8IO
-).enablePlugins(ScoverageSummaryPlugin)
+)
+
+// Spark publishes no Scala 3 build. spark still lists 3.9 in its crossScalaVersions, because `+` runs a task on the
+// root alone wherever the root supports the version, and the root's aggregation would then pull a 2.13-only spark onto
+// a core switched to 3.9. On 3.9 spark is empty instead: no sources, no Spark, nothing published.
+def sparkSupported(scalaVersion: String): Boolean =
+  CrossVersion.partialVersion(scalaVersion) match {
+    case Some((2, 13)) => true
+    case Some((3, 9)) => false
+    case _ => unsupportedScala(scalaVersion)
+  }
+
+val spark = (project in file("spark"))
+  .settings(
+    name := "xi-spark",
+    libraryDependencies ++= (if (sparkSupported(scalaVersion.value)) Spark % Provided else Nil),
+    Compile / unmanagedSourceDirectories :=
+      (if (sparkSupported(scalaVersion.value)) (Compile / unmanagedSourceDirectories).value else Nil),
+    Test / unmanagedSourceDirectories :=
+      (if (sparkSupported(scalaVersion.value)) (Test / unmanagedSourceDirectories).value else Nil),
+    publish / skip := !sparkSupported(scalaVersion.value),
+    publishLocal / skip := !sparkSupported(scalaVersion.value)
+  )
+  .dependsOn(core)
+
+val root = (project in file("."))
+  .enablePlugins(ScoverageSummaryPlugin)
+  .settings(name := ProjectName, publish / skip := true, publishLocal / skip := true)
+  .aggregate(core, spark)
 
 val pages = (project in file("pages"))
   .settings(
@@ -99,5 +129,5 @@ val pages = (project in file("pages"))
     mdocVariables :=
       Map("VERSION" -> (if (isSnapshot.value) previousStableVersion.value else None).getOrElse(version.value))
   )
-  .dependsOn(root)
+  .dependsOn(core, spark)
   .enablePlugins(ScalaUnidocPlugin, MdocPlugin)

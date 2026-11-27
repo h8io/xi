@@ -1,4 +1,4 @@
-package h8io.xi.stages
+package h8io.xi.core.stages
 
 import cats.data.Validated
 import h8io.cfg.{Node, NodeError}

@@ -1,4 +1,4 @@
-package h8io.xi.stages
+package h8io.xi.core.stages
 
 import h8io.reflect.Type
 import h8io.stages.Stage
