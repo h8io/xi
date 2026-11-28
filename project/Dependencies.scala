@@ -6,7 +6,7 @@ object Dependencies {
   val H8IO: Seq[ModuleID] = Seq(
     "io.h8" %% "stages" % "0.1.0",
     "io.h8" %% "cfg" % "0.4.1",
-    "io.h8" %% "reflect" % "0.0.6"
+    "io.h8" %% "reflect" % "0.1.0"
   )
 
   val TestBundle: Seq[ModuleID] = Seq(
